@@ -1,0 +1,88 @@
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { cookies } from 'next/headers';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambiar-en-produccion';
+
+export interface UserPayload {
+  id: number;
+  email: string;
+  nombre: string;
+  apellido: string;
+}
+
+export function hashPassword(password: string): string {
+  return bcrypt.hashSync(password, 10);
+}
+
+export function comparePassword(password: string, hash: string): boolean {
+  return bcrypt.compareSync(password, hash);
+}
+
+export function generateToken(user: UserPayload): string {
+  return jwt.sign(user, JWT_SECRET, { expiresIn: '7d' });
+}
+
+export function verifyToken(token: string): UserPayload | null {
+  try {
+    return jwt.verify(token, JWT_SECRET) as UserPayload;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function setAuthCookie(token: string) {
+  const cookieStore = await cookies();
+  cookieStore.set('auth-token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 7, // 7 días
+    path: '/',
+  });
+}
+
+export async function getAuthCookie(): Promise<string | undefined> {
+  const cookieStore = await cookies();
+  return cookieStore.get('auth-token')?.value;
+}
+
+export async function removeAuthCookie() {
+  const cookieStore = await cookies();
+  cookieStore.delete('auth-token');
+}
+
+export async function getCurrentUser(): Promise<UserPayload | null> {
+  const token = await getAuthCookie();
+  if (!token) return null;
+  return verifyToken(token);
+}
+
+export async function verifyAuth(request: Request): Promise<{ authenticated: boolean; user?: UserPayload }> {
+  try {
+    const cookieHeader = request.headers.get('cookie');
+    if (!cookieHeader) {
+      return { authenticated: false };
+    }
+
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    const token = cookies['auth-token'];
+    if (!token) {
+      return { authenticated: false };
+    }
+
+    const user = verifyToken(token);
+    if (!user) {
+      return { authenticated: false };
+    }
+
+    return { authenticated: true, user };
+  } catch (error) {
+    return { authenticated: false };
+  }
+}
