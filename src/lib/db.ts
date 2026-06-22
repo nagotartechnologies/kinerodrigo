@@ -1,41 +1,56 @@
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 import path from 'path';
 
-// Configuración de base de datos
+// Credenciales de conexion a la base de datos en la nube
 const TURSO_URL = process.env.TURSO_DATABASE_URL;
 const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN;
 
-// Usar SQLite local si no hay credenciales de Turso
-const USE_LOCAL_DB = !TURSO_URL || !TURSO_AUTH_TOKEN;
-
-// Crear cliente (Turso o SQLite local)
-const tursoClient = createClient(
-  USE_LOCAL_DB
-    ? {
-        url: 'file:' + path.join(process.cwd(), 'database.db')
-      }
-    : {
-        url: TURSO_URL,
-        authToken: TURSO_AUTH_TOKEN
-      }
-);
-
-if (USE_LOCAL_DB) {
-  console.log('📁 Usando base de datos SQLite local: database.db');
-} else {
-  console.log('☁️ Usando base de datos Turso en la nube');
+// Si no existen las variables de entorno el servidor no puede arrancar
+if (!TURSO_URL || !TURSO_AUTH_TOKEN) {
+  console.error('ERROR: Las variables de entorno de Turso no estan configuradas.');
+  console.error('Agrega las siguientes variables en el archivo .env.local:');
+  console.error('  - TURSO_DATABASE_URL');
+  console.error('  - TURSO_AUTH_TOKEN');
+  console.error('');
+  console.error('Puedes obtener estas credenciales desde: https://turso.tech');
+  throw new Error('TURSO_DATABASE_URL y TURSO_AUTH_TOKEN son requeridos. Verifica tu archivo .env.local');
 }
 
-// Wrapper para mantener compatibilidad con better-sqlite3
+// Se usa el cliente web de Turso para evitar dependencias de binarios nativos en Netlify
+const tursoClient = createClient({
+  url: TURSO_URL,
+  authToken: TURSO_AUTH_TOKEN,
+  fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
+    try {
+      const response = await fetch(input, {
+        ...init,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  }
+});
+
+console.log('Conexion establecida con la base de datos Turso.');
+
+// Esta clase envuelve el cliente de Turso imitando la API de better-sqlite3
+// para no tener que reescribir todas las consultas del sistema
 class TursoDatabase {
   private client = tursoClient;
 
-  // Ejecutar SQL directo
+  // Ejecuta una sentencia SQL sin parametros
   exec(sql: string) {
     return this.client.execute(sql);
   }
 
-  // Preparar statement
+  // Prepara una consulta SQL y devuelve metodos para ejecutarla con parametros
   prepare(sql: string) {
     return {
       run: async (...params: any[]) => {
@@ -65,13 +80,15 @@ class TursoDatabase {
     };
   }
 
-  // Pragma (no-op para Turso, pero mantiene compatibilidad)
+  // Turso no soporta pragmas de SQLite, pero se mantiene el metodo para no romper
+  // codigo que lo llame por compatibilidad con better-sqlite3
   pragma(pragma: string) {
-    console.log(`[Turso] Pragma ignorado: ${pragma}`);
+    console.log(`Pragma ignorado en Turso: ${pragma}`);
     return this;
   }
 
-  // Transaction (ejecuta función directamente, sin transacción real en Turso)
+  // Turso no soporta transacciones locales de la misma forma que SQLite.
+  // Esta implementacion ejecuta la funcion directamente sin garantia de atomicidad.
   transaction(fn: (...args: any[]) => void) {
     return (...args: any[]) => {
       return fn(...args);
@@ -81,14 +98,59 @@ class TursoDatabase {
 
 const db = new TursoDatabase();
 
-// Función para inicializar la base de datos
-export async function initDatabase() {
-  try {
-    console.log('🔄 Inicializando base de datos Turso...');
+// Reintenta una operacion async hasta N veces si falla por timeout de red.
+// Util en entornos serverless donde la conexion puede tardar en establecerse.
+async function retryWithTimeout<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 5,
+  timeout: number = 20000
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error(`Timeout después de ${timeout}ms`)), timeout);
+      });
+      
+      return await Promise.race([operation(), timeoutPromise]);
+    } catch (error: any) {
+      const isLastAttempt = attempt === maxRetries;
+      const isTimeoutError = error.message?.includes('Timeout') || 
+                            error.message?.includes('fetch failed') ||
+                            error.code === 'UND_ERR_CONNECT_TIMEOUT' ||
+                            error.cause?.code === 'UND_ERR_CONNECT_TIMEOUT';
+      
+      if (isLastAttempt) {
+        console.error(`Error despues de ${maxRetries} intentos:`, error.message);
+        throw error;
+      }
+      
+      if (isTimeoutError) {
+        const waitTime = 2000 * attempt;
+        console.log(`Intento ${attempt}/${maxRetries} fallo por timeout, reintentando en ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw new Error('No se pudo completar la operación');
+}
 
-    // Crear tablas si no existen
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS usuarios (
+// Crea todas las tablas y datos iniciales si no existen.
+// Se ejecuta una sola vez por arranque del servidor.
+let dbInitialized = false;
+
+export async function initDatabase() {
+  if (dbInitialized) return;
+  
+  try {
+    console.log('Iniciando conexion con la base de datos Turso...');
+    console.log(`URL de conexion: ${TURSO_URL?.substring(0, 30)}...`);
+
+    // Se crean todas las tablas en una sola llamada HTTP para minimizar la latencia
+    // en entornos serverless. Si las tablas ya existen no hace nada.
+    await retryWithTimeout(() => tursoClient.batch([
+      `CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
@@ -99,14 +161,11 @@ export async function initDatabase() {
         activo INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS pacientes (
+      )`,
+      `CREATE TABLE IF NOT EXISTS pacientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
-        rut TEXT UNIQUE NOT NULL,
+        rut TEXT,
         telefono TEXT,
         edad INTEGER,
         altura REAL,
@@ -117,6 +176,15 @@ export async function initDatabase() {
         medicamentos TEXT,
         alergias TEXT,
         cirugias TEXT,
+        deportes TEXT,
+        alimentacion TEXT,
+        consumo_agua TEXT,
+        descanso TEXT,
+        psicologicamente TEXT,
+        digestion TEXT,
+        lesion_consulta TEXT,
+        objetivo_paciente TEXT,
+        evaluacion_fisica TEXT,
         motivo_consulta TEXT,
         diagnostico TEXT,
         tratamiento TEXT,
@@ -124,14 +192,12 @@ export async function initDatabase() {
         sesiones_programadas INTEGER DEFAULT NULL,
         evaluacion_final TEXT DEFAULT NULL,
         numero_sesion INTEGER DEFAULT NULL,
+        estado_tratamiento TEXT DEFAULT 'en_tratamiento',
         activo INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS citas (
+      )`,
+      `CREATE TABLE IF NOT EXISTS citas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         paciente_id INTEGER NOT NULL,
         fecha TEXT NOT NULL,
@@ -143,11 +209,8 @@ export async function initDatabase() {
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE
-      )
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS horarios_bloqueados (
+      )`,
+      `CREATE TABLE IF NOT EXISTS horarios_bloqueados (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         fecha TEXT NOT NULL,
         hora_inicio TEXT NOT NULL,
@@ -156,11 +219,8 @@ export async function initDatabase() {
         tipo TEXT DEFAULT 'bloqueo',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS evaluaciones (
+      )`,
+      `CREATE TABLE IF NOT EXISTS evaluaciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario_id INTEGER NOT NULL,
         cita_id INTEGER,
@@ -172,11 +232,8 @@ export async function initDatabase() {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
         FOREIGN KEY (cita_id) REFERENCES citas(id) ON DELETE SET NULL
-      )
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS planes_rehabilitacion (
+      )`,
+      `CREATE TABLE IF NOT EXISTS planes_rehabilitacion (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario_id INTEGER NOT NULL,
         evaluacion_id INTEGER,
@@ -191,11 +248,15 @@ export async function initDatabase() {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
         FOREIGN KEY (evaluacion_id) REFERENCES evaluaciones(id) ON DELETE SET NULL
-      )
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS sesiones (
+      )`,
+      `CREATE TABLE IF NOT EXISTS ejercicios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        descripcion TEXT,
+        categoria TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS sesiones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         paciente_id INTEGER NOT NULL,
         cita_id INTEGER,
@@ -219,11 +280,8 @@ export async function initDatabase() {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
         FOREIGN KEY (cita_id) REFERENCES citas(id) ON DELETE SET NULL
-      )
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS recordatorios (
+      )`,
+      `CREATE TABLE IF NOT EXISTS recordatorios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         cita_id INTEGER NOT NULL,
         mensaje_id TEXT,
@@ -238,11 +296,8 @@ export async function initDatabase() {
         enviado_at TEXT DEFAULT CURRENT_TIMESTAMP,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (cita_id) REFERENCES citas(id) ON DELETE CASCADE
-      )
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS pagos (
+      )`,
+      `CREATE TABLE IF NOT EXISTS pagos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         paciente_id INTEGER NOT NULL,
         sesion_id INTEGER,
@@ -257,11 +312,36 @@ export async function initDatabase() {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE,
         FOREIGN KEY (sesion_id) REFERENCES sesiones(id) ON DELETE SET NULL
-      )
-    `);
-
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS configuraciones (
+      )`,
+      `CREATE TABLE IF NOT EXISTS categorias_gastos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL UNIQUE,
+        color TEXT DEFAULT '#6b7280',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS gastos_fijos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        categoria TEXT NOT NULL,
+        descripcion TEXT NOT NULL,
+        monto REAL NOT NULL,
+        activo INTEGER DEFAULT 1,
+        dia_generacion INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS gastos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        categoria TEXT NOT NULL,
+        descripcion TEXT NOT NULL,
+        monto REAL NOT NULL,
+        estado TEXT DEFAULT 'pendiente',
+        fecha_gasto TEXT NOT NULL,
+        metodo_pago TEXT,
+        notas TEXT,
+        gasto_fijo_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (gasto_fijo_id) REFERENCES gastos_fijos(id) ON DELETE SET NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS configuraciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         clave TEXT UNIQUE NOT NULL,
         valor TEXT,
@@ -270,10 +350,91 @@ export async function initDatabase() {
         descripcion TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+      )`,
+      `CREATE TABLE IF NOT EXISTS documentos_paciente (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        paciente_id INTEGER NOT NULL,
+        nombre TEXT NOT NULL,
+        tipo TEXT DEFAULT 'imagen',
+        url TEXT NOT NULL,
+        public_id TEXT NOT NULL,
+        formato TEXT,
+        tamano INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS historial_estados_paciente (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        paciente_id INTEGER NOT NULL,
+        estado_anterior TEXT,
+        estado_nuevo TEXT NOT NULL,
+        motivo TEXT,
+        notas TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS episodios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        paciente_id INTEGER NOT NULL,
+        numero_episodio INTEGER NOT NULL DEFAULT 1,
+        motivo_lesion TEXT,
+        objetivo TEXT,
+        evaluacion_fisica TEXT,
+        evaluacion_final TEXT,
+        estado TEXT DEFAULT 'en_tratamiento',
+        fecha_inicio TEXT DEFAULT CURRENT_TIMESTAMP,
+        fecha_cierre TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE
+      )`
+    ], 'write'));
 
-    // Insertar configuraciones por defecto
+    // Se agregan columnas nuevas a tablas existentes.
+    // Si la columna ya existe la base de datos lanza un error que se ignora intencionalmente.
+    const columnsToAdd = [
+      'deportes TEXT', 'alimentacion TEXT', 'consumo_agua TEXT', 'descanso TEXT',
+      'psicologicamente TEXT', 'digestion TEXT', 'lesion_consulta TEXT',
+      'objetivo_paciente TEXT', 'evaluacion_fisica TEXT',
+      'estado_tratamiento TEXT DEFAULT en_tratamiento',
+      'estado_paciente TEXT DEFAULT activo'
+    ];
+    for (const column of columnsToAdd) {
+      try {
+        await tursoClient.execute(`ALTER TABLE pacientes ADD COLUMN ${column}`);
+      } catch (error) {
+        // Si la columna ya existe se ignora el error sin hacer nada
+      }
+    }
+
+    // Columnas agregadas en versiones posteriores del schema de sesiones
+    const sesionesColumnsToAdd = [
+      'borg_percepcion INTEGER',
+      'episodio_id INTEGER'
+    ];
+    for (const column of sesionesColumnsToAdd) {
+      try {
+        await tursoClient.execute(`ALTER TABLE sesiones ADD COLUMN ${column}`);
+      } catch (error) {
+        // Si la columna ya existe se ignora el error sin hacer nada
+      }
+    }
+
+    // Se insertan los datos iniciales: categorias de gastos, configuraciones por defecto
+    // y una correccion de datos legacy. Todos usan INSERT OR IGNORE para ser idem potentes.
+    const seedStatements: any[] = [
+      // Categorias de gastos por defecto
+      { sql: 'INSERT OR IGNORE INTO categorias_gastos (nombre, color) VALUES (?, ?)', args: ['Arriendo', '#ef4444'] },
+      { sql: 'INSERT OR IGNORE INTO categorias_gastos (nombre, color) VALUES (?, ?)', args: ['Servicios', '#3b82f6'] },
+      { sql: 'INSERT OR IGNORE INTO categorias_gastos (nombre, color) VALUES (?, ?)', args: ['Insumos', '#10b981'] },
+      { sql: 'INSERT OR IGNORE INTO categorias_gastos (nombre, color) VALUES (?, ?)', args: ['Materiales', '#f59e0b'] },
+      { sql: 'INSERT OR IGNORE INTO categorias_gastos (nombre, color) VALUES (?, ?)', args: ['Otros', '#6b7280'] },
+      // Correccion de datos: citas antiguas con estado 'programada' se normalizan a 'pendiente'
+      { sql: `UPDATE citas SET estado = 'pendiente' WHERE estado = 'programada'`, args: [] }
+    ];
+
+    // Valores iniciales para todas las claves de configuracion del sistema.
+    // Se usan INSERT OR IGNORE, asi que si ya existen no se sobreescriben.
     const configDefault = [
       { clave: 'nombre_centro', valor: 'NAGO-KINE', tipo: 'text', categoria: 'general', descripcion: 'Nombre del centro' },
       { clave: 'logo_url', valor: '', tipo: 'image', categoria: 'general', descripcion: 'Logo del centro' },
@@ -303,24 +464,24 @@ export async function initDatabase() {
     ];
 
     for (const config of configDefault) {
-      try {
-        await tursoClient.execute({
-          sql: `INSERT OR IGNORE INTO configuraciones (clave, valor, tipo, categoria, descripcion) VALUES (?, ?, ?, ?, ?)`,
-          args: [config.clave, config.valor, config.tipo, config.categoria, config.descripcion]
-        });
-      } catch (error) {
-        // Ignorar errores de duplicados
-      }
+      seedStatements.push({
+        sql: `INSERT OR IGNORE INTO configuraciones (clave, valor, tipo, categoria, descripcion) VALUES (?, ?, ?, ?, ?)`,
+        args: [config.clave, config.valor, config.tipo, config.categoria, config.descripcion]
+      });
     }
 
-    console.log('✅ Base de datos Turso inicializada correctamente');
+    await retryWithTimeout(() => tursoClient.batch(seedStatements, 'write'));
+
+    dbInitialized = true;
+    console.log('Base de datos lista y todas las tablas verificadas.');
   } catch (error) {
-    console.error('❌ Error al inicializar base de datos Turso:', error);
+    console.error('Error al inicializar la base de datos Turso:', error);
     throw error;
   }
 }
 
-// Inicializar al importar (solo en servidor)
+// Se inicia automaticamente cuando este modulo se importa en el servidor.
+// En el navegador no hace nada porque typeof window !== 'undefined'.
 if (typeof window === 'undefined') {
   initDatabase().catch(console.error);
 }

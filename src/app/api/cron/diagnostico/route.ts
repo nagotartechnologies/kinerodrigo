@@ -102,8 +102,8 @@ export async function GET(request: NextRequest) {
       problemas.push('❌ WhatsApp está DESACTIVADO en configuración');
     }
     
-    if (!configuraciones.whatsapp_instance_id || !configuraciones.whatsapp_api_token) {
-      problemas.push('❌ Faltan credenciales de WhatsApp (Instance ID o API Token)');
+    if (!configuraciones.greenapi_instance_id || !configuraciones.greenapi_token) {
+      problemas.push('❌ Faltan credenciales de Green API (Instance ID o API Token)');
     }
     
     if (citasProximas.length === 0) {

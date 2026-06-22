@@ -61,20 +61,11 @@ export async function POST(request: NextRequest) {
       evaluacionFisica,
     } = body;
 
-    // Validar campos requeridos
-    if (!nombre || !rut || !telefono || !edad || !altura || !peso || !lesionConsulta || !objetivoPaciente) {
+    // Validar campos requeridos (solo nombre)
+    if (!nombre) {
       return NextResponse.json(
-        { error: 'Faltan campos requeridos' },
+        { error: 'El nombre es obligatorio' },
         { status: 400 }
-      );
-    }
-
-    // Verificar si el RUT ya existe
-    const existingPaciente = await db.prepare('SELECT id FROM pacientes WHERE rut = ?').get(rut);
-    if (existingPaciente) {
-      return NextResponse.json(
-        { error: 'Ya existe un paciente con este RUT' },
-        { status: 409 }
       );
     }
 
@@ -107,13 +98,29 @@ export async function POST(request: NextRequest) {
       evaluacionFisica || null
     );
 
-    const paciente = await db.prepare('SELECT * FROM pacientes WHERE id = ?').get(result.lastInsertRowid);
+    const pacienteId = Number(result.lastInsertRowid);
+
+    // Crear automáticamente el Episodio 1 con los datos clínicos iniciales
+    await db.prepare(`
+      INSERT INTO episodios
+        (paciente_id, numero_episodio, motivo_lesion, objetivo, evaluacion_fisica,
+         estado, fecha_inicio)
+      VALUES (?, 1, ?, ?, ?, 'en_tratamiento', ?)
+    `).run(
+      pacienteId,
+      lesionConsulta || null,
+      objetivoPaciente || null,
+      evaluacionFisica || null,
+      new Date().toISOString()
+    );
+
+    const paciente = await db.prepare('SELECT * FROM pacientes WHERE id = ?').get(pacienteId);
 
     return NextResponse.json({ 
       message: 'Paciente creado exitosamente',
       paciente 
     }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al crear paciente:', error);
     return NextResponse.json(
       { error: 'Error al crear paciente' },

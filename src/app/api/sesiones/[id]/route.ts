@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
 
 // GET - Obtener una sesión por ID
 export async function GET(
@@ -7,6 +8,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id: idStr } = await params;
     const id = parseInt(idStr);
 
@@ -25,6 +31,7 @@ export async function GET(
         s.observaciones,
         s.dolor_inicial,
         s.dolor_final,
+        s.borg_percepcion,
         s.movilidad,
         s.fuerza,
         s.progreso_general,
@@ -66,6 +73,7 @@ export async function GET(
         observaciones: sesion.observaciones,
         dolorInicial: sesion.dolor_inicial,
         dolorFinal: sesion.dolor_final,
+        borgPercepcion: sesion.borg_percepcion,
         movilidad: sesion.movilidad,
         fuerza: sesion.fuerza,
         progresoGeneral: sesion.progreso_general,
@@ -90,6 +98,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id: idStr } = await params;
     const id = parseInt(idStr);
     const body = await request.json();
@@ -106,6 +119,7 @@ export async function PUT(
       observaciones,
       dolorInicial,
       dolorFinal,
+      borgPercepcion,
       movilidad,
       fuerza,
       progresoGeneral,
@@ -137,6 +151,7 @@ export async function PUT(
         observaciones = ?,
         dolor_inicial = ?,
         dolor_final = ?,
+        borg_percepcion = ?,
         movilidad = ?,
         fuerza = ?,
         progreso_general = ?,
@@ -155,8 +170,9 @@ export async function PUT(
       notasSesion || null,
       ejerciciosRealizados ? JSON.stringify(ejerciciosRealizados) : null,
       observaciones || null,
-      dolorInicial || null,
-      dolorFinal || null,
+      dolorInicial !== undefined && dolorInicial !== null && dolorInicial !== '' ? dolorInicial : null,
+      dolorFinal !== undefined && dolorFinal !== null && dolorFinal !== '' ? dolorFinal : null,
+      borgPercepcion !== undefined && borgPercepcion !== null && borgPercepcion !== '' ? borgPercepcion : null,
       movilidad || null,
       fuerza || null,
       progresoGeneral || null,
@@ -206,6 +222,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id: idStr } = await params;
     const id = parseInt(idStr);
 

@@ -870,6 +870,18 @@ body.dragging {
   border: 1px solid #f59e0b;
 }
 
+.estado-badge.cancelada {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+.estado-badge.completada {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid #10b981;
+}
+
 .btn-icon {
   width: 40px;
   height: 40px;
@@ -1048,28 +1060,29 @@ body.dragging {
   }
 
   .semana-horarios-header {
-    grid-template-columns: 40px repeat(7, 60px);
+    grid-template-columns: 32px repeat(7, 1fr);
     background: #0a0a0a;
     border-bottom: 2px solid #2a2a2a;
     position: sticky;
     top: 0;
     z-index: 10;
     display: grid;
-    min-width: fit-content;
+    width: 100%;
+    padding-right: 2px;
   }
 
   .hora-column-header {
-    padding: 0.5rem 0.125rem;
-    font-size: 0.6rem;
-    min-width: 40px;
+    padding: 0.5rem 0.1rem;
+    font-size: 0.5rem;
+    min-width: 32px;
+    width: 32px;
     font-weight: 600;
     color: #666;
   }
 
   .dia-column-header {
-    padding: 0.5rem 0.25rem;
-    min-width: 60px;
-    width: 60px;
+    padding: 0.4rem 0.1rem;
+    min-width: 0;
     border-right: 1px solid #2a2a2a;
     text-align: center;
     display: flex !important;
@@ -1080,15 +1093,15 @@ body.dragging {
   }
 
   .dia-column-header .dia-nombre {
-    font-size: 0.6rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.5rem;
+    margin-bottom: 0.15rem;
     text-transform: uppercase;
     font-weight: 600;
     color: #888;
   }
 
   .dia-column-header .dia-numero {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #fff;
   }
@@ -1100,23 +1113,25 @@ body.dragging {
   .dia-column-header.hoy .dia-numero {
     background: #3FFF00;
     color: #0a0a0a;
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto;
     font-weight: 800;
+    font-size: 0.9rem;
   }
 
   .semana-horarios-grid {
     max-height: calc(100vh - 280px);
     overflow-y: auto;
-    overflow-x: visible;
+    overflow-x: hidden;
     background: #0a0a0a;
     -webkit-overflow-scrolling: touch;
-    min-width: fit-content;
+    width: 100%;
+    padding-right: 2px;
   }
 
   .semana-horarios-grid::-webkit-scrollbar {
@@ -1133,17 +1148,18 @@ body.dragging {
   }
 
   .hora-row {
-    grid-template-columns: 40px repeat(7, 60px);
+    grid-template-columns: 32px repeat(7, 1fr);
     min-height: 70px;
     border-bottom: 1px solid #1a1a1a;
-    min-width: fit-content;
+    width: 100%;
     display: grid;
   }
 
   .hora-label {
-    padding: 0.5rem 0.125rem;
-    font-size: 0.6rem;
-    min-width: 40px;
+    padding: 0.5rem 0.1rem;
+    font-size: 0.5rem;
+    min-width: 32px;
+    width: 32px;
     border-right: 1px solid #1a1a1a;
     color: #666;
     font-weight: 600;
@@ -1153,8 +1169,7 @@ body.dragging {
   .hora-slot {
     padding: 0;
     min-height: 70px;
-    min-width: 60px;
-    width: 60px;
+    min-width: 0;
     border-right: 1px solid #2a2a2a;
     background: #0a0a0a;
     display: flex !important;
@@ -1169,9 +1184,9 @@ body.dragging {
   }
 
   .cita-bloque {
-    padding: 0.375rem 0.25rem;
-    border-radius: 4px;
-    font-size: 0.65rem;
+    padding: 0.25rem 0.15rem;
+    border-radius: 3px;
+    font-size: 0.55rem;
     line-height: 1.1;
     margin-bottom: 0.125rem;
     cursor: pointer;
@@ -1183,24 +1198,24 @@ body.dragging {
   }
 
   .cita-bloque:hover {
-    transform: scale(1.05);
+    transform: scale(1.02);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     z-index: 5;
   }
 
   .cita-bloque.confirmada {
     background: rgba(63, 255, 0, 0.15);
-    border-left: 3px solid #3FFF00;
+    border-left: 2px solid #3FFF00;
   }
 
   .cita-bloque.pendiente {
     background: rgba(245, 158, 11, 0.15);
-    border-left: 3px solid #f59e0b;
+    border-left: 2px solid #f59e0b;
   }
 
   .cita-bloque.cancelada {
     background: rgba(239, 68, 68, 0.15);
-    border-left: 3px solid #ef4444;
+    border-left: 2px solid #ef4444;
   }
 
   .cita-bloque .cita-paciente {

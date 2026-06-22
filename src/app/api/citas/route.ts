@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
 
 // GET - Obtener todas las citas
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const fecha = searchParams.get('fecha');
     const pacienteId = searchParams.get('paciente_id');
@@ -23,9 +29,24 @@ export async function GET(request: NextRequest) {
         c.updated_at,
         p.nombre as paciente_nombre,
         p.rut as paciente_rut,
-        p.telefono as paciente_telefono
+        p.telefono as paciente_telefono,
+        s.id as sesion_id,
+        s.estado as sesion_estado,
+        s.progreso_general as sesion_progreso,
+        r.id as recordatorio_id,
+        r.estado as recordatorio_estado,
+        r.respuesta as recordatorio_respuesta,
+        r.enviado_at as recordatorio_enviado_at
       FROM citas c
       LEFT JOIN pacientes p ON c.paciente_id = p.id
+      LEFT JOIN sesiones s ON s.cita_id = c.id
+      LEFT JOIN (
+        SELECT cita_id, id, estado, respuesta, enviado_at
+        FROM recordatorios
+        WHERE id IN (
+          SELECT MAX(id) FROM recordatorios GROUP BY cita_id
+        )
+      ) r ON r.cita_id = c.id
       WHERE 1=1
     `;
 
@@ -51,50 +72,34 @@ export async function GET(request: NextRequest) {
     const stmt = db.prepare(query);
     const citas = await stmt.all(...params);
 
-    // Formatear las citas para el frontend
-    const citasFormateadas = await Promise.all(citas.map(async (cita: any) => {
-      // Buscar si existe una sesión relacionada con esta cita
-      const sesion: any = await db.prepare(`
-        SELECT id, estado, progreso_general
-        FROM sesiones
-        WHERE cita_id = ?
-        LIMIT 1
-      `).get(cita.id);
-      
-      // Buscar si existen pagos relacionados con esta cita
-      const pagos: any[] = await db.prepare(`
-        SELECT id, monto, metodo_pago, estado, fecha_pago
-        FROM pagos
-        WHERE paciente_id = ? AND fecha_pago = ?
-        ORDER BY created_at DESC
-      `).all(cita.paciente_id, cita.fecha);
-      
-      const totalPagado = pagos
-        .filter(p => p.estado === 'completado')
-        .reduce((sum, p) => sum + p.monto, 0);
-      
-      return {
-        id: cita.id,
-        pacienteId: cita.paciente_id,
-        paciente: cita.paciente_nombre,
-        rut: cita.paciente_rut,
-        telefono: cita.paciente_telefono,
-        fecha: cita.fecha,
-        hora: cita.hora,
-        duracion: cita.duracion,
-        tipo: cita.tipo,
-        estado: cita.estado,
-        notas: cita.notas,
-        createdAt: cita.created_at,
-        updatedAt: cita.updated_at,
-        tieneSesion: !!sesion,
-        sesionId: sesion?.id || null,
-        sesionEstado: sesion?.estado || null,
-        tienePago: pagos.length > 0,
-        totalPagado: totalPagado,
-        cantidadPagos: pagos.length,
-        sesionProgreso: sesion?.progreso_general || null
-      };
+    // Formatear las citas para el frontend (sin queries adicionales)
+    const citasFormateadas = citas.map((cita: any) => ({
+      id: cita.id,
+      pacienteId: cita.paciente_id,
+      paciente: cita.paciente_nombre,
+      rut: cita.paciente_rut,
+      telefono: cita.paciente_telefono,
+      fecha: cita.fecha,
+      hora: cita.hora,
+      duracion: cita.duracion,
+      tipo: cita.tipo,
+      estado: cita.estado,
+      notas: cita.notas,
+      createdAt: cita.created_at,
+      updatedAt: cita.updated_at,
+      tieneSesion: !!cita.sesion_id,
+      sesionId: cita.sesion_id || null,
+      sesionEstado: cita.sesion_estado || null,
+      sesionProgreso: cita.sesion_progreso || null,
+      tienePago: false,
+      totalPagado: 0,
+      cantidadPagos: 0,
+      recordatorio: cita.recordatorio_id ? {
+        id: cita.recordatorio_id,
+        estado: cita.recordatorio_estado,
+        respuesta: cita.recordatorio_respuesta,
+        enviadoAt: cita.recordatorio_enviado_at
+      } : null
     }));
 
     return NextResponse.json({
@@ -115,6 +120,11 @@ export async function GET(request: NextRequest) {
 // POST - Crear una nueva cita
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { pacienteId, fecha, hora, duracion, tipo, notas } = body;
 
@@ -135,15 +145,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar que no haya conflicto de horario
+    // Verificar que no haya conflicto de horario (considerando duración)
+    // Convertimos las horas a minutos desde medianoche para comparar rangos numéricamente
+    // Dos rangos se solapan si: inicio1 < fin2 AND inicio2 < fin1
+    const duracionNueva = duracion || 60;
     const conflicto = await db.prepare(`
-      SELECT id FROM citas 
-      WHERE fecha = ? AND hora = ? AND estado != 'cancelada'
-    `).get(fecha, hora);
+      SELECT id, hora, duracion FROM citas 
+      WHERE fecha = ? AND estado != 'cancelada'
+        AND (
+          (CAST(substr(hora, 1, 2) AS INTEGER) * 60 + CAST(substr(hora, 4, 2) AS INTEGER))
+          < (CAST(substr(?, 1, 2) AS INTEGER) * 60 + CAST(substr(?, 4, 2) AS INTEGER) + ?)
+        )
+        AND (
+          (CAST(substr(?, 1, 2) AS INTEGER) * 60 + CAST(substr(?, 4, 2) AS INTEGER))
+          < (CAST(substr(hora, 1, 2) AS INTEGER) * 60 + CAST(substr(hora, 4, 2) AS INTEGER) + duracion)
+        )
+    `).get(fecha, hora, hora, duracionNueva, hora, hora);
 
     if (conflicto) {
       return NextResponse.json(
-        { success: false, error: 'Ya existe una cita en ese horario' },
+        { success: false, error: 'Ya existe una cita que se sobrepone en ese horario' },
         { status: 409 }
       );
     }

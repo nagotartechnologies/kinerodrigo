@@ -1,30 +1,26 @@
-// Servicio de WhatsApp usando WhatsApp Business API (Meta)
+// Servicio de WhatsApp multi-proveedor
 import db from './db';
-
-// Configuración para WhatsApp Business API
-const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
-const TEST_MODE = process.env.WHATSAPP_TEST_MODE === 'true';
+import { getWhatsAppProvider } from './whatsapp/factory';
 
 /**
- * Obtener configuración de WhatsApp desde la base de datos
+ * Obtener configuración de WhatsApp desde la base de datos (con cache en memoria)
  */
+const configCache: Record<string, { valor: string; timestamp: number }> = {};
+const CONFIG_CACHE_TTL = 300000; // 5 minutos
+
 async function getConfig(clave: string, defaultValue: string = ''): Promise<string> {
+  const cached = configCache[clave];
+  if (cached && Date.now() - cached.timestamp < CONFIG_CACHE_TTL) {
+    return cached.valor;
+  }
   try {
     const config: any = await db.prepare('SELECT valor FROM configuraciones WHERE clave = ?').get(clave);
-    return config?.valor || defaultValue;
+    const valor = config?.valor || defaultValue;
+    configCache[clave] = { valor, timestamp: Date.now() };
+    return valor;
   } catch (error) {
     return defaultValue;
   }
-}
-
-/**
- * Obtener credenciales de WhatsApp Business API
- */
-async function getWhatsAppCredentials() {
-  const phoneNumberId = await getConfig('whatsapp_phone_number_id', '');
-  const accessToken = await getConfig('whatsapp_access_token', '');
-  
-  return { phoneNumberId, accessToken };
 }
 
 /**
@@ -48,115 +44,52 @@ interface SendMessageResponse {
 }
 
 /**
- * Enviar mensaje de texto por WhatsApp usando WhatsApp Business API
+ * Enviar mensaje de texto por WhatsApp usando el proveedor configurado
  */
 export async function sendWhatsAppMessage({ phone, message }: SendMessageParams): Promise<SendMessageResponse> {
-  const { phoneNumberId, accessToken } = await getWhatsAppCredentials();
-  
-  // Modo de prueba (sin credenciales configuradas)
-  if (TEST_MODE || !phoneNumberId || !accessToken) {
-    console.log('🧪 MODO DE PRUEBA - WhatsApp Business API');
-    console.log('📱 Teléfono:', phone);
-    console.log('💬 Mensaje:', message);
-    
-    // Simular respuesta exitosa
-    return {
-      idMessage: `TEST_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
-  }
-
-  // Limpiar número de teléfono (remover espacios, guiones, etc.)
-  const cleanPhone = phone.replace(/\D/g, '');
-  
-  // Agregar código de país si no lo tiene (Chile: 56)
-  const phoneWithCountry = cleanPhone.startsWith('56') ? cleanPhone : `56${cleanPhone}`;
-
-  // URL de WhatsApp Business API
-  const url = `${WHATSAPP_API_URL}/${phoneNumberId}/messages`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      to: phoneWithCountry,
-      type: 'text',
-      text: {
-        body: message
-      }
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Error al enviar mensaje de WhatsApp: ${error}`);
-  }
-
-  const result = await response.json();
-  
-  // WhatsApp Business API retorna el ID del mensaje en result.messages[0].id
-  return {
-    idMessage: result.messages?.[0]?.id || `MSG_${Date.now()}`
-  };
+  const provider = await getWhatsAppProvider();
+  return provider.sendMessage({ phone, message });
 }
 
 /**
- * Enviar mensaje con botones interactivos usando WhatsApp Business API
- * Nota: Los botones interactivos requieren aprobación de plantillas en WhatsApp Business
+ * Enviar mensaje con botones interactivos por WhatsApp usando el proveedor configurado
  */
-export async function sendWhatsAppButtons({ phone, message, buttons }: {
+export async function sendWhatsAppMessageWithButtons({ 
+  phone, 
+  message, 
+  buttons 
+}: {
   phone: string;
   message: string;
-  buttons: Array<{ id: string; text: string }>;
-}) {
-  const { phoneNumberId, accessToken } = await getWhatsAppCredentials();
+  buttons: Array<{ buttonId: string; buttonText: string }>;
+}): Promise<SendMessageResponse> {
+  const provider = await getWhatsAppProvider();
   
-  if (!phoneNumberId || !accessToken) {
-    throw new Error('WhatsApp Business API no está configurado');
+  // Si el proveedor soporta botones, usarlos
+  if (provider.sendMessageWithButtons) {
+    return provider.sendMessageWithButtons({ phone, message, buttons });
   }
+  
+  // Fallback: enviar mensaje normal sin botones
+  console.log('⚠️ Proveedor no soporta botones, enviando mensaje normal');
+  return provider.sendMessage({ phone, message });
+}
 
-  const cleanPhone = phone.replace(/\D/g, '');
-  const phoneWithCountry = cleanPhone.startsWith('56') ? cleanPhone : `56${cleanPhone}`;
-
-  const url = `${WHATSAPP_API_URL}/${phoneNumberId}/messages`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      to: phoneWithCountry,
-      type: 'interactive',
-      interactive: {
-        type: 'button',
-        body: {
-          text: message
-        },
-        action: {
-          buttons: buttons.slice(0, 3).map(btn => ({
-            type: 'reply',
-            reply: {
-              id: btn.id,
-              title: btn.text.substring(0, 20) // Máximo 20 caracteres
-            }
-          }))
-        }
-      }
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Error al enviar botones: ${error}`);
+/**
+ * Enviar archivo por WhatsApp usando el proveedor configurado
+ */
+export async function sendWhatsAppFile({ phone, fileUrl, caption }: {
+  phone: string;
+  fileUrl: string;
+  caption?: string;
+}) {
+  const provider = await getWhatsAppProvider();
+  
+  if (!provider.sendFile) {
+    throw new Error(`El proveedor ${provider.name} no soporta envío de archivos`);
   }
-
-  return await response.json();
+  
+  return provider.sendFile({ phone, fileUrl, caption });
 }
 
 /**
@@ -174,7 +107,7 @@ export async function formatearMensajeRecordatorio(cita: {
 
   const nombreCentro = await getConfig('nombre_centro', 'NAGO-KINE');
   const plantilla = await getConfig('whatsapp_mensaje_recordatorio', 
-    '🏥 *RECORDATORIO DE CITA - {nombre_centro}*\n\nHola {paciente},\n\nTe recordamos tu cita programada:\n\n📅 *Fecha:* {fecha}\n🕐 *Hora:* {hora}\n⏱️ *Duración:* {duracion} minutos\n📋 *Tipo:* {tipo}\n\nPor favor, responde con una de las siguientes opciones:\n\n1️⃣ *CONFIRMAR* - Para confirmar tu asistencia\n2️⃣ *CANCELAR* - Para cancelar la cita\n3️⃣ *REAGENDAR* - Para cambiar la fecha/hora\n\n¡Te esperamos! 💪'
+    '🏥 *RECORDATORIO DE CITA - {nombre_centro}*\n\nHola {paciente}, te recordamos tu cita:\n\n📅 *Fecha:* {fecha}\n🕐 *Hora:* {hora}\n⏱️ *Duración:* {duracion} min\n📋 *Tipo:* {tipo}\n\nResponde con el *número* de tu opción:\n\n*1* ✅ Confirmo asistencia\n*2* ❌ Necesito cancelar\n*3* 📅 Quiero cambiar fecha/hora\n\n¡Te esperamos! 💪'
   );
 
   return reemplazarVariables(plantilla, {

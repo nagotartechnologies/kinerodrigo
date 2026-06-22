@@ -1,6 +1,7 @@
 /**
- * Servidor personalizado de Next.js con cron de recordatorios
- * Este archivo inicia el servidor Next.js y el sistema de recordatorios automáticos
+ * Punto de entrada del servidor.
+ * Inicia Next.js con un servidor HTTP personalizado.
+ * Los recordatorios automaticos se activan desde el dashboard, no desde aqui.
  */
 
 const { createServer } = require('http');
@@ -20,7 +21,7 @@ app.prepare().then(() => {
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
-      console.error('Error occurred handling', req.url, err);
+      console.error('Error al procesar la solicitud:', req.url, err);
       res.statusCode = 500;
       res.end('internal server error');
     }
@@ -30,7 +31,7 @@ app.prepare().then(() => {
       process.exit(1);
     })
     .listen(port, () => {
-      console.log(`✅ Servidor Next.js listo en http://${hostname}:${port}`);
-      console.log(`ℹ️  El sistema de recordatorios se iniciará al acceder al dashboard`);
+      console.log(`Servidor listo en http://${hostname}:${port}`);
+      console.log('El sistema de recordatorios se activa cuando alguien accede al dashboard.');
     });
 });

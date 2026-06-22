@@ -152,6 +152,7 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  turbopack: {},
 }
 
 module.exports = withPWA(nextConfig)

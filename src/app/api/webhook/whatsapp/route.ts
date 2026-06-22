@@ -1,215 +1,248 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { 
-  sendWhatsAppMessage, 
+  sendWhatsAppMessage,
   formatearMensajeConfirmacion, 
   formatearMensajeCancelacion,
   formatearMensajeReagendamiento 
 } from '@/lib/whatsapp';
+import { detectarIntencion } from '@/lib/whatsapp/detectarIntencion';
 
 // POST - Webhook para recibir mensajes de WhatsApp
+// Procesa respuestas a recordatorios usando sistema de scoring por intención
+// Si no reconoce la respuesta, envía un re-prompt al paciente
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    console.log('📱 Webhook WhatsApp recibido:', JSON.stringify(body, null, 2));
 
-    // Verificar que sea un mensaje de texto entrante
-    if (body.typeWebhook !== 'incomingMessageReceived') {
-      console.log(`⚠️ Tipo de webhook no procesado: ${body.typeWebhook}`);
-      return NextResponse.json({ success: true, message: 'Tipo de webhook no procesado' });
-    }
-
-    const messageData = body.messageData;
-    if (!messageData) {
-      console.log('⚠️ No hay messageData en el webhook');
-      return NextResponse.json({ success: true, message: 'No hay messageData' });
-    }
-
-    // Extraer información del mensaje
-    const senderData = body.senderData;
-    if (!senderData) {
-      console.log('⚠️ No hay senderData en el webhook');
-      return NextResponse.json({ success: true, message: 'No hay senderData' });
-    }
-    
-    const phone = senderData.chatId?.replace('@c.us', '') || senderData.sender?.replace('@c.us', '') || '';
-    
-    // Extraer texto del mensaje (puede ser textMessage o quotedMessage)
+    // Detectar formato del webhook
+    let phone = '';
     let messageText = '';
-    if (messageData.typeMessage === 'textMessage') {
-      messageText = messageData.textMessageData?.textMessage?.toLowerCase().trim() || '';
-    } else if (messageData.typeMessage === 'quotedMessage') {
-      messageText = messageData.extendedTextMessageData?.text?.toLowerCase().trim() || '';
+    let quotedMessageId = '';
+    let idMessage = '';
+    let esReaccion = false;
+    let reaccionEmoji = '';
+    
+    // FORMATO ULTRAMSG
+    if (body.data && body.data.from) {
+      phone = body.data.from.replace('@c.us', '').replace('@s.whatsapp.net', '');
+      messageText = body.data.body || '';
+    } 
+    // FORMATO GREEN API
+    else if (body.typeWebhook) {
+      // Solo procesar mensajes ENTRANTES del paciente
+      const tiposAceptados = [
+        'incomingMessageReceived', 
+        'incomingButtonsResponse', 
+        'incomingCallback'
+      ];
+      
+      if (!tiposAceptados.includes(body.typeWebhook)) {
+        return NextResponse.json({ success: true, message: `Tipo ${body.typeWebhook} ignorado` });
+      }
+
+      const messageData = body.messageData;
+      const senderData = body.senderData;
+      if (!messageData || !senderData) {
+        return NextResponse.json({ success: true, message: 'Datos incompletos' });
+      }
+      
+      phone = senderData.chatId?.replace('@c.us', '') || senderData.sender?.replace('@c.us', '') || '';
+      
+      // ID único del mensaje para deduplicación en BD
+      idMessage = body.idMessage || '';
+      
+      // Log detallado para diagnóstico
+      console.log(`📩 Green API: type=${body.typeWebhook}, msgType=${messageData.typeMessage}, from=${phone}, idMsg=${idMessage}`);
+      
+      // Extraer quotedMessageId si existe (para vincular respuesta al recordatorio)
+      quotedMessageId = messageData.quotedMessage?.stanzaId || 
+                        messageData.extendedTextMessageData?.stanzaId || '';
+      
+      if (messageData.typeMessage === 'textMessage') {
+        messageText = messageData.textMessageData?.textMessage || '';
+      } else if (messageData.typeMessage === 'quotedMessage') {
+        messageText = messageData.extendedTextMessageData?.text || '';
+      } else if (messageData.typeMessage === 'buttonsResponseMessage') {
+        const buttonId = messageData.buttonsResponseMessage?.selectedButtonId || '';
+        const buttonText = messageData.buttonsResponseMessage?.selectedButtonText || '';
+        
+        if (buttonId === '1' || buttonId === 'confirmar' || buttonText.toLowerCase().includes('confirmar')) {
+          messageText = 'confirmar';
+        } else if (buttonId === '2' || buttonId === 'cancelar' || buttonText.toLowerCase().includes('cancelar')) {
+          messageText = 'cancelar';
+        } else if (buttonId === '3' || buttonId === 'reagendar' || buttonText.toLowerCase().includes('reagendar')) {
+          messageText = 'reagendar';
+        } else {
+          messageText = buttonText;
+        }
+      } else if (messageData.typeMessage === 'reactionMessage') {
+        // Mejora 7: Soporte para reacciones de WhatsApp
+        esReaccion = true;
+        reaccionEmoji = messageData.reactionMessage?.text || '';
+        // Convertir reacción a texto para el scoring
+        messageText = reaccionEmoji;
+      } else if (
+        messageData.typeMessage === 'stickerMessage' || 
+        messageData.typeMessage === 'imageMessage' ||
+        messageData.typeMessage === 'audioMessage' ||
+        messageData.typeMessage === 'videoMessage'
+      ) {
+        return NextResponse.json({ success: true, message: 'Tipo de mensaje ignorado' });
+      } else {
+        return NextResponse.json({ success: true, message: 'Tipo no soportado' });
+      }
     } else {
-      console.log(`⚠️ Tipo de mensaje no soportado: ${messageData.typeMessage}`);
-      return NextResponse.json({ success: true, message: 'Tipo de mensaje no soportado' });
+      return NextResponse.json({ success: true, message: 'Formato desconocido' });
     }
     
-    console.log(`📞 Mensaje de ${phone}: "${messageText}"`);
+    // Limpiar messageText
+    messageText = messageText.trim();
     
     if (!messageText) {
-      console.log('⚠️ Mensaje vacío');
       return NextResponse.json({ success: true, message: 'Mensaje vacío' });
     }
+    
+    console.log(`📱 De ${phone}: "${messageText}" (idMsg: ${idMessage || 'N/A'})`);
 
     // Buscar recordatorio pendiente para este teléfono
-    // Limpiar número de teléfono (solo dígitos)
     const phoneClean = phone.replace(/\D/g, '');
     const phoneLast8 = phoneClean.slice(-8);
-    
-    console.log(`🔍 Buscando recordatorio para teléfono: ${phone} (últimos 8: ${phoneLast8})`);
-    
-    const recordatorio: any = await db.prepare(`
-      SELECT 
-        r.id as recordatorio_id,
-        r.cita_id,
-        c.id as cita_id,
-        c.fecha,
-        c.hora,
-        c.estado,
-        p.nombre as paciente_nombre,
-        p.telefono as paciente_telefono
-      FROM recordatorios r
-      INNER JOIN citas c ON r.cita_id = c.id
-      INNER JOIN pacientes p ON c.paciente_id = p.id
-      WHERE (r.telefono LIKE ? OR r.telefono LIKE ? OR r.telefono LIKE ?)
-        AND r.estado = 'enviado'
-        AND r.respuesta IS NULL
-      ORDER BY r.enviado_at DESC
-      LIMIT 1
-    `).get(`%${phoneLast8}%`, `%${phoneClean}%`, `%${phone}%`);
 
-    if (!recordatorio) {
-      console.log('❌ No se encontró recordatorio pendiente para este teléfono');
-      console.log('💡 Tip: Verifica que el recordatorio se haya enviado y que el número coincida');
-      
-      // Mostrar recordatorios recientes para debug
-      const recordatoriosRecientes = await db.prepare(`
-        SELECT r.telefono, r.estado, r.enviado_at, r.respuesta
+    // Mejora 6: Si hay quotedMessageId, buscar por mensaje_id directamente
+    let recordatorio: any = null;
+    
+    if (quotedMessageId) {
+      recordatorio = await db.prepare(`
+        SELECT 
+          r.id as recordatorio_id, r.cita_id, r.enviado_at, r.mensaje_id,
+          c.fecha, c.hora, c.estado,
+          p.nombre as paciente_nombre, p.telefono as paciente_telefono
         FROM recordatorios r
+        INNER JOIN citas c ON r.cita_id = c.id
+        INNER JOIN pacientes p ON c.paciente_id = p.id
+        WHERE r.mensaje_id = ?
+          AND r.estado = 'enviado'
+          AND r.respuesta IS NULL
+        LIMIT 1
+      `).get(quotedMessageId);
+    }
+    
+    // Si no se encontró por quotedMessage, buscar por teléfono + ventana de tiempo
+    if (!recordatorio) {
+      recordatorio = await db.prepare(`
+        SELECT 
+          r.id as recordatorio_id, r.cita_id, r.enviado_at, r.mensaje_id,
+          c.fecha, c.hora, c.estado,
+          p.nombre as paciente_nombre, p.telefono as paciente_telefono
+        FROM recordatorios r
+        INNER JOIN citas c ON r.cita_id = c.id
+        INNER JOIN pacientes p ON c.paciente_id = p.id
+        WHERE (r.telefono LIKE ? OR r.telefono LIKE ? OR r.telefono LIKE ?)
+          AND r.estado = 'enviado'
+          AND r.respuesta IS NULL
+          AND datetime(r.enviado_at) >= datetime('now', '-48 hours')
         ORDER BY r.enviado_at DESC
-        LIMIT 5
-      `).all();
-      console.log('📋 Últimos 5 recordatorios:', recordatoriosRecientes);
-      
-      return NextResponse.json({ success: true, message: 'No hay recordatorio pendiente' });
+        LIMIT 1
+      `).get(`%${phoneLast8}%`, `%${phoneClean}%`, `%${phone}%`);
     }
 
-    console.log(`✅ Recordatorio encontrado para cita #${recordatorio.cita_id}`);
+    if (!recordatorio) {
+      console.log(`❌ Sin recordatorio pendiente para ${phoneLast8} (phone=${phoneClean})`);
+      return NextResponse.json({ 
+        success: true, 
+        message: 'No hay recordatorio pendiente'
+      });
+    }
 
-    let respuesta = '';
-    let nuevoEstado = recordatorio.estado;
+    console.log(`✅ Recordatorio #${recordatorio.recordatorio_id} para cita #${recordatorio.cita_id} (enviado: ${recordatorio.enviado_at})`);
+    
+    // Mejora 2+3: Usar sistema de scoring por intención
+    const resultado = detectarIntencion(messageText);
+    console.log(`🧠 Intención: ${resultado.intencion} (confianza: ${resultado.confianza.toFixed(2)}, scores: C=${resultado.scoreConfirmar} X=${resultado.scoreCancelar} R=${resultado.scoreReagendar})`);
+
+    // Mejora 4: Si no se reconoce la intención, enviar re-prompt
+    if (resultado.intencion === 'NO_RECONOCIDO') {
+      const mensajeReprompt = '🤔 No logré entender tu respuesta.\n\nPor favor responde solo con:\n\n*1* ✅ Confirmar\n*2* ❌ Cancelar\n*3* 📅 Reagendar';
+      
+      try {
+        await sendWhatsAppMessage({ phone: recordatorio.paciente_telefono, message: mensajeReprompt });
+        console.log('📤 Re-prompt enviado');
+      } catch (err: any) {
+        console.error('⚠️ Error enviando re-prompt:', err.message);
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Respuesta no reconocida, re-prompt enviado'
+      });
+    }
+
+    let respuesta = resultado.intencion;
     let mensajeRespuesta = '';
 
-    // Procesar respuesta del paciente
-    if (messageText.includes('confirmar') || messageText === '1') {
-      // CONFIRMAR CITA
-      respuesta = 'CONFIRMAR';
-      nuevoEstado = 'confirmada';
-      
+    if (respuesta === 'CONFIRMAR') {
       await db.prepare('UPDATE citas SET estado = ? WHERE id = ?').run('confirmada', recordatorio.cita_id);
-      
       mensajeRespuesta = await formatearMensajeConfirmacion({
         paciente: recordatorio.paciente_nombre,
         fecha: recordatorio.fecha,
         hora: recordatorio.hora
       });
-      
       console.log(`✅ Cita #${recordatorio.cita_id} CONFIRMADA`);
-
-    } else if (messageText.includes('cancelar') || messageText === '2') {
-      // CANCELAR CITA
-      respuesta = 'CANCELAR';
-      nuevoEstado = 'cancelada';
-      
+    } else if (respuesta === 'CANCELAR') {
       await db.prepare('UPDATE citas SET estado = ? WHERE id = ?').run('cancelada', recordatorio.cita_id);
-      
       mensajeRespuesta = await formatearMensajeCancelacion({
         paciente: recordatorio.paciente_nombre
       });
-      
       console.log(`❌ Cita #${recordatorio.cita_id} CANCELADA`);
-
-    } else if (messageText.includes('reagendar') || messageText === '3') {
-      // REAGENDAR CITA
-      respuesta = 'REAGENDAR';
-      
+    } else if (respuesta === 'REAGENDAR') {
       mensajeRespuesta = await formatearMensajeReagendamiento();
-      
-      console.log(`📅 Solicitud de reagendamiento para cita #${recordatorio.cita_id}`);
-      
-      // Para reagendamiento, NO marcamos el recordatorio como respondido
-      // para que el paciente pueda confirmar o cancelar después
-      // Solo enviamos el mensaje informativo
-
-    } else {
-      // Respuesta no reconocida
-      console.log('⚠️ Respuesta no reconocida');
-      return NextResponse.json({ success: true, message: 'Respuesta no reconocida' });
+      console.log(`📅 Cita #${recordatorio.cita_id} REAGENDAR`);
     }
 
-    // Actualizar recordatorio con la respuesta (excepto para REAGENDAR)
-    if (respuesta !== 'REAGENDAR') {
-      await db.prepare(`
-        UPDATE recordatorios 
-        SET respuesta = ?, respuesta_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(respuesta, recordatorio.recordatorio_id);
-    }
+    // Actualizar recordatorio con la respuesta
+    await db.prepare(`
+      UPDATE recordatorios 
+      SET respuesta = ?, respuesta_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(respuesta, recordatorio.recordatorio_id);
 
-    // Enviar mensaje de respuesta al paciente
+    // Enviar mensaje de confirmación/cancelación/reagendamiento DIRECTAMENTE
     if (mensajeRespuesta) {
-      console.log(`📤 Enviando mensaje de respuesta a ${recordatorio.paciente_telefono}`);
-      console.log(`📝 Mensaje: ${mensajeRespuesta}`);
-      console.log(`🔧 Acción detectada: ${respuesta}`);
-      
       try {
-        const resultado = await sendWhatsAppMessage({
+        const envioResult = await sendWhatsAppMessage({
           phone: recordatorio.paciente_telefono,
           message: mensajeRespuesta
         });
-        console.log('✅ Mensaje de respuesta enviado exitosamente:', resultado);
+        console.log(`📤 Mensaje de ${respuesta} enviado: ${envioResult.idMessage}`);
         
-        // Registrar el envío exitoso
         await db.prepare(`
           UPDATE recordatorios 
-          SET mensaje_respuesta_id = ?, mensaje_respuesta_enviado = 1
+          SET mensaje_respuesta_id = ?, mensaje_respuesta_enviado = 1, error_respuesta = NULL
           WHERE id = ?
-        `).run(resultado.idMessage || 'enviado', recordatorio.recordatorio_id);
-        
-      } catch (error: any) {
-        console.error('❌ Error al enviar mensaje de respuesta:', error);
-        console.error('❌ Detalles del error:', error.message);
-        console.error('❌ Stack:', error.stack);
-        
-        // Registrar el error en la base de datos
+        `).run(envioResult.idMessage || 'enviado', recordatorio.recordatorio_id);
+      } catch (envioError: any) {
+        console.error(`❌ Error enviando mensaje de ${respuesta}:`, envioError.message);
         await db.prepare(`
           UPDATE recordatorios 
-          SET error_respuesta = ?
+          SET mensaje_respuesta_enviado = 0, error_respuesta = ?
           WHERE id = ?
-        `).run(error.message, recordatorio.recordatorio_id);
+        `).run(envioError.message, recordatorio.recordatorio_id);
       }
-    } else {
-      console.log('⚠️ No hay mensaje de respuesta para enviar');
-      console.log('⚠️ Respuesta detectada:', respuesta);
-      console.log('⚠️ Mensaje generado:', mensajeRespuesta);
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Respuesta procesada exitosamente',
+      message: 'Respuesta procesada',
       accion: respuesta,
-      citaId: recordatorio.cita_id
+      citaId: recordatorio.cita_id,
+      confianza: resultado.confianza
     });
 
   } catch (error: any) {
-    console.error('❌ Error en webhook WhatsApp:', error);
+    console.error('❌ Error webhook:', error.message);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error.message || 'Error al procesar webhook' 
-      },
+      { success: false, error: error.message || 'Error al procesar webhook' },
       { status: 500 }
     );
   }

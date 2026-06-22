@@ -1,8 +1,5 @@
-import * as cron from 'node-cron';
 import db from './db';
 import { sendWhatsAppMessage, formatearMensajeRecordatorio } from './whatsapp';
-
-let cronTask: any = null;
 
 /**
  * Obtener valor de configuración
@@ -12,11 +9,8 @@ async function getConfigValue(clave: string, defaultValue: any = ''): Promise<an
     const config: any = await db.prepare('SELECT valor FROM configuraciones WHERE clave = ?').get(clave);
     if (!config) return defaultValue;
     
-    // Convertir valores booleanos
     if (config.valor === 'true') return true;
     if (config.valor === 'false') return false;
-    
-    // Convertir números
     if (!isNaN(Number(config.valor))) return Number(config.valor);
     
     return config.valor;
@@ -27,37 +21,42 @@ async function getConfigValue(clave: string, defaultValue: any = ''): Promise<an
 }
 
 /**
- * Enviar recordatorios automáticos para citas próximas
+ * Enviar recordatorios automáticos para citas próximas.
+ * Retorna un resumen con la cantidad de enviados y errores.
+ * En producción se ejecuta via Netlify Scheduled Function (cada 2h).
+ * En desarrollo se ejecuta via POST /api/cron/recordatorios { accion: 'ejecutar' }.
  */
-async function enviarRecordatoriosAutomaticos() {
+export async function enviarRecordatoriosAutomaticos(): Promise<{ enviados: number; errores: number; total: number; detalles: any[] }> {
+  const resultado = { enviados: 0, errores: 0, total: 0, detalles: [] as any[] };
+
   try {
-    console.log('🔔 [CRON] Verificando citas para enviar recordatorios automáticos...');
+    console.log('🔔 Verificando citas para enviar recordatorios automáticos...');
     
-    // Verificar si los recordatorios automáticos están activados
     const recordatoriosActivos = await getConfigValue('recordatorios_automaticos', true);
     if (!recordatoriosActivos) {
-      console.log('⏸️  [CRON] Recordatorios automáticos desactivados en configuración');
-      return;
+      console.log('⏸️ Recordatorios automáticos desactivados');
+      return resultado;
     }
 
-    // Verificar si WhatsApp está activo
     const whatsappActivo = await getConfigValue('whatsapp_activo', true);
     if (!whatsappActivo) {
-      console.log('⏸️  [CRON] WhatsApp desactivado en configuración');
-      return;
+      console.log('⏸️ WhatsApp desactivado');
+      return resultado;
     }
 
-    // Obtener horas antes para enviar recordatorio
     const horasAntes = await getConfigValue('recordatorios_horas_antes', 24);
     
-    // Calcular fecha límite (ahora + horasAntes)
+    // Zona horaria Chile
     const ahora = new Date();
-    const fechaLimite = new Date(ahora.getTime() + (horasAntes * 60 * 60 * 1000));
-    const fechaLimiteStr = fechaLimite.toISOString().split('T')[0];
+    const ahoraChile = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Santiago' }));
+    const fechaLimite = new Date(ahoraChile.getTime() + (horasAntes * 60 * 60 * 1000));
     
-    console.log(`📅 [CRON] Buscando citas para el ${fechaLimiteStr} (${horasAntes}h antes)`);
+    const fechaLimiteStr = `${fechaLimite.getFullYear()}-${String(fechaLimite.getMonth() + 1).padStart(2, '0')}-${String(fechaLimite.getDate()).padStart(2, '0')}`;
+    const fechaActual = `${ahoraChile.getFullYear()}-${String(ahoraChile.getMonth() + 1).padStart(2, '0')}-${String(ahoraChile.getDate()).padStart(2, '0')}`;
+    const horaActual = `${String(ahoraChile.getHours()).padStart(2, '0')}:${String(ahoraChile.getMinutes()).padStart(2, '0')}`;
+    
+    console.log(`📅 Buscando citas para ${fechaLimiteStr} (${horasAntes}h antes)`);
 
-    // Buscar citas próximas que aún no tienen recordatorio enviado
     const citas: any[] = await db.prepare(`
       SELECT 
         c.id,
@@ -75,29 +74,24 @@ async function enviarRecordatoriosAutomaticos() {
         AND p.activo = 1
         AND p.telefono IS NOT NULL
         AND p.telefono != ''
+        AND (c.fecha > ? OR (c.fecha = ? AND c.hora > ?))
         AND c.id NOT IN (
-          SELECT cita_id 
-          FROM recordatorios 
-          WHERE DATE(enviado_at) = DATE('now')
+          SELECT cita_id FROM recordatorios WHERE DATE(enviado_at) = DATE('now')
         )
       ORDER BY c.hora ASC
-    `).all(fechaLimiteStr);
+    `).all(fechaLimiteStr, fechaActual, fechaActual, horaActual);
+
+    resultado.total = citas.length;
 
     if (citas.length === 0) {
-      console.log('✅ [CRON] No hay citas pendientes de recordatorio');
-      return;
+      console.log('✅ No hay citas pendientes de recordatorio');
+      return resultado;
     }
 
-    console.log(`📨 [CRON] Encontradas ${citas.length} cita(s) para enviar recordatorio`);
-
-    let enviados = 0;
-    let errores = 0;
+    console.log(`📨 Encontradas ${citas.length} cita(s) para enviar recordatorio`);
 
     for (const cita of citas) {
       try {
-        console.log(`📤 [CRON] Enviando recordatorio para cita #${cita.id} - ${cita.paciente_nombre}`);
-
-        // Formatear mensaje
         const mensaje = await formatearMensajeRecordatorio({
           paciente: cita.paciente_nombre,
           fecha: cita.fecha,
@@ -106,124 +100,78 @@ async function enviarRecordatoriosAutomaticos() {
           duracion: cita.duracion
         });
 
-        // Enviar mensaje por WhatsApp
-        const resultado = await sendWhatsAppMessage({
+        // Enviar mensaje de texto plano (sin botones interactivos)
+        const envioResultado = await sendWhatsAppMessage({
           phone: cita.paciente_telefono,
           message: mensaje
         });
 
-        // Registrar el envío en la base de datos
         await db.prepare(`
-          INSERT INTO recordatorios (
-            cita_id,
-            mensaje_id,
-            telefono,
-            mensaje,
-            estado,
-            enviado_at
-          ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        `).run(
-          cita.id,
-          resultado.idMessage || null,
-          cita.paciente_telefono,
-          mensaje,
-          'enviado'
-        );
+          INSERT INTO recordatorios (cita_id, mensaje_id, telefono, mensaje, estado, enviado_at)
+          VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `).run(cita.id, envioResultado.idMessage || null, cita.paciente_telefono, mensaje, 'enviado');
 
-        enviados++;
-        console.log(`✅ [CRON] Recordatorio enviado exitosamente para cita #${cita.id}`);
+        resultado.enviados++;
+        resultado.detalles.push({ citaId: cita.id, paciente: cita.paciente_nombre, estado: 'enviado' });
+        console.log(`✅ Recordatorio enviado para cita #${cita.id} - ${cita.paciente_nombre}`);
 
-        // Esperar 2 segundos entre mensajes para no saturar la API
+        // Esperar 2s entre mensajes para no saturar la API
         await new Promise(resolve => setTimeout(resolve, 2000));
 
       } catch (error: any) {
-        errores++;
-        console.error(`❌ [CRON] Error al enviar recordatorio para cita #${cita.id}:`, error.message);
+        resultado.errores++;
+        resultado.detalles.push({ citaId: cita.id, paciente: cita.paciente_nombre, estado: 'error', error: error.message });
+        console.error(`❌ Error recordatorio cita #${cita.id}:`, error.message);
       }
     }
 
-    console.log(`📊 [CRON] Resumen: ${enviados} enviados, ${errores} errores`);
+    console.log(`📊 Resumen: ${resultado.enviados} enviados, ${resultado.errores} errores`);
+    return resultado;
 
   } catch (error) {
-    console.error('❌ [CRON] Error en proceso de recordatorios automáticos:', error);
+    console.error('❌ Error en proceso de recordatorios:', error);
+    return resultado;
   }
 }
 
 /**
- * Iniciar el cron job de recordatorios
- * Se ejecuta cada 2 horas (patrón: 0 asterisco-barra-2 asterisco asterisco asterisco)
+ * Funciones de compatibilidad con endpoints existentes.
+ * En producción, el cron real es la Netlify Scheduled Function.
+ * Estas funciones solo sirven para la API de control manual.
  */
 export function iniciarCronRecordatorios() {
-  if (cronTask) {
-    console.log('⚠️  [CRON] El cron de recordatorios ya está en ejecución');
-    return;
-  }
-
-  // Ejecutar cada 2 horas (a las 00:00, 02:00, 04:00, etc.)
-  cronTask = cron.schedule('0 */2 * * *', () => {
-    enviarRecordatoriosAutomaticos();
-  }, {
-    timezone: 'America/Santiago' // Zona horaria de Chile
-  });
-
-  console.log('✅ [CRON] Recordatorios automáticos iniciados (cada 2 horas)');
-
-  // Ejecutar inmediatamente al iniciar (opcional)
-  // enviarRecordatoriosAutomaticos();
+  console.log('ℹ️ Cron de recordatorios gestionado por Netlify Scheduled Functions en producción');
 }
 
-/**
- * Detener el cron job de recordatorios
- */
 export function detenerCronRecordatorios() {
-  if (cronTask) {
-    cronTask.stop();
-    cronTask = null;
-    console.log('⏹️  [CRON] Recordatorios automáticos detenidos');
-  }
+  console.log('ℹ️ Cron de recordatorios gestionado por Netlify Scheduled Functions en producción');
 }
 
-/**
- * Obtener estado del cron
- */
 export function estadoCronRecordatorios() {
-  // Calcular próxima ejecución (cada 2 horas en punto: 00, 02, 04, 06, etc.)
-  let proximaEjecucion = null;
-  if (cronTask) {
-    const ahora = new Date();
-    const horaActual = ahora.getHours();
-    const minutoActual = ahora.getMinutes();
-    
-    // Calcular la próxima hora par
-    let proximaHora = horaActual % 2 === 0 ? horaActual : horaActual + 1;
-    
-    // Si ya pasó el minuto 0 de la hora par actual, ir a la siguiente hora par
-    if (horaActual % 2 === 0 && minutoActual > 0) {
-      proximaHora = horaActual + 2;
-    }
-    
-    const proxima = new Date(ahora);
-    
-    if (proximaHora >= 24) {
-      proxima.setDate(proxima.getDate() + 1);
-      proxima.setHours(proximaHora - 24, 0, 0, 0);
-    } else {
-      proxima.setHours(proximaHora, 0, 0, 0);
-    }
-    
-    proximaEjecucion = proxima.toISOString();
+  // Calcular próxima ejecución (cada 2 horas en punto)
+  const ahora = new Date();
+  const horaActual = ahora.getHours();
+  const minutoActual = ahora.getMinutes();
+  let proximaHora = horaActual % 2 === 0 ? horaActual : horaActual + 1;
+  if (horaActual % 2 === 0 && minutoActual > 0) proximaHora = horaActual + 2;
+  const proxima = new Date(ahora);
+  if (proximaHora >= 24) {
+    proxima.setDate(proxima.getDate() + 1);
+    proxima.setHours(proximaHora - 24, 0, 0, 0);
+  } else {
+    proxima.setHours(proximaHora, 0, 0, 0);
   }
-  
+
   return {
-    activo: cronTask !== null,
-    proximaEjecucion
+    activo: true,
+    tipo: 'netlify-scheduled',
+    frecuencia: 'cada 2 horas',
+    proximaEjecucion: proxima.toISOString(),
+    nota: 'Gestionado por Netlify Scheduled Functions en producción'
   };
 }
 
-/**
- * Ejecutar manualmente el proceso de recordatorios (para testing)
- */
 export async function ejecutarRecordatoriosManual() {
-  console.log('🔧 [CRON] Ejecución manual de recordatorios');
-  await enviarRecordatoriosAutomaticos();
+  console.log('🔧 Ejecución manual de recordatorios');
+  return await enviarRecordatoriosAutomaticos();
 }

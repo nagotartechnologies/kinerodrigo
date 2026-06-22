@@ -56,8 +56,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Redirigir según el rol
-      router.push(data.redirectUrl);
+      // Redirigir según el rol - usar window.location para forzar recarga completa
+      window.location.href = data.redirectUrl;
     } catch (err) {
       setError('Error de conexión. Intenta nuevamente.');
       setLoading(false);
@@ -218,15 +218,10 @@ export default function LoginPage() {
           </form>
 
           <div className="form-footer">
-            <p>Usuario de prueba:</p>
-            <div className="test-users">
-              <div className="test-user">
-                <strong>Email:</strong> usuario@kinecitas.com
-              </div>
-              <div className="test-user">
-                <strong>Password:</strong> demo123
-              </div>
-            </div>
+            <p className="info-text">
+              Sistema de gestión integral para centros kinesiológicos. 
+              Administra citas, pacientes, evaluaciones y planes de rehabilitación de forma eficiente.
+            </p>
           </div>
         </div>
       </div>

@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
+import { asegurarEpisodio } from '@/lib/episodios';
 
 // GET - Obtener todas las sesiones
 export async function GET(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const pacienteId = searchParams.get('pacienteId');
     const estado = searchParams.get('estado');
@@ -14,6 +21,7 @@ export async function GET(request: NextRequest) {
       SELECT 
         s.id,
         s.paciente_id,
+        s.episodio_id,
         s.cita_id,
         s.fecha,
         s.hora,
@@ -26,6 +34,7 @@ export async function GET(request: NextRequest) {
         s.observaciones,
         s.dolor_inicial,
         s.dolor_final,
+        s.borg_percepcion,
         s.movilidad,
         s.fuerza,
         s.progreso_general,
@@ -73,6 +82,7 @@ export async function GET(request: NextRequest) {
     const sesionesFormateadas = sesiones.map((sesion: any) => ({
       id: sesion.id,
       pacienteId: sesion.paciente_id,
+      episodioId: sesion.episodio_id,
       citaId: sesion.cita_id,
       paciente: sesion.paciente_nombre,
       rut: sesion.paciente_rut,
@@ -90,6 +100,7 @@ export async function GET(request: NextRequest) {
       observaciones: sesion.observaciones,
       dolorInicial: sesion.dolor_inicial,
       dolorFinal: sesion.dolor_final,
+      borgPercepcion: sesion.borg_percepcion,
       movilidad: sesion.movilidad,
       fuerza: sesion.fuerza,
       progresoGeneral: sesion.progreso_general,
@@ -116,6 +127,11 @@ export async function GET(request: NextRequest) {
 // POST - Crear una nueva sesión
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       pacienteId,
@@ -130,6 +146,7 @@ export async function POST(request: NextRequest) {
       observaciones,
       dolorInicial,
       dolorFinal,
+      borgPercepcion,
       movilidad,
       fuerza,
       progresoGeneral,
@@ -145,8 +162,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar que el paciente existe
-    const paciente = await db.prepare('SELECT id FROM pacientes WHERE id = ?').get(pacienteId);
+    // Verificar que el paciente existe y su estado
+    const paciente: any = await db.prepare('SELECT id, nombre, estado_paciente FROM pacientes WHERE id = ?').get(pacienteId);
     if (!paciente) {
       return NextResponse.json(
         { success: false, error: 'Paciente no encontrado' },
@@ -154,9 +171,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let citaIdFinal = citaId;
+    // Validar que el paciente no esté de alta o abandono
+    if (paciente.estado_paciente === 'alta') {
+      return NextResponse.json(
+        { success: false, error: 'No se pueden crear sesiones para pacientes dados de alta. Por favor, reactive al paciente primero.' },
+        { status: 400 }
+      );
+    }
+    
+    if (paciente.estado_paciente === 'abandono') {
+      return NextResponse.json(
+        { success: false, error: 'No se pueden crear sesiones para pacientes en receso. Por favor, reactive al paciente primero.' },
+        { status: 400 }
+      );
+    }
 
-    // Si no se proporciona citaId, crear una cita automáticamente
+    // Obtener (o crear) el episodio actual del paciente
+    const episodio = await asegurarEpisodio(pacienteId);
+    const episodioId = episodio?.id || null;
+
+    // Calcular numero_sesion automáticamente DENTRO del episodio actual
+    const countResult: any = await db.prepare(
+      'SELECT COUNT(*) as total FROM sesiones WHERE episodio_id = ?'
+    ).get(episodioId);
+    const numeroSesion = (countResult?.total || 0) + 1;
+
+    let citaIdFinal = citaId || null;
+
+    // Si no hay citaId, crear cita automáticamente para que aparezca en el calendario
+    // La cita usa estado 'pendiente' (sistema de citas) para que funcionen los recordatorios WhatsApp
     if (!citaId) {
       const citaResult = await db.prepare(`
         INSERT INTO citas (
@@ -168,35 +211,36 @@ export async function POST(request: NextRequest) {
         hora,
         duracion || 60,
         tipo,
-        estado || 'programada',
-        notasSesion || 'Cita creada automáticamente desde sesión'
+        'pendiente',
+        `Sesión #${numeroSesion} - ${tipo}`
       );
-      
-      citaIdFinal = citaResult.lastInsertRowid;
-      console.log(`✅ Cita creada automáticamente: ID ${citaIdFinal}`);
+      citaIdFinal = Number(citaResult.lastInsertRowid);
     }
 
     // Insertar sesión
     const result = await db.prepare(`
       INSERT INTO sesiones (
-        paciente_id, cita_id, fecha, hora, duracion, tipo, estado,
-        notas_sesion, ejercicios_realizados, observaciones,
-        dolor_inicial, dolor_final, movilidad, fuerza,
+        paciente_id, episodio_id, cita_id, fecha, hora, duracion, tipo, estado,
+        numero_sesion, notas_sesion, ejercicios_realizados, observaciones,
+        dolor_inicial, dolor_final, borg_percepcion, movilidad, fuerza,
         progreso_general, recomendaciones, proxima_sesion
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       pacienteId,
+      episodioId,
       citaIdFinal,
       fecha,
       hora,
       duracion || 60,
       tipo,
       estado || 'programada',
+      numeroSesion,
       notasSesion || null,
       ejerciciosRealizados ? JSON.stringify(ejerciciosRealizados) : null,
       observaciones || null,
-      dolorInicial || null,
-      dolorFinal || null,
+      dolorInicial !== undefined && dolorInicial !== null && dolorInicial !== '' ? dolorInicial : null,
+      dolorFinal !== undefined && dolorFinal !== null && dolorFinal !== '' ? dolorFinal : null,
+      borgPercepcion !== undefined && borgPercepcion !== null && borgPercepcion !== '' ? borgPercepcion : null,
       movilidad || null,
       fuerza || null,
       progresoGeneral || null,
@@ -207,8 +251,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       sesion: { 
-        id: result.lastInsertRowid,
+        id: Number(result.lastInsertRowid),
+        episodioId,
         citaId: citaIdFinal,
+        numeroSesion,
         citaCreada: !citaId
       }
     }, { status: 201 });

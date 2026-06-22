@@ -128,7 +128,7 @@ function getRecomendaciones(config: any, stats: any) {
   if (recomendaciones.length === 0) {
     recomendaciones.push({
       tipo: 'success',
-      mensaje: '✅ Todo parece estar funcionando correctamente'
+      mensaje: 'Todo parece estar funcionando correctamente'
     });
   }
 

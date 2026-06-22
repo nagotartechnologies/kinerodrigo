@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT - Actualizar una configuración
+// PUT - Actualizar o crear una configuración
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
@@ -54,39 +54,50 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Verificar que la configuración existe
-    const configExistente: any = db.prepare(
+    // Verificar si la configuración existe
+    const configExistente: any = await db.prepare(
       'SELECT * FROM configuraciones WHERE clave = ?'
     ).get(clave);
 
-    if (!configExistente) {
-      return NextResponse.json(
-        { success: false, error: 'Configuración no encontrada' },
-        { status: 404 }
-      );
-    }
-
     // Convertir valor según el tipo
     let valorFinal = valor;
-    if (configExistente.tipo === 'boolean') {
-      valorFinal = valor ? 'true' : 'false';
-    } else if (configExistente.tipo === 'number') {
-      valorFinal = String(valor);
+    let tipo = 'text';
+    
+    if (configExistente) {
+      tipo = configExistente.tipo;
+      if (tipo === 'boolean') {
+        valorFinal = valor ? 'true' : 'false';
+      } else if (tipo === 'number') {
+        valorFinal = String(valor);
+      }
+    } else {
+      // Si no existe, determinar el tipo automáticamente
+      if (typeof valor === 'boolean') {
+        tipo = 'boolean';
+        valorFinal = valor ? 'true' : 'false';
+      } else if (typeof valor === 'number') {
+        tipo = 'number';
+        valorFinal = String(valor);
+      } else {
+        valorFinal = String(valor);
+      }
     }
 
-    // Actualizar configuración
-    db.prepare(`
-      UPDATE configuraciones 
-      SET valor = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE clave = ?
-    `).run(valorFinal, clave);
+    // Usar INSERT OR REPLACE para crear o actualizar
+    await db.prepare(`
+      INSERT INTO configuraciones (clave, valor, tipo, categoria, descripcion, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT(clave) DO UPDATE SET
+        valor = excluded.valor,
+        updated_at = CURRENT_TIMESTAMP
+    `).run(clave, valorFinal, tipo, 'whatsapp', `Configuración de ${clave}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Configuración actualizada exitosamente'
+      message: configExistente ? 'Configuración actualizada exitosamente' : 'Configuración creada exitosamente'
     });
   } catch (error) {
-    console.error('Error al actualizar configuración:', error);
+    console.error('Error al actualizar/crear configuración:', error);
     return NextResponse.json(
       { success: false, error: 'Error al actualizar configuración' },
       { status: 500 }

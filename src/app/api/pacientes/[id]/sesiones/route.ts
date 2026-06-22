@@ -41,7 +41,7 @@ export async function GET(
         created_at
       FROM sesiones
       WHERE paciente_id = ?
-      ORDER BY fecha DESC, hora DESC
+      ORDER BY fecha ASC, hora ASC
     `).all(pacienteId);
 
     // Formatear sesiones

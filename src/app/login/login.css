@@ -361,22 +361,13 @@
   font-weight: 600;
 }
 
-.test-users {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.test-user {
-  display: inline-block;
-  padding: 0.5rem;
-  background: #0f0f0f;
-  border-radius: 6px;
-  border: 1px solid #2a2a2a;
-}
-
-.test-user strong {
-  color: #3FFF00;
+.form-footer .info-text {
+  color: #888;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  font-weight: 400;
+  margin: 0;
+  padding: 0.5rem 0;
 }
 
 /* Responsive */

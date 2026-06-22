@@ -122,6 +122,17 @@ export function initDatabase() {
     )
   `);
 
+  // Tabla de ejercicios (biblioteca)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ejercicios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      descripcion TEXT,
+      categoria TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Tabla de sesiones
   db.exec(`
     CREATE TABLE IF NOT EXISTS sesiones (

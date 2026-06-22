@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
 
 // GET - Obtener una cita por ID
 export async function GET(
@@ -7,6 +8,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id: idStr } = await params;
     const id = parseInt(idStr);
 
@@ -71,6 +77,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id: idStr } = await params;
     const id = parseInt(idStr);
     const body = await request.json();
@@ -85,16 +96,26 @@ export async function PUT(
       );
     }
 
-    // Si se está cambiando fecha u hora, verificar conflictos
+    // Si se está cambiando fecha u hora, verificar conflictos (considerando duración)
+    // Dos rangos se solapan si: inicio1 < fin2 AND inicio2 < fin1
     if (fecha && hora) {
-      const conflicto: any = await db.prepare(`
-        SELECT id FROM citas 
-        WHERE fecha = ? AND hora = ? AND id != ? AND estado != 'cancelada'
-      `).get(fecha, hora, id);
+      const duracionCheck = duracion || 60;
+      // Calcular minutos de la nueva cita en JS para evitar problemas con parámetros SQL
+      const [h, m] = hora.split(':').map(Number);
+      const nuevaInicio = h * 60 + m;
+      const nuevaFin = nuevaInicio + duracionCheck;
 
-      if (conflicto) {
+      const conflictos: any[] = await db.prepare(`
+        SELECT id, hora, duracion FROM citas 
+        WHERE fecha = ? AND id != ? AND estado NOT IN ('cancelada', 'completada')
+          AND (CAST(substr(hora, 1, 2) AS INTEGER) * 60 + CAST(substr(hora, 4, 2) AS INTEGER)) < ?
+          AND ? < (CAST(substr(hora, 1, 2) AS INTEGER) * 60 + CAST(substr(hora, 4, 2) AS INTEGER) + COALESCE(duracion, 60))
+      `).all(fecha, id, nuevaFin, nuevaInicio);
+
+      if (conflictos.length > 0) {
+        console.log(`⚠️ Conflicto al mover cita ${id} a ${fecha} ${hora}: conflictos con citas`, conflictos.map(c => `#${c.id} ${c.hora} (${c.duracion}min)`));
         return NextResponse.json(
-          { success: false, error: 'Ya existe una cita en ese horario' },
+          { success: false, error: `Ya existe una cita que se sobrepone en ese horario (${conflictos.map(c => c.hora).join(', ')})` },
           { status: 409 }
         );
       }
@@ -232,6 +253,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id: idStr } = await params;
     const id = parseInt(idStr);
 
@@ -244,12 +270,19 @@ export async function DELETE(
       );
     }
 
-    // Eliminar la cita
+    // Eliminar datos relacionados en orden correcto
+    // 1. Eliminar recordatorios asociados a la cita
+    await db.prepare('DELETE FROM recordatorios WHERE cita_id = ?').run(id);
+    
+    // 2. Eliminar sesiones asociadas a la cita
+    await db.prepare('DELETE FROM sesiones WHERE cita_id = ?').run(id);
+    
+    // 3. Eliminar la cita
     await db.prepare('DELETE FROM citas WHERE id = ?').run(id);
 
     return NextResponse.json({
       success: true,
-      message: 'Cita eliminada exitosamente'
+      message: 'Cita y datos relacionados eliminados exitosamente'
     });
 
   } catch (error: any) {
