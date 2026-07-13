@@ -279,15 +279,9 @@ export default function CitasModule() {
 
   const esHorarioBloqueado = (fecha: Date, hora: string): any => {
     const fechaStr = fechaAString(fecha);
-    return horariosBloqueados.find(bloqueo => {
-      if (bloqueo.fecha !== fechaStr) return false;
-      
-      const horaActual = hora;
-      const horaInicio = bloqueo.hora_inicio;
-      const horaFin = bloqueo.hora_fin;
-      
-      return horaActual >= horaInicio && horaActual < horaFin;
-    });
+    const bloqueosDelDia = horariosBloqueadosPorFecha.get(fechaStr);
+    if (!bloqueosDelDia) return undefined;
+    return bloqueosDelDia.find(bloqueo => hora >= bloqueo.hora_inicio && hora < bloqueo.hora_fin);
   };
 
   const mostrarMensaje = (mensaje: string, esError: boolean = false) => {
@@ -343,7 +337,7 @@ export default function CitasModule() {
           numeroFactura: ''
         });
         mostrarMensaje('✅ Pago registrado exitosamente');
-        await cargarCitas();
+        await cargarCitas(false);
       } else {
         mostrarMensaje(data.error || 'Error al registrar pago', true);
       }
@@ -379,7 +373,7 @@ export default function CitasModule() {
         const data = await response.json();
         
         if (data.success) {
-          await cargarCitas();
+          await cargarCitas(false);
           mostrarMensaje('Cita actualizada exitosamente');
           setEditandoCita(null);
         } else {
@@ -403,7 +397,7 @@ export default function CitasModule() {
         const data = await response.json();
         
         if (data.success) {
-          await cargarCitas();
+          await cargarCitas(false);
           mostrarMensaje('Cita creada exitosamente');
         } else {
           mostrarMensaje(data.error || 'Error al crear la cita', true);
@@ -471,7 +465,7 @@ export default function CitasModule() {
       const data = await response.json();
       
       if (data.success) {
-        await cargarCitas();
+        await cargarCitas(false);
         mostrarMensaje('Cita eliminada exitosamente');
       } else {
         mostrarMensaje(data.error || 'Error al eliminar la cita', true);
@@ -500,7 +494,7 @@ export default function CitasModule() {
       const data = await response.json();
       
       if (data.success) {
-        await cargarCitas();
+        await cargarCitas(false);
         mostrarMensaje(`Estado cambiado a ${nuevoEstado}`);
       } else {
         mostrarMensaje(data.error || 'Error al cambiar estado', true);
@@ -533,7 +527,7 @@ export default function CitasModule() {
       const data = await response.json();
       
       if (data.success) {
-        await cargarCitas();
+        await cargarCitas(false);
         const cambioDeDay = fechaOriginal !== fechaStr;
         if (cambioDeDay) {
           const diasNombres = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
@@ -605,7 +599,7 @@ export default function CitasModule() {
 
       if (data.success) {
         mostrarMensaje('✅ Sesión creada exitosamente');
-        await cargarCitas(); // Recargar para actualizar indicador
+        await cargarCitas(false); // Recargar para actualizar indicador
         handleCerrarModal();
       } else {
         mostrarMensaje(data.error || 'Error al crear sesión', true);
@@ -640,7 +634,7 @@ export default function CitasModule() {
       if (data.success) {
         setResultadoMasivo(data);
         mostrarMensaje(`${data.enviados} recordatorio(s) enviado(s)${data.errores > 0 ? `, ${data.errores} error(es)` : ''}`);
-        await cargarCitas();
+        await cargarCitas(false);
         setTimeout(() => setResultadoMasivo(null), 10000);
       } else {
         mostrarMensaje(data.error || 'Error al enviar recordatorios', true);
@@ -780,9 +774,53 @@ export default function CitasModule() {
   const obtenerDiasMes = () => diasMes;
   const obtenerDiasSemana = () => diasSemana;
 
+  // Memoizar citas agrupadas por fecha para evitar filtros repetitivos
+  const citasPorFecha = useMemo(() => {
+    const mapa = new Map<string, any[]>();
+    for (const cita of citas) {
+      const lista = mapa.get(cita.fecha);
+      if (lista) {
+        lista.push(cita);
+      } else {
+        mapa.set(cita.fecha, [cita]);
+      }
+    }
+    return mapa;
+  }, [citas]);
+
+  // Memoizar horarios bloqueados agrupados por fecha para evitar find lineal repetitivo
+  const horariosBloqueadosPorFecha = useMemo(() => {
+    const mapa = new Map<string, any[]>();
+    for (const bloqueo of horariosBloqueados) {
+      const lista = mapa.get(bloqueo.fecha);
+      if (lista) {
+        lista.push(bloqueo);
+      } else {
+        mapa.set(bloqueo.fecha, [bloqueo]);
+      }
+    }
+    return mapa;
+  }, [horariosBloqueados]);
+
+  // Memoizar citas de hoy y conteos por estado para la vista "hoy"
+  const citasHoyMemo = useMemo(() => {
+    const hoyStr = fechaAString(new Date());
+    const citasDelDia = (citasPorFecha.get(hoyStr) || [])
+      .slice()
+      .sort((a, b) => a.hora.localeCompare(b.hora));
+    const conteos = { confirmadas: 0, pendientes: 0, completadas: 0, canceladas: 0 };
+    for (const c of citasDelDia) {
+      if (c.estado === 'confirmada') conteos.confirmadas++;
+      else if (c.estado === 'pendiente') conteos.pendientes++;
+      else if (c.estado === 'completada') conteos.completadas++;
+      else if (c.estado === 'cancelada') conteos.canceladas++;
+    }
+    return { citasDelDia, conteos };
+  }, [citasPorFecha]);
+
   const obtenerCitasDia = (fecha: Date) => {
     const fechaStr = fechaAString(fecha);
-    return citas.filter(cita => cita.fecha === fechaStr);
+    return citasPorFecha.get(fechaStr) || [];
   };
 
   const formatearFecha = (fecha: Date) => {
@@ -909,7 +947,7 @@ export default function CitasModule() {
                 <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/>
               </svg>
             )}
-            {enviandoMasivo ? 'Enviando...' : `Recordatorios${citas.filter(c => c.estado === 'pendiente' && !c.recordatorio && c.telefono).length > 0 ? ` (${citas.filter(c => c.estado === 'pendiente' && !c.recordatorio && c.telefono).length})` : ''}`}
+            {enviandoMasivo ? 'Enviando...' : `Recordatorios${citasSinRecordatorio.length > 0 ? ` (${citasSinRecordatorio.length})` : ''}`}
           </button>
           <button className="btn-primary" onClick={() => setShowModalRecurrente(true)} style={{ background: '#1e40af' }}>
             Recurrentes
@@ -1005,12 +1043,6 @@ export default function CitasModule() {
         )}
 
         {/* Vista Semanal */}
-        {!loading && vistaCalendario === 'semana' && (() => {
-          console.log('🗓️ Vista semanal - Total citas:', citas.length);
-          console.log('📋 Citas disponibles:', citas);
-          console.log('📅 Días de la semana:', obtenerDiasSemana().map(d => d.toISOString().split('T')[0]));
-          return null;
-        })()}
         {!loading && vistaCalendario === 'semana' && (
           <div>
             {/* Navegación móvil para cambiar de día */}
@@ -1223,14 +1255,8 @@ export default function CitasModule() {
 
         {/* Vista Hoy - Citas del Día con acciones rápidas */}
         {!loading && vistaCalendario === 'hoy' && (() => {
-          const hoyStr = fechaAString(new Date());
-          const citasHoy = citas
-            .filter(c => c.fecha === hoyStr)
-            .sort((a, b) => a.hora.localeCompare(b.hora));
-          const confirmadas = citasHoy.filter(c => c.estado === 'confirmada').length;
-          const pendientes = citasHoy.filter(c => c.estado === 'pendiente').length;
-          const completadas = citasHoy.filter(c => c.estado === 'completada').length;
-          const canceladas = citasHoy.filter(c => c.estado === 'cancelada').length;
+          const citasHoy = citasHoyMemo.citasDelDia;
+          const { confirmadas, pendientes, completadas, canceladas } = citasHoyMemo.conteos;
 
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1965,7 +1991,7 @@ export default function CitasModule() {
                 if (data.success) {
                   mostrarMensaje(data.message, false);
                   setShowModalRecurrente(false);
-                  cargarCitas();
+                  cargarCitas(false);
                   setRecurrenteData({
                     pacienteId: '',
                     horaInicio: '09:00',

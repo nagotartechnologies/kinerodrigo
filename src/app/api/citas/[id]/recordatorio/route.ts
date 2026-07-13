@@ -28,28 +28,15 @@ export async function POST(
       WHERE c.id = ?
     `).get(citaId);
 
-    console.log('📋 Datos de la cita:', {
-      citaId,
-      pacienteId: cita?.paciente_id,
-      pacienteNombre: cita?.paciente_nombre,
-      pacienteTelefono: cita?.paciente_telefono,
-      telefonoTipo: typeof cita?.paciente_telefono,
-      telefonoLength: cita?.paciente_telefono?.length
-    });
-
     if (!cita) {
-      console.log('❌ Cita no encontrada');
       return NextResponse.json(
         { success: false, error: 'Cita no encontrada' },
         { status: 404 }
       );
     }
 
-    console.log('✅ Cita encontrada, estado:', cita.estado);
-
     // Verificar que la cita no esté cancelada
     if (cita.estado === 'cancelada') {
-      console.log('❌ Cita cancelada, no se puede enviar recordatorio');
       return NextResponse.json(
         { 
           success: false, 
@@ -62,7 +49,6 @@ export async function POST(
 
     // Verificar que la cita no esté completada o confirmada
     if (cita.estado === 'completada' || cita.estado === 'confirmada') {
-      console.log('❌ Cita completada/confirmada, no se puede enviar recordatorio');
       return NextResponse.json(
         { 
           success: false, 
@@ -72,8 +58,6 @@ export async function POST(
         { status: 400 }
       );
     }
-
-    console.log('✅ Estado de cita válido');
 
     // Verificar que la cita no haya pasado (fecha y hora)
     // Usar zona horaria de Chile (America/Santiago, UTC-3)
@@ -85,18 +69,10 @@ export async function POST(
     const fechaActual = `${year}-${month}-${day}`;
     const horaActual = `${String(ahoraChile.getHours()).padStart(2, '0')}:${String(ahoraChile.getMinutes()).padStart(2, '0')}`;
     
-    console.log('📅 Validación de fecha:', {
-      fechaCita: cita.fecha,
-      horaCita: cita.hora,
-      fechaActual,
-      horaActual
-    });
-    
     const citaPasada = cita.fecha < fechaActual || 
                        (cita.fecha === fechaActual && cita.hora <= horaActual);
     
     if (citaPasada) {
-      console.log('❌ Cita ya pasó, no se puede enviar recordatorio');
       return NextResponse.json(
         { 
           success: false, 
@@ -107,17 +83,8 @@ export async function POST(
       );
     }
 
-    console.log('✅ Fecha válida, cita es futura');
-
     // Verificar que el paciente tenga teléfono
     if (!cita.paciente_telefono || cita.paciente_telefono.trim() === '') {
-      console.log('❌ Teléfono no válido:', {
-        telefono: cita.paciente_telefono,
-        esNull: cita.paciente_telefono === null,
-        esUndefined: cita.paciente_telefono === undefined,
-        esVacio: cita.paciente_telefono === ''
-      });
-      
       return NextResponse.json(
         { 
           success: false, 
@@ -132,8 +99,6 @@ export async function POST(
       );
     }
 
-    console.log('✅ Teléfono válido, continuando con envío...');
-
     // Formatear mensaje usando la misma función que el envío masivo
     const mensaje = await formatearMensajeRecordatorio({
       paciente: cita.paciente_nombre,
@@ -143,10 +108,6 @@ export async function POST(
       duracion: cita.duracion
     });
     
-    console.log('📤 Preparando envío de mensaje...');
-    console.log('📞 Teléfono:', cita.paciente_telefono);
-    console.log('💬 Longitud del mensaje:', mensaje.length);
-    
     // Enviar mensaje por WhatsApp (texto plano, sin botones interactivos)
     let resultado;
     try {
@@ -154,7 +115,6 @@ export async function POST(
         phone: cita.paciente_telefono,
         message: mensaje
       });
-      console.log('✅ Mensaje enviado, ID:', resultado.idMessage);
     } catch (sendError: any) {
       console.error('❌ Error al enviar mensaje:', sendError);
       throw sendError;

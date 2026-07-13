@@ -112,10 +112,10 @@ export async function PUT(
           AND ? < (CAST(substr(hora, 1, 2) AS INTEGER) * 60 + CAST(substr(hora, 4, 2) AS INTEGER) + COALESCE(duracion, 60))
       `).all(fecha, id, nuevaFin, nuevaInicio);
 
-      if (conflictos.length > 0) {
-        console.log(`⚠️ Conflicto al mover cita ${id} a ${fecha} ${hora}: conflictos con citas`, conflictos.map(c => `#${c.id} ${c.hora} (${c.duracion}min)`));
+      if (conflictos.length >= 2) {
+        console.log(`⚠️ Conflicto al mover cita ${id} a ${fecha} ${hora}: ya hay 2 citas`, conflictos.map(c => `#${c.id} ${c.hora} (${c.duracion}min)`));
         return NextResponse.json(
-          { success: false, error: `Ya existe una cita que se sobrepone en ese horario (${conflictos.map(c => c.hora).join(', ')})` },
+          { success: false, error: `Ya hay 2 citas agendadas en ese horario (máximo permitido)` },
           { status: 409 }
         );
       }

@@ -14,6 +14,9 @@ export async function GET(request: NextRequest) {
     const fecha = searchParams.get('fecha');
     const pacienteId = searchParams.get('paciente_id');
     const estado = searchParams.get('estado');
+    const fechaDesde = searchParams.get('fechaDesde');
+    const fechaHasta = searchParams.get('fechaHasta');
+    const sinFiltro = searchParams.get('sinFiltro');
 
     let query = `
       SELECT 
@@ -65,6 +68,25 @@ export async function GET(request: NextRequest) {
     if (estado) {
       query += ` AND c.estado = ?`;
       params.push(estado);
+    }
+
+    if (fechaDesde) {
+      query += ` AND c.fecha >= ?`;
+      params.push(fechaDesde);
+    }
+
+    if (fechaHasta) {
+      query += ` AND c.fecha <= ?`;
+      params.push(fechaHasta);
+    }
+
+    // Filtro por defecto: últimas 8 semanas si no hay fecha exacta, rango explícito ni sinFiltro
+    if (!fecha && !fechaDesde && !fechaHasta && !sinFiltro) {
+      const fechaLimite = new Date();
+      fechaLimite.setDate(fechaLimite.getDate() - 56);
+      const fechaLimiteStr = `${fechaLimite.getFullYear()}-${String(fechaLimite.getMonth() + 1).padStart(2, '0')}-${String(fechaLimite.getDate()).padStart(2, '0')}`;
+      query += ` AND c.fecha >= ?`;
+      params.push(fechaLimiteStr);
     }
 
     query += ` ORDER BY c.fecha DESC, c.hora DESC`;
@@ -145,11 +167,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar que no haya conflicto de horario (considerando duración)
-    // Convertimos las horas a minutos desde medianoche para comparar rangos numéricamente
+    // Verificar conflictos de horario (considerando duración)
+    // Se permite un máximo de 2 citas simultáneas en el mismo horario
     // Dos rangos se solapan si: inicio1 < fin2 AND inicio2 < fin1
     const duracionNueva = duracion || 60;
-    const conflicto = await db.prepare(`
+    const conflictos: any[] = await db.prepare(`
       SELECT id, hora, duracion FROM citas 
       WHERE fecha = ? AND estado != 'cancelada'
         AND (
@@ -160,11 +182,11 @@ export async function POST(request: NextRequest) {
           (CAST(substr(?, 1, 2) AS INTEGER) * 60 + CAST(substr(?, 4, 2) AS INTEGER))
           < (CAST(substr(hora, 1, 2) AS INTEGER) * 60 + CAST(substr(hora, 4, 2) AS INTEGER) + duracion)
         )
-    `).get(fecha, hora, hora, duracionNueva, hora, hora);
+    `).all(fecha, hora, hora, duracionNueva, hora, hora);
 
-    if (conflicto) {
+    if (conflictos.length >= 2) {
       return NextResponse.json(
-        { success: false, error: 'Ya existe una cita que se sobrepone en ese horario' },
+        { success: false, error: 'Ya hay 2 citas agendadas en ese horario (máximo permitido)' },
         { status: 409 }
       );
     }

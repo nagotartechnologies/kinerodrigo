@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
         const day = String(fecha.getDate()).padStart(2, '0');
         const fechaStr = `${year}-${month}-${day}`;
 
-        // Verificar conflicto de horario
-        const conflicto: any = await db.prepare(`
+        // Verificar conflicto de horario (máximo 2 citas simultáneas permitidas)
+        const citasExistentes: any[] = await db.prepare(`
           SELECT id, hora, duracion FROM citas 
           WHERE fecha = ? AND estado != 'cancelada'
             AND (
@@ -74,10 +74,10 @@ export async function POST(request: NextRequest) {
               (CAST(substr(?, 1, 2) AS INTEGER) * 60 + CAST(substr(?, 4, 2) AS INTEGER))
               < (CAST(substr(hora, 1, 2) AS INTEGER) * 60 + CAST(substr(hora, 4, 2) AS INTEGER) + duracion)
             )
-        `).get(fechaStr, horaInicio, horaInicio, duracionCita, horaInicio, horaInicio);
+        `).all(fechaStr, horaInicio, horaInicio, duracionCita, horaInicio, horaInicio);
 
-        if (conflicto) {
-          conflictos.push({ fecha: fechaStr, hora: horaInicio, motivo: 'Conflicto de horario' });
+        if (citasExistentes.length >= 2) {
+          conflictos.push({ fecha: fechaStr, hora: horaInicio, motivo: 'Ya hay 2 citas en ese horario' });
           continue;
         }
 

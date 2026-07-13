@@ -208,7 +208,6 @@ export default function DashboardPage() {
 
   const inicializarCronAutomatico = async () => {
     try {
-      console.log('Iniciando sistema de recordatorios automaticos...');
       const response = await fetch('/api/cron/init', { method: 'POST' });
       
       if (!response.ok) {
@@ -217,7 +216,6 @@ export default function DashboardPage() {
       }
       
       const data = await response.json();
-      console.log('Sistema de recordatorios iniciado:', data);
     } catch (error) {
       console.error('Error al inicializar el sistema de recordatorios:', error);
       // El error se captura sin relanzar para no interrumpir la carga del dashboard

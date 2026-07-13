@@ -16,8 +16,6 @@ export async function GET(request: NextRequest) {
       ORDER BY created_at DESC
     `).all();
 
-    console.log('📊 Pacientes obtenidos:', pacientes?.length || 0);
-
     return NextResponse.json({ 
       success: true,
       pacientes 
