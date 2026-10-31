@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { hashPassword } from '@/lib/auth';
+import { hashPassword, verifyAuth } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
     const stmt = db.prepare('SELECT id, nombre, apellido, email, activo, created_at as createdAt FROM usuarios ORDER BY created_at DESC');
     const usuarios = await stmt.all();
 
@@ -22,6 +27,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
     const { nombre, apellido, email, password } = await request.json();
 
     // Validar campos requeridos
@@ -75,7 +85,7 @@ export async function POST(request: Request) {
       success: true,
       message: 'Usuario creado exitosamente',
       usuario: {
-        id: result.lastInsertRowid,
+        id: Number(result.lastInsertRowid),
         nombre,
         apellido,
         email,

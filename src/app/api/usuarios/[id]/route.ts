@@ -1,12 +1,23 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { hashPassword } from '@/lib/auth';
+import { hashPassword, verifyAuth } from '@/lib/auth';
+
+// Cuenta usuarios activos distintos del indicado (para no dejar el sistema sin acceso)
+async function otrosUsuariosActivos(id: string): Promise<number> {
+  const fila: any = await db.prepare('SELECT COUNT(*) as total FROM usuarios WHERE activo = 1 AND id != ?').get(id);
+  return Number(fila?.total || 0);
+}
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
     const { nombre, apellido, email, password, activo } = body;
@@ -66,6 +77,20 @@ export async function PUT(
       values.push(hashPassword(password));
     }
     if (activo !== undefined) {
+      if (!activo) {
+        if (String(auth.user?.id) === String(id)) {
+          return NextResponse.json(
+            { success: false, error: 'No puedes desactivar tu propio usuario' },
+            { status: 400 }
+          );
+        }
+        if (await otrosUsuariosActivos(id) === 0) {
+          return NextResponse.json(
+            { success: false, error: 'Debe quedar al menos un usuario activo' },
+            { status: 400 }
+          );
+        }
+      }
       updates.push('activo = ?');
       values.push(activo ? 1 : 0);
     }
@@ -104,7 +129,19 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    if (String(auth.user?.id) === String(id)) {
+      return NextResponse.json(
+        { success: false, error: 'No puedes eliminar tu propio usuario' },
+        { status: 400 }
+      );
+    }
 
     // Verificar que el usuario existe
     const checkStmt = db.prepare('SELECT id FROM usuarios WHERE id = ?');
@@ -114,6 +151,13 @@ export async function DELETE(
       return NextResponse.json(
         { success: false, error: 'Usuario no encontrado' },
         { status: 404 }
+      );
+    }
+
+    if (await otrosUsuariosActivos(id) === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Debe quedar al menos un usuario activo' },
+        { status: 400 }
       );
     }
 
