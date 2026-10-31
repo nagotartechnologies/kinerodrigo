@@ -1,6 +1,7 @@
 // Servicio de WhatsApp multi-proveedor
 import db from './db';
 import { getWhatsAppProvider } from './whatsapp/factory';
+import { nombreMarca } from './marca';
 
 /**
  * Obtener configuración de WhatsApp desde la base de datos (con cache en memoria)
@@ -105,7 +106,7 @@ export async function formatearMensajeRecordatorio(cita: {
   const [year, month, day] = cita.fecha.split('-');
   const fechaFormateada = `${day}/${month}/${year}`;
 
-  const nombreCentro = await getConfig('nombre_centro', 'NAGO-KINE');
+  const nombreCentro = nombreMarca(await getConfig('nombre_centro', ''));
   const plantilla = await getConfig('whatsapp_mensaje_recordatorio', 
     '🏥 *RECORDATORIO DE CITA - {nombre_centro}*\n\nHola {paciente}, te recordamos tu cita:\n\n📅 *Fecha:* {fecha}\n🕐 *Hora:* {hora}\n⏱️ *Duración:* {duracion} min\n📋 *Tipo:* {tipo}\n\nResponde con el *número* de tu opción:\n\n*1* ✅ Confirmo asistencia\n*2* ❌ Necesito cancelar\n*3* 📅 Quiero cambiar fecha/hora\n\n¡Te esperamos! 💪'
   );

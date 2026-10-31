@@ -30,9 +30,9 @@
 }
 
 .vista-btn.active {
-  background: #3FFF00;
+  background: #2AD636;
   color: #0a0a0a;
-  box-shadow: 0 0 15px rgba(63, 255, 0, 0.4);
+  box-shadow: 0 0 15px rgba(42, 214, 54, 0.4);
 }
 
 .vista-btn:hover:not(.active) {
@@ -81,7 +81,7 @@
 .dia-semana {
   text-align: center;
   font-weight: 700;
-  color: #3FFF00;
+  color: #2AD636;
   padding: 0.75rem;
   font-size: 0.875rem;
   text-transform: uppercase;
@@ -105,8 +105,8 @@
 }
 
 .dia-celda:hover:not(.vacio) {
-  border-color: #3FFF00;
-  box-shadow: 0 0 15px rgba(63, 255, 0, 0.2);
+  border-color: #2AD636;
+  box-shadow: 0 0 15px rgba(42, 214, 54, 0.2);
   transform: translateY(-2px);
 }
 
@@ -117,8 +117,8 @@
 }
 
 .dia-celda.hoy {
-  border-color: #3FFF00;
-  box-shadow: 0 0 20px rgba(63, 255, 0, 0.3);
+  border-color: #2AD636;
+  box-shadow: 0 0 20px rgba(42, 214, 54, 0.3);
 }
 
 .dia-numero {
@@ -129,8 +129,8 @@
 }
 
 .dia-celda.hoy .dia-numero {
-  color: #3FFF00;
-  text-shadow: 0 0 10px rgba(63, 255, 0, 0.5);
+  color: #2AD636;
+  text-shadow: 0 0 10px rgba(42, 214, 54, 0.5);
 }
 
 .citas-dia {
@@ -143,7 +143,7 @@
 
 .cita-item {
   background: #1a1a1a;
-  border-left: 3px solid #3FFF00;
+  border-left: 3px solid #2AD636;
   padding: 0.375rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
@@ -153,7 +153,7 @@
 }
 
 .cita-item.confirmada {
-  border-left-color: #3FFF00;
+  border-left-color: #2AD636;
 }
 
 .cita-item.pendiente {
@@ -161,7 +161,7 @@
 }
 
 .cita-hora {
-  color: #3FFF00;
+  color: #2AD636;
   font-weight: 700;
 }
 
@@ -216,7 +216,7 @@
 
 .hora-label.hora-principal {
   font-size: 0.9rem;
-  color: #3FFF00;
+  color: #2AD636;
 }
 
 .hora-label.hora-secundaria {
@@ -237,7 +237,7 @@
 }
 
 .dia-column-header.hoy {
-  background: linear-gradient(135deg, rgba(63, 255, 0, 0.1) 0%, rgba(63, 255, 0, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(42, 214, 54, 0.1) 0%, rgba(42, 214, 54, 0.05) 100%);
 }
 
 .dia-column-header .dia-nombre {
@@ -255,7 +255,7 @@
 }
 
 .dia-column-header.hoy .dia-numero {
-  color: #3FFF00;
+  color: #2AD636;
 }
 
 .semana-horarios-grid {
@@ -271,7 +271,7 @@
 }
 
 .hora-row:hover {
-  background: rgba(63, 255, 0, 0.02);
+  background: rgba(42, 214, 54, 0.02);
 }
 
 .hora-label {
@@ -299,8 +299,8 @@
 }
 
 .hora-slot:hover:empty {
-  background-color: rgba(63, 255, 0, 0.05);
-  border-color: rgba(63, 255, 0, 0.3);
+  background-color: rgba(42, 214, 54, 0.05);
+  border-color: rgba(42, 214, 54, 0.3);
 }
 
 .hora-slot:empty::after {
@@ -315,7 +315,7 @@
 }
 
 .hora-slot:hover:empty::after {
-  color: rgba(63, 255, 0, 0.5);
+  color: rgba(42, 214, 54, 0.5);
 }
 
 .hora-slot:last-child {
@@ -323,12 +323,12 @@
 }
 
 .hora-slot.drop-zone {
-  background: rgba(63, 255, 0, 0.05);
-  border: 2px dashed #3FFF00;
+  background: rgba(42, 214, 54, 0.05);
+  border: 2px dashed #2AD636;
 }
 
 .hora-slot:hover {
-  background: rgba(63, 255, 0, 0.03);
+  background: rgba(42, 214, 54, 0.03);
 }
 
 .hora-slot.bloqueado {
@@ -370,25 +370,25 @@
 }
 
 .hora-slot.long-pressing {
-  background: rgba(63, 255, 0, 0.15) !important;
-  border: 2px solid #3FFF00 !important;
+  background: rgba(42, 214, 54, 0.15) !important;
+  border: 2px solid #2AD636 !important;
   animation: pulse-long-press 0.5s ease-in-out;
 }
 
 @keyframes pulse-long-press {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(63, 255, 0, 0.7);
+    box-shadow: 0 0 0 0 rgba(42, 214, 54, 0.7);
   }
   50% {
     transform: scale(1.02);
-    box-shadow: 0 0 0 10px rgba(63, 255, 0, 0);
+    box-shadow: 0 0 0 10px rgba(42, 214, 54, 0);
   }
 }
 
 .cita-horario {
   background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-  border: 2px solid #3FFF00;
+  border: 2px solid #2AD636;
   border-radius: 4px;
   padding: 0.5rem;
   margin: 0;
@@ -407,8 +407,8 @@
 
 .cita-horario:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(63, 255, 0, 0.3);
-  border-color: #3FFF00;
+  box-shadow: 0 4px 12px rgba(42, 214, 54, 0.3);
+  border-color: #2AD636;
 }
 
 .cita-horario.dragging,
@@ -449,7 +449,7 @@ body.dragging {
 }
 
 .cita-horario.confirmada {
-  border-color: #3FFF00;
+  border-color: #2AD636;
 }
 
 .cita-horario.completada {
@@ -465,7 +465,7 @@ body.dragging {
 .cita-horario-hora {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #3FFF00;
+  color: #2AD636;
   margin-bottom: 0.1rem;
   line-height: 1.1;
   display: flex;
@@ -473,7 +473,7 @@ body.dragging {
 }
 
 .cita-horario.con-sesion {
-  border-left: 3px solid #3FFF00;
+  border-left: 3px solid #2AD636;
 }
 
 .cita-horario.con-sesion::after {
@@ -483,9 +483,9 @@ body.dragging {
   right: 4px;
   width: 6px;
   height: 6px;
-  background: #3FFF00;
+  background: #2AD636;
   border-radius: 50%;
-  box-shadow: 0 0 6px rgba(63, 255, 0, 0.6);
+  box-shadow: 0 0 6px rgba(42, 214, 54, 0.6);
 }
 
 .cita-horario-paciente {
@@ -527,7 +527,7 @@ body.dragging {
 }
 
 .semana-horarios-grid::-webkit-scrollbar-thumb:hover {
-  background: #3FFF00;
+  background: #2AD636;
 }
 
 /* Vista Semanal */
@@ -540,9 +540,9 @@ body.dragging {
 
 /* Drag and Drop */
 .semana-dia.drop-zone {
-  border-color: #3FFF00;
-  box-shadow: 0 0 30px rgba(63, 255, 0, 0.4);
-  background: rgba(63, 255, 0, 0.05);
+  border-color: #2AD636;
+  box-shadow: 0 0 30px rgba(42, 214, 54, 0.4);
+  background: rgba(42, 214, 54, 0.05);
 }
 
 .cita-card.dragging {
@@ -553,11 +553,11 @@ body.dragging {
 .drop-placeholder {
   padding: 2rem;
   text-align: center;
-  color: #3FFF00;
+  color: #2AD636;
   font-weight: 600;
-  border: 2px dashed #3FFF00;
+  border: 2px dashed #2AD636;
   border-radius: 8px;
-  background: rgba(63, 255, 0, 0.05);
+  background: rgba(42, 214, 54, 0.05);
   animation: pulse 2s infinite;
 }
 
@@ -586,8 +586,8 @@ body.dragging {
 }
 
 .semana-dia-header.hoy {
-  border-color: #3FFF00;
-  box-shadow: 0 0 15px rgba(63, 255, 0, 0.3);
+  border-color: #2AD636;
+  box-shadow: 0 0 15px rgba(42, 214, 54, 0.3);
 }
 
 .dia-nombre {
@@ -599,7 +599,7 @@ body.dragging {
 }
 
 .semana-dia-header.hoy .dia-nombre {
-  color: #3FFF00;
+  color: #2AD636;
 }
 
 .semana-dia-header .dia-numero {
@@ -609,8 +609,8 @@ body.dragging {
 }
 
 .semana-dia-header.hoy .dia-numero {
-  color: #3FFF00;
-  text-shadow: 0 0 10px rgba(63, 255, 0, 0.5);
+  color: #2AD636;
+  text-shadow: 0 0 10px rgba(42, 214, 54, 0.5);
 }
 
 .semana-grid {
@@ -632,13 +632,13 @@ body.dragging {
 }
 
 .semana-dia.hoy {
-  border-color: #3FFF00;
-  box-shadow: 0 0 15px rgba(63, 255, 0, 0.2);
+  border-color: #2AD636;
+  box-shadow: 0 0 15px rgba(42, 214, 54, 0.2);
 }
 
 .cita-card {
   background: #1a1a1a;
-  border-left: 4px solid #3FFF00;
+  border-left: 4px solid #2AD636;
   border-radius: 8px;
   padding: 0.75rem;
   transition: all 0.3s ease;
@@ -648,11 +648,11 @@ body.dragging {
 
 .cita-card:hover {
   transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(63, 255, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(42, 214, 54, 0.2);
 }
 
 .cita-card.confirmada {
-  border-left-color: #3FFF00;
+  border-left-color: #2AD636;
 }
 
 .cita-card.pendiente {
@@ -669,7 +669,7 @@ body.dragging {
 .cita-card-hora {
   font-size: 1rem;
   font-weight: 700;
-  color: #3FFF00;
+  color: #2AD636;
 }
 
 .cita-card-acciones {
@@ -704,7 +704,7 @@ body.dragging {
 }
 
 .btn-icon-small:hover {
-  background: #3FFF00;
+  background: #2AD636;
   color: #0a0a0a;
   transform: scale(1.1);
 }
@@ -723,7 +723,7 @@ body.dragging {
 }
 
 .cita-card:hover .cita-card-drag-hint {
-  color: #3FFF00;
+  color: #2AD636;
 }
 
 .cita-card-info {
@@ -774,13 +774,13 @@ body.dragging {
 }
 
 .cita-lista-item:hover {
-  border-color: #3FFF00;
-  box-shadow: 0 4px 20px rgba(63, 255, 0, 0.2);
+  border-color: #2AD636;
+  box-shadow: 0 4px 20px rgba(42, 214, 54, 0.2);
   transform: translateY(-2px);
 }
 
 .cita-lista-item.confirmada {
-  border-left: 4px solid #3FFF00;
+  border-left: 4px solid #2AD636;
 }
 
 .cita-lista-item.pendiente {
@@ -796,13 +796,13 @@ body.dragging {
   padding: 1rem;
   background: #1a1a1a;
   border-radius: 12px;
-  border: 2px solid #3FFF00;
+  border: 2px solid #2AD636;
 }
 
 .fecha-dia {
   font-size: 2rem;
   font-weight: 700;
-  color: #3FFF00;
+  color: #2AD636;
   line-height: 1;
 }
 
@@ -840,7 +840,7 @@ body.dragging {
 }
 
 .detalle-item svg {
-  color: #3FFF00;
+  color: #2AD636;
 }
 
 .cita-lista-acciones {
@@ -859,9 +859,9 @@ body.dragging {
 }
 
 .estado-badge.confirmada {
-  background: rgba(63, 255, 0, 0.1);
-  color: #3FFF00;
-  border: 1px solid #3FFF00;
+  background: rgba(42, 214, 54, 0.1);
+  color: #2AD636;
+  border: 1px solid #2AD636;
 }
 
 .estado-badge.pendiente {
@@ -902,10 +902,10 @@ body.dragging {
 }
 
 .btn-icon:hover {
-  background: #3FFF00;
+  background: #2AD636;
   color: #0a0a0a;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(63, 255, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(42, 214, 54, 0.4);
 }
 
 .btn-icon.delete:hover {
@@ -946,8 +946,8 @@ body.dragging {
 
 .form-field select:focus {
   outline: none;
-  border-color: #3FFF00;
-  box-shadow: 0 0 0 3px rgba(63, 255, 0, 0.1), 0 0 20px rgba(63, 255, 0, 0.2);
+  border-color: #2AD636;
+  box-shadow: 0 0 0 3px rgba(42, 214, 54, 0.1), 0 0 20px rgba(42, 214, 54, 0.2);
 }
 
 .form-field select option {
@@ -1370,7 +1370,7 @@ button.dia-celda {
 
 .agenda-card.is-en-curso {
   border-color: var(--accent);
-  background: rgba(63, 255, 0, 0.05);
+  background: rgba(42, 214, 54, 0.05);
 }
 
 .agenda-card__top {
@@ -1633,7 +1633,7 @@ button.estado-badge {
   border-radius: 18px;
   background: var(--accent);
   color: var(--on-accent);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 12px rgba(63, 255, 0, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 12px rgba(42, 214, 54, 0.25);
   cursor: pointer;
   transition: transform 0.15s var(--ease);
 }
@@ -1952,8 +1952,8 @@ body.dragging .citas-fab {
   --col-min: 104px;
   position: relative;
   overflow: auto;
-  max-height: calc(100vh - 250px);
-  max-height: calc(100dvh - var(--sat) - 240px);
+  max-height: calc(100vh - 200px);
+  max-height: calc(100dvh - var(--sat) - 192px);
   min-height: 380px;
   background: var(--surface-1);
   border: 1px solid var(--border);
@@ -2080,7 +2080,7 @@ body.dragging .citas-fab {
 }
 
 .gcal-col.hoy {
-  background-color: rgba(63, 255, 0, 0.025);
+  background-color: rgba(42, 214, 54, 0.025);
 }
 
 .gcal-col.pasado {
@@ -2112,7 +2112,7 @@ body.dragging .citas-fab {
 }
 
 .gcal-ev--pendiente { --ev-color: var(--estado-pendiente); --ev-bg: #4a3717; }
-.gcal-ev--confirmada { --ev-color: var(--accent); --ev-bg: #224c14; }
+.gcal-ev--confirmada { --ev-color: var(--accent); --ev-bg: #1e4320; }
 .gcal-ev--completada { --ev-color: var(--estado-completada); --ev-bg: #21314a; }
 .gcal-ev--cancelada { --ev-color: var(--estado-cancelada); --ev-bg: #492323; opacity: 0.6; }
 .gcal-ev--reagendar { --ev-color: var(--estado-reagendar); --ev-bg: #39274b; }

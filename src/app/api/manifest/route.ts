@@ -1,97 +1,36 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { MARCA, nombreMarca } from '@/lib/marca';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   try {
-    // Obtener configuración del sistema
+    // Nombre configurado o marca por defecto
     const nombreCentro = await db.prepare('SELECT valor FROM configuraciones WHERE clave = ?')
       .get('nombre_centro')
-      .then((row: any) => row?.valor || 'KINE-CITAS');
+      .then((row: any) => nombreMarca(row?.valor));
+    const nombreCorto = nombreCentro === MARCA.nombreCompleto ? MARCA.nombreCorto : nombreCentro;
 
-    // Generar manifest dinámico usando el logo de configuración vía /api/icon
+    // Manifest dinámico con los íconos del brand kit
     const manifest = {
-      name: `${nombreCentro} - Sistema de Gestión`,
-      short_name: nombreCentro,
-      description: `Sistema de gestión kinesiológica - ${nombreCentro}`,
-      start_url: "/",
+      name: nombreCentro,
+      short_name: nombreCorto,
+      description: MARCA.descripcion,
+      start_url: "/dashboard",
       display: "standalone",
-      background_color: "#ffffff",
-      theme_color: "#10b981",
+      background_color: MARCA.colorFondo,
+      theme_color: MARCA.colorFondo,
       orientation: "portrait-primary",
       scope: "/",
+      lang: "es-CL",
       icons: [
-        {
-          src: "/api/icon",
-          sizes: "72x72",
-          type: "image/png",
-          purpose: "any"
-        },
-        {
-          src: "/api/icon",
-          sizes: "96x96",
-          type: "image/png",
-          purpose: "any"
-        },
-        {
-          src: "/api/icon",
-          sizes: "128x128",
-          type: "image/png",
-          purpose: "any"
-        },
-        {
-          src: "/api/icon",
-          sizes: "144x144",
-          type: "image/png",
-          purpose: "any"
-        },
-        {
-          src: "/api/icon",
-          sizes: "152x152",
-          type: "image/png",
-          purpose: "any"
-        },
-        {
-          src: "/api/icon",
-          sizes: "192x192",
-          type: "image/png",
-          purpose: "any"
-        },
-        {
-          src: "/api/icon",
-          sizes: "384x384",
-          type: "image/png",
-          purpose: "any"
-        },
-        {
-          src: "/api/icon",
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "any"
-        },
-        {
-          src: "/api/icon",
-          sizes: "192x192",
-          type: "image/png",
-          purpose: "maskable"
-        },
-        {
-          src: "/api/icon",
-          sizes: "512x512",
-          type: "image/png",
-          purpose: "maskable"
-        }
+        { src: "/android-chrome-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: "/android-chrome-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: "/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
       ],
-      categories: ["health", "medical", "productivity"],
-      screenshots: [
-        {
-          src: "/api/icon",
-          sizes: "512x512",
-          type: "image/png"
-        }
-      ]
+      categories: ["health", "medical", "productivity"]
     };
 
     return NextResponse.json(manifest, {
@@ -105,19 +44,17 @@ export async function GET(request: Request) {
     
     // Fallback a manifest por defecto
     const defaultManifest = {
-      name: "KINE-CITAS - Sistema de Gestión",
-      short_name: "KINE-CITAS",
-      description: "Sistema de gestión kinesiológica",
-      start_url: "/",
+      name: MARCA.nombreCompleto,
+      short_name: MARCA.nombreCorto,
+      description: MARCA.descripcion,
+      start_url: "/dashboard",
       display: "standalone",
-      background_color: "#ffffff",
-      theme_color: "#4F46E5",
+      background_color: MARCA.colorFondo,
+      theme_color: MARCA.colorFondo,
       icons: [
-        {
-          src: "/icon-192x192.png",
-          sizes: "192x192",
-          type: "image/png"
-        }
+        { src: "/android-chrome-192.png", sizes: "192x192", type: "image/png" },
+        { src: "/android-chrome-512.png", sizes: "512x512", type: "image/png" },
+        { src: "/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
       ]
     };
 

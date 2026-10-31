@@ -205,7 +205,7 @@ export function generarFichaPDF({ paciente, sesiones, logoUrl, nombreCentro }: G
                 <div style="background: ${
                   sesion.estado === 'completada' ? '#10b981' :
                   sesion.estado === 'programada' ? '#3b82f6' :
-                  sesion.estado === 'confirmada' ? '#3FFF00' : '#ef4444'
+                  sesion.estado === 'confirmada' ? '#2AD636' : '#ef4444'
                 }; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
                   ${sesion.estado}
                 </div>
@@ -305,11 +305,11 @@ export function generarFichaPDF({ paciente, sesiones, logoUrl, nombreCentro }: G
                   <div class="campo-valor">
                     ${sesion.ejerciciosRealizados.map((ejercicio: any) => {
                       if (typeof ejercicio === 'string') {
-                        return `<div style="margin: 5px 0; padding: 8px; background: #f8f8f8; border-left: 3px solid #3FFF00; border-radius: 4px;">
+                        return `<div style="margin: 5px 0; padding: 8px; background: #f8f8f8; border-left: 3px solid #2AD636; border-radius: 4px;">
                           <strong>${ejercicio}</strong>
                         </div>`;
                       }
-                      return `<div style="margin: 5px 0; padding: 10px; background: #f8f8f8; border-left: 3px solid #3FFF00; border-radius: 4px;">
+                      return `<div style="margin: 5px 0; padding: 10px; background: #f8f8f8; border-left: 3px solid #2AD636; border-radius: 4px;">
                         <div style="font-weight: bold; margin-bottom: 5px; color: #2a2a2a;">${ejercicio.nombre}</div>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; font-size: 0.85em; color: #666;">
                           ${ejercicio.peso ? `<div><strong>Peso:</strong> ${ejercicio.peso}</div>` : ''}

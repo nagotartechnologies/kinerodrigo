@@ -95,6 +95,34 @@ export default function ConfigUsuarios({ mostrarMensaje }: ConfigSectionProps) {
     }
   };
 
+  const handleCambiarPassword = async (usuario: Usuario) => {
+    const nueva = prompt(`Nueva contraseña para ${usuario.nombre} ${usuario.apellido} (mínimo 6 caracteres):`);
+    if (nueva === null) return;
+    if (nueva.length < 6) {
+      mostrarMensaje('La contraseña debe tener al menos 6 caracteres', true);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/usuarios/${usuario.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: nueva })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        mostrarMensaje('Contraseña actualizada');
+      } else {
+        mostrarMensaje(data.error || 'Error al cambiar la contraseña', true);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarMensaje('Error al cambiar la contraseña', true);
+    }
+  };
+
   const handleOpenModal = () => {
     cargarUsuarios();
     setShowModal(true);
@@ -215,6 +243,13 @@ export default function ConfigUsuarios({ mostrarMensaje }: ConfigSectionProps) {
                           <span className={`config-badge ${usuario.activo ? 'config-badge--success' : 'config-badge--error'}`}>
                             {usuario.activo ? 'ACTIVO' : 'INACTIVO'}
                           </span>
+                          <button
+                            className="btn-secondary"
+                            onClick={() => handleCambiarPassword(usuario)}
+                            style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                          >
+                            Contraseña
+                          </button>
                           <button 
                             className="btn-cancel"
                             onClick={() => handleEliminarUsuario(usuario.id)}

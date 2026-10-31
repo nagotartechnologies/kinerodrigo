@@ -1,48 +1,42 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import DynamicFavicon from '@/components/DynamicFavicon';
+import { MARCA } from '@/lib/marca';
 
 export const metadata: Metadata = {
-  title: 'KINE-CITAS - Sistema de Gestión Kinesiológica',
-  description: 'Sistema de gestión integral para centros kinesiológicos. Administra citas, pacientes, evaluaciones y planes de rehabilitación.',
+  title: MARCA.nombreCompleto,
+  description: MARCA.descripcion,
   manifest: '/api/manifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'KINE-CITAS',
+    title: MARCA.nombreCorto,
   },
   formatDetection: {
     telephone: false,
   },
+  metadataBase: new URL('https://rodrigoulloakine.netlify.app'),
+  // Íconos del brand kit (ver /brand-kit/web/head-snippet.html)
   icons: {
     icon: [
-      { url: '/icon-72x72.png', sizes: '72x72', type: 'image/png' },
-      { url: '/icon-96x96.png', sizes: '96x96', type: 'image/png' },
-      { url: '/icon-128x128.png', sizes: '128x128', type: 'image/png' },
-      { url: '/icon-144x144.png', sizes: '144x144', type: 'image/png' },
-      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-384x384.png', sizes: '384x384', type: 'image/png' },
-      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
     ],
-    apple: [
-      { url: '/icon-152x152.png', sizes: '152x152', type: 'image/png' },
-      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-    ],
-    shortcut: [
-      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
-    title: 'KINE-CITAS - Sistema de Gestión Kinesiológica',
-    description: 'Sistema de gestión integral para centros kinesiológicos. Administra citas, pacientes, evaluaciones y planes de rehabilitación.',
-    url: 'https://rodrigoulloakine.netlify.app',
-    siteName: 'KINE-CITAS',
+    title: MARCA.nombreCompleto,
+    description: MARCA.descripcion,
+    url: '/',
+    siteName: MARCA.nombreCompleto,
     images: [
       {
-        url: 'https://rodrigoulloakine.netlify.app/api/icon',
-        width: 512,
-        height: 512,
-        alt: 'KINE-CITAS Logo',
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: MARCA.nombreCompleto,
       },
     ],
     locale: 'es_CL',
@@ -50,14 +44,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KINE-CITAS - Sistema de Gestión Kinesiológica',
-    description: 'Sistema de gestión integral para centros kinesiológicos',
-    images: ['https://rodrigoulloakine.netlify.app/api/icon'],
+    title: MARCA.nombreCompleto,
+    description: MARCA.descripcion,
+    images: ['/og-image.png'],
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a',
+  themeColor: MARCA.colorFondo,
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -73,28 +67,18 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        {/* Apple Touch Icons - iOS */}
-        <link rel="apple-touch-icon" href="/api/icon" sizes="152x152" />
-        <link rel="apple-touch-icon" href="/api/icon" sizes="192x192" />
-        <link rel="apple-touch-icon" href="/api/icon" sizes="512x512" />
-        
         {/* Apple Web App Meta Tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="KINE-CITAS" />
-        
+        <meta name="apple-mobile-web-app-title" content={MARCA.nombreCorto} />
+
         {/* Android/Chrome */}
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="application-name" content="KINE-CITAS" />
-        
-        {/* Favicon */}
-        <link rel="icon" type="image/png" sizes="32x32" href="/icon-96x96.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/icon-72x72.png" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        
+        <meta name="application-name" content={MARCA.nombreCompleto} />
+
         {/* Microsoft Tiles */}
-        <meta name="msapplication-TileColor" content="#10b981" />
-        <meta name="msapplication-TileImage" content="/icon-144x144.png" />
+        <meta name="msapplication-TileColor" content={MARCA.colorFondo} />
+        <meta name="msapplication-TileImage" content="/android-chrome-192.png" />
         <meta name="msapplication-config" content="none" />
       </head>
       <body>

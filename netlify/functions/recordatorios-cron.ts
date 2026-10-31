@@ -1,5 +1,6 @@
 import { schedule } from '@netlify/functions';
 import { createClient } from '@libsql/client';
+import { nombreMarca } from '../../src/lib/marca';
 
 // Configuración de Turso
 const TURSO_URL = process.env.TURSO_DATABASE_URL;
@@ -173,7 +174,7 @@ async function formatearMensajeRecordatorio(cita: {
   const [year, month, day] = cita.fecha.split('-');
   const fechaFormateada = `${day}/${month}/${year}`;
 
-  const nombreCentro = await getConfigValue('nombre_centro', 'NAGO-KINE');
+  const nombreCentro = nombreMarca(await getConfigValue('nombre_centro', ''));
   const plantilla = await getConfigValue('whatsapp_mensaje_recordatorio', 
     '🏥 *RECORDATORIO DE CITA - {nombre_centro}*\n\nHola {paciente},\n\nTe recordamos tu cita programada:\n\n📅 *Fecha:* {fecha}\n🕐 *Hora:* {hora}\n⏱️ *Duración:* {duracion} minutos\n📋 *Tipo:* {tipo}\n\nPor favor, responde con una de las siguientes opciones:\n\n1️⃣ *CONFIRMAR* - Para confirmar tu asistencia\n2️⃣ *CANCELAR* - Para cancelar la cita\n3️⃣ *REAGENDAR* - Para cambiar la fecha/hora\n\n¡Te esperamos! 💪'
   );

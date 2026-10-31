@@ -317,7 +317,7 @@ export default function ConfiguracionModule() {
                           borderRadius: '6px',
                           fontSize: '0.85rem'
                         }}>
-                          <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: '#3FFF00' }}>
+                          <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: '#2AD636' }}>
                             <svg viewBox="0 0 24 24" fill="none" width="14" height="14" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }}>
                               <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

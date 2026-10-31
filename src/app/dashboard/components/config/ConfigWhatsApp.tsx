@@ -92,10 +92,10 @@ export default function ConfigWhatsApp({ getConfigValue, handleEditarConfig, han
           {/* Boton Test de Conexion */}
           <div className="config-item" style={{
             background: testResult 
-              ? testResult.success ? 'rgba(63, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)'
+              ? testResult.success ? 'rgba(42, 214, 54, 0.05)' : 'rgba(255, 0, 0, 0.05)'
               : 'transparent',
             border: testResult 
-              ? `1px solid ${testResult.success ? '#3FFF00' : '#ff4444'}`
+              ? `1px solid ${testResult.success ? '#2AD636' : '#ff4444'}`
               : undefined
           }}>
             <div className="config-item-info">

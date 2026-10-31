@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { comparePassword, generateToken, setAuthCookie } from '@/lib/auth';
+import { comparePassword, generateToken, setAuthCookie, DIAS_SESION_RECORDADA, DIAS_SESION_NORMAL } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   try {
     const parseStart = Date.now();
-    const { email, password } = await request.json();
+    const { email, password, recordarme } = await request.json();
     console.log(`⏱️ Parse JSON: ${Date.now() - parseStart}ms`);
 
     // Validar campos
@@ -51,8 +51,9 @@ export async function POST(request: NextRequest) {
       apellido: user.apellido,
     };
 
-    const token = generateToken(userPayload);
-    await setAuthCookie(token);
+    const diasSesion = recordarme === false ? DIAS_SESION_NORMAL : DIAS_SESION_RECORDADA;
+    const token = generateToken(userPayload, diasSesion);
+    await setAuthCookie(token, diasSesion);
     console.log(`⏱️ Token generation: ${Date.now() - tokenStart}ms`);
 
     // Retornar usuario sin contraseña

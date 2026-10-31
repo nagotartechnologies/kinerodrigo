@@ -436,7 +436,7 @@ export async function initDatabase() {
     // Valores iniciales para todas las claves de configuracion del sistema.
     // Se usan INSERT OR IGNORE, asi que si ya existen no se sobreescriben.
     const configDefault = [
-      { clave: 'nombre_centro', valor: 'NAGO-KINE', tipo: 'text', categoria: 'general', descripcion: 'Nombre del centro' },
+      { clave: 'nombre_centro', valor: 'Rodrigo Ulloa · Kinesiólogo Deportivo', tipo: 'text', categoria: 'general', descripcion: 'Nombre del centro' },
       { clave: 'logo_url', valor: '', tipo: 'image', categoria: 'general', descripcion: 'Logo del centro' },
       { clave: 'direccion', valor: 'Av. Principal 123', tipo: 'text', categoria: 'general', descripcion: 'Dirección' },
       { clave: 'telefono_contacto', valor: '+56 9 4888 1923', tipo: 'text', categoria: 'general', descripcion: 'Teléfono de contacto' },

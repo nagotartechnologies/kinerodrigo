@@ -842,7 +842,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
     switch (estado) {
       case 'completada': return '#10b981';
       case 'programada': return '#3b82f6';
-      case 'confirmada': return '#3FFF00';
+      case 'confirmada': return '#2AD636';
       case 'cancelada': return '#ef4444';
       default: return '#a0a0a0';
     }
@@ -1021,7 +1021,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
               return (
                 <div key={grupo.pacienteId} style={{
                   background: '#1a1a1a',
-                  border: isExpanded ? '2px solid #3FFF00' : '1px solid #2a2a2a',
+                  border: isExpanded ? '2px solid #2AD636' : '1px solid #2a2a2a',
                   borderRadius: '12px',
                   overflow: 'hidden',
                   transition: 'all 0.3s ease'
@@ -1037,13 +1037,13 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                       gap: '1rem',
                       transition: 'background 0.2s'
                     }}
-                    onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = 'rgba(63, 255, 0, 0.03)'; }}
+                    onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = 'rgba(42, 214, 54, 0.03)'; }}
                     onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}
                   >
                     {/* Fila superior: Nombre + Flecha */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
-                        <span style={{ fontSize: '1.1rem', color: tienePendiente ? '#3FFF00' : '#10b981', flexShrink: 0 }}>
+                        <span style={{ fontSize: '1.1rem', color: tienePendiente ? '#2AD636' : '#10b981', flexShrink: 0 }}>
                           {tienePendiente ? '●' : '✓'}
                         </span>
                         <h3 style={{ 
@@ -1130,7 +1130,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                           <div style={{
                             width: `${Math.min(progresoPct, 100)}%`,
                             height: '100%',
-                            background: progresoPct >= 100 ? '#10b981' : '#3FFF00',
+                            background: progresoPct >= 100 ? '#10b981' : '#2AD636',
                             borderRadius: '3px',
                             transition: 'width 0.5s ease'
                           }} />
@@ -1291,9 +1291,9 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                               style={{
                                 padding: '0.5rem 1rem',
                                 borderRadius: '8px',
-                                border: '1px solid #3FFF00',
+                                border: '1px solid #2AD636',
                                 background: 'transparent',
-                                color: '#3FFF00',
+                                color: '#2AD636',
                                 fontWeight: 600,
                                 fontSize: '0.85rem',
                                 cursor: 'pointer',
@@ -1499,8 +1499,8 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                                 flexDirection: 'column',
                                 gap: '0.5rem',
                                 padding: '0.75rem',
-                                background: isProxima ? 'rgba(63, 255, 0, 0.05)' : '#0a0a0a',
-                                border: isProxima ? '1px solid rgba(63, 255, 0, 0.3)' : '1px solid #1a1a1a',
+                                background: isProxima ? 'rgba(42, 214, 54, 0.05)' : '#0a0a0a',
+                                border: isProxima ? '1px solid rgba(42, 214, 54, 0.3)' : '1px solid #1a1a1a',
                                 borderRadius: '8px',
                                 transition: 'all 0.2s'
                               }}>
@@ -1514,7 +1514,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                                     borderRadius: '50%',
                                     background: sesion.estado === 'completada' ? '#10b981' 
                                       : sesion.estado === 'cancelada' ? '#ef4444' 
-                                      : isProxima ? '#3FFF00' : '#333',
+                                      : isProxima ? '#2AD636' : '#333',
                                     color: sesion.estado === 'completada' || isProxima ? '#0a0a0a' : '#888',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -1550,7 +1550,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                                           <span>Borg: <span style={{ color: getBorgColor(sesion.borgPercepcion) }}>{sesion.borgPercepcion}/10</span></span>
                                         )}
                                         {sesion.movilidad && <span>Mov: <span style={{ color: '#3b82f6', textTransform: 'capitalize' }}>{sesion.movilidad}</span></span>}
-                                        {sesion.progresoGeneral && <span style={{ color: '#3FFF00', textTransform: 'capitalize' }}>{sesion.progresoGeneral.replace(/_/g, ' ')}</span>}
+                                        {sesion.progresoGeneral && <span style={{ color: '#2AD636', textTransform: 'capitalize' }}>{sesion.progresoGeneral.replace(/_/g, ' ')}</span>}
                                         {sesion.ejerciciosRealizados?.length > 0 && <span>{sesion.ejerciciosRealizados.length} ejercicios</span>}
                                       </div>
                                     )}
@@ -1755,9 +1755,9 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                         style={{
                           padding: '0.5rem 1rem',
                           borderRadius: '20px',
-                          border: formData.progresoGeneral === opcion.value ? '2px solid #3FFF00' : '1px solid #333',
-                          background: formData.progresoGeneral === opcion.value ? 'rgba(63, 255, 0, 0.15)' : '#1a1a1a',
-                          color: formData.progresoGeneral === opcion.value ? '#3FFF00' : '#ccc',
+                          border: formData.progresoGeneral === opcion.value ? '2px solid #2AD636' : '1px solid #333',
+                          background: formData.progresoGeneral === opcion.value ? 'rgba(42, 214, 54, 0.15)' : '#1a1a1a',
+                          color: formData.progresoGeneral === opcion.value ? '#2AD636' : '#ccc',
                           cursor: 'pointer',
                           fontSize: '0.85rem',
                           fontWeight: formData.progresoGeneral === opcion.value ? 600 : 400,
@@ -1835,7 +1835,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                   </button>
                 ) : (
                   <div style={{ 
-                    border: '1px solid #3FFF00', 
+                    border: '1px solid #2AD636', 
                     borderRadius: '8px', 
                     padding: '1rem', 
                     marginBottom: '1rem',
@@ -2102,7 +2102,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 'bold', color: '#3FFF00', marginBottom: '0.5rem' }}>
+                          <div style={{ fontWeight: 'bold', color: '#2AD636', marginBottom: '0.5rem' }}>
                             {ejercicio.nombre}
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', fontSize: '0.85rem', color: '#888' }}>
@@ -2204,7 +2204,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
             
             <div style={{ padding: '1.5rem' }}>
               <p style={{ color: '#888', marginBottom: '1rem' }}>
-                Total de ejercicios: <strong style={{ color: '#3FFF00' }}>{bibliotecaEjercicios.length}</strong>
+                Total de ejercicios: <strong style={{ color: '#2AD636' }}>{bibliotecaEjercicios.length}</strong>
               </p>
 
               {bibliotecaEjercicios.length === 0 ? (
@@ -2246,7 +2246,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                         alignItems: 'center',
                         transition: 'border-color 0.2s'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.borderColor = '#3FFF00'}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = '#2AD636'}
                       onMouseLeave={(e) => e.currentTarget.style.borderColor = '#2a2a2a'}
                     >
                       <div style={{ flex: 1 }}>
@@ -2262,8 +2262,8 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                           <div style={{ 
                             display: 'inline-block',
                             fontSize: '0.75rem', 
-                            color: '#3FFF00',
-                            background: 'rgba(63, 255, 0, 0.1)',
+                            color: '#2AD636',
+                            background: 'rgba(42, 214, 54, 0.1)',
                             padding: '0.2rem 0.6rem',
                             borderRadius: '12px',
                             marginTop: '0.25rem'
@@ -2350,8 +2350,8 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
             
             <div className="modal-body">
               {pacienteEvaluacion && (
-                <div style={{ marginBottom: '1rem', padding: '1rem', background: '#0a0a0a', borderRadius: '8px', border: '1px solid #3FFF00' }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#3FFF00' }}>
+                <div style={{ marginBottom: '1rem', padding: '1rem', background: '#0a0a0a', borderRadius: '8px', border: '1px solid #2AD636' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#2AD636' }}>
                     {pacienteEvaluacion.nombre}
                   </h4>
                   <p style={{ margin: 0, color: '#888', fontSize: '0.875rem' }}>
@@ -2416,7 +2416,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
           <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px' }}>
             <div className="modal-header">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '24px', height: '24px', color: '#3FFF00' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '24px', height: '24px', color: '#2AD636' }}>
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
                 </svg>
                 Progreso del Tratamiento
@@ -2429,14 +2429,14 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
               <div style={{ 
                 marginBottom: '1.5rem', 
                 padding: '1.5rem', 
-                background: 'linear-gradient(135deg, rgba(63, 255, 0, 0.1) 0%, rgba(63, 255, 0, 0.05) 100%)', 
+                background: 'linear-gradient(135deg, rgba(42, 214, 54, 0.1) 0%, rgba(42, 214, 54, 0.05) 100%)', 
                 borderRadius: '12px', 
-                border: '2px solid #3FFF00' 
+                border: '2px solid #2AD636' 
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                      <h4 style={{ margin: 0, color: '#3FFF00', fontSize: '1.5rem' }}>
+                      <h4 style={{ margin: 0, color: '#2AD636', fontSize: '1.5rem' }}>
                         {pacienteProgreso.nombre}
                       </h4>
                       {pacienteProgreso.estado_paciente === 'alta' && (
@@ -2475,7 +2475,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                     </p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#3FFF00' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#2AD636' }}>
                       {sesionesProgreso.length}
                     </div>
                     <div style={{ fontSize: '0.875rem', color: '#888' }}>
@@ -2488,7 +2488,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
               {/* Métricas de Progreso */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <h4 style={{ marginBottom: '1rem', color: '#e0e0e0', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3FFF00" strokeWidth="2">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2AD636" strokeWidth="2">
                     <path d="M3 3v18h18M7 16l4-4 4 4 6-6"/>
                   </svg>
                   Métricas Generales
@@ -2555,7 +2555,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
               {/* Historial de Sesiones */}
               <div>
                 <h4 style={{ marginBottom: '1rem', color: '#e0e0e0', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3FFF00" strokeWidth="2">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2AD636" strokeWidth="2">
                     <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                   </svg>
                   Historial de Sesiones
@@ -2582,7 +2582,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                           <div style={{
                             width: '40px',
                             height: '40px',
-                            background: '#3FFF00',
+                            background: '#2AD636',
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
@@ -2645,7 +2645,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                         {sesion.progresoGeneral && (
                           <div>
                             <div style={{ fontSize: '0.7rem', color: '#888', marginBottom: '0.25rem' }}>Progreso</div>
-                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#3FFF00', textTransform: 'capitalize' }}>{sesion.progresoGeneral}</div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2AD636', textTransform: 'capitalize' }}>{sesion.progresoGeneral}</div>
                           </div>
                         )}
                       </div>
@@ -2660,12 +2660,12 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                               if (typeof ejercicio === 'string') {
                                 return (
                                   <span key={idx} style={{
-                                    background: 'rgba(63, 255, 0, 0.1)',
-                                    color: '#3FFF00',
+                                    background: 'rgba(42, 214, 54, 0.1)',
+                                    color: '#2AD636',
                                     padding: '0.25rem 0.75rem',
                                     borderRadius: '12px',
                                     fontSize: '0.8rem',
-                                    border: '1px solid rgba(63, 255, 0, 0.3)',
+                                    border: '1px solid rgba(42, 214, 54, 0.3)',
                                     display: 'inline-block',
                                     width: 'fit-content'
                                   }}>
@@ -2676,13 +2676,13 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                               // Formato nuevo (objeto) - mostrar con detalles
                               return (
                                 <div key={idx} style={{
-                                  background: 'rgba(63, 255, 0, 0.05)',
-                                  border: '1px solid rgba(63, 255, 0, 0.2)',
+                                  background: 'rgba(42, 214, 54, 0.05)',
+                                  border: '1px solid rgba(42, 214, 54, 0.2)',
                                   borderRadius: '8px',
                                   padding: '0.5rem',
                                   fontSize: '0.8rem'
                                 }}>
-                                  <div style={{ fontWeight: 600, color: '#3FFF00', marginBottom: '0.25rem' }}>
+                                  <div style={{ fontWeight: 600, color: '#2AD636', marginBottom: '0.25rem' }}>
                                     {ejercicio.nombre}
                                   </div>
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: '#aaa' }}>
@@ -2715,7 +2715,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                         }}>
                           {sesion.notasSesion && (
                             <div style={{ marginBottom: '0.5rem' }}>
-                              <strong style={{ color: '#3FFF00' }}>Notas:</strong> {sesion.notasSesion}
+                              <strong style={{ color: '#2AD636' }}>Notas:</strong> {sesion.notasSesion}
                             </div>
                           )}
                           {sesion.observaciones && (
@@ -2761,7 +2761,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 </svg>
                 Completar Sesión
                 {sesionCompletar.numeroSesion && (
-                  <span style={{ color: '#3FFF00', fontSize: '0.9rem' }}>
+                  <span style={{ color: '#2AD636', fontSize: '0.9rem' }}>
                     #{sesionCompletar.numeroSesion}{sesionCompletar.sesionesProgramadas ? ` / ${sesionCompletar.sesionesProgramadas}` : ''}
                   </span>
                 )}
@@ -2897,9 +2897,9 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                       style={{
                         padding: '0.5rem 1rem',
                         borderRadius: '20px',
-                        border: completarForm.progresoGeneral === opcion.value ? '2px solid #3FFF00' : '1px solid #333',
-                        background: completarForm.progresoGeneral === opcion.value ? 'rgba(63, 255, 0, 0.15)' : '#1a1a1a',
-                        color: completarForm.progresoGeneral === opcion.value ? '#3FFF00' : '#ccc',
+                        border: completarForm.progresoGeneral === opcion.value ? '2px solid #2AD636' : '1px solid #333',
+                        background: completarForm.progresoGeneral === opcion.value ? 'rgba(42, 214, 54, 0.15)' : '#1a1a1a',
+                        color: completarForm.progresoGeneral === opcion.value ? '#2AD636' : '#ccc',
                         cursor: 'pointer',
                         fontSize: '0.85rem',
                         fontWeight: completarForm.progresoGeneral === opcion.value ? 600 : 400,
@@ -2982,9 +2982,9 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                       style={{
                         padding: '0.4rem 0.8rem',
                         borderRadius: '6px',
-                        border: '1px solid #3FFF00',
+                        border: '1px solid #2AD636',
                         background: 'transparent',
-                        color: '#3FFF00',
+                        color: '#2AD636',
                         cursor: 'pointer',
                         fontSize: '0.8rem'
                       }}
@@ -2996,7 +2996,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
 
                 {/* Selector de ejercicio inline */}
                 {mostrarSelectorEjercicioCompletar && (
-                  <div style={{ border: '1px solid #3FFF00', borderRadius: '8px', padding: '0.75rem', marginBottom: '0.75rem', background: '#1a1a1a' }}>
+                  <div style={{ border: '1px solid #2AD636', borderRadius: '8px', padding: '0.75rem', marginBottom: '0.75rem', background: '#1a1a1a' }}>
                     {!modoCrearEjercicioCompletar ? (
                       <>
                         <input
@@ -3134,7 +3134,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                       <div key={idx} style={{
                         padding: '0.5rem 0.75rem',
                         background: editandoEjercicioIdx === idx ? '#1a1a1a' : '#0a0a0a',
-                        border: editandoEjercicioIdx === idx ? '1px solid #3FFF00' : '1px solid #2a2a2a',
+                        border: editandoEjercicioIdx === idx ? '1px solid #2AD636' : '1px solid #2a2a2a',
                         borderRadius: '6px',
                         fontSize: '0.85rem',
                         transition: 'all 0.2s ease'
@@ -3144,7 +3144,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                             style={{ flex: 1, cursor: 'pointer' }}
                             onClick={() => setEditandoEjercicioIdx(editandoEjercicioIdx === idx ? null : idx)}
                           >
-                            <span style={{ color: '#3FFF00', fontWeight: 600 }}>{ej.nombre}</span>
+                            <span style={{ color: '#2AD636', fontWeight: 600 }}>{ej.nombre}</span>
                             {editandoEjercicioIdx !== idx && (
                               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: '#888' }}>
                                 {ej.peso && <span>Peso: {ej.peso}</span>}
@@ -3159,7 +3159,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                             <button
                               type="button"
                               onClick={() => setEditandoEjercicioIdx(editandoEjercicioIdx === idx ? null : idx)}
-                              style={{ background: 'none', border: 'none', color: editandoEjercicioIdx === idx ? '#3FFF00' : '#666', cursor: 'pointer', padding: '0 0.25rem', display: 'flex', alignItems: 'center' }}
+                              style={{ background: 'none', border: 'none', color: editandoEjercicioIdx === idx ? '#2AD636' : '#666', cursor: 'pointer', padding: '0 0.25rem', display: 'flex', alignItems: 'center' }}
                               title="Editar"
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px' }}>

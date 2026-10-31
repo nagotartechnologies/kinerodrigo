@@ -123,18 +123,31 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
 
 ## Advertencias conocidas
 
-- **Auth en la API inconsistente**: el middleware excluye `/api`, y solo ~21 de ~57 rutas llaman a `verifyAuth`/`getCurrentUser`. Pagos, gastos, finanzas, usuarios, configuraciones, migraciones, diagnósticos y otras rutas quedan expuestas sin sesión. Hay que tenerlo en cuenta antes de agregar o modificar endpoints. Las rutas nuevas deben validar la sesión, salvo los webhooks.
+- **Auth en la API inconsistente**: el middleware excluye `/api`, y solo ~21 de ~57 rutas llaman a `verifyAuth`/`getCurrentUser`. Pagos, gastos, finanzas, configuraciones, migraciones, diagnósticos y otras rutas quedan expuestas sin sesión. `/api/usuarios` y `/api/usuarios/[id]` ya validan la sesión e impiden eliminar o desactivar el propio usuario y el último activo. Hay que tenerlo en cuenta antes de agregar o modificar endpoints. Las rutas nuevas deben validar la sesión, salvo los webhooks.
 - El fallback de `JWT_SECRET` en `src/lib/auth.ts` es inseguro.
 - Bugs de rendimiento pendientes en `CitasModule.tsx` (`esHorarioBloqueado` sin memoizar, IIFE de la vista "hoy", doble `filter` en el botón de recordatorios) y `console.log` excesivos en las APIs. Ver `docs/bugs-rendimiento.md`.
 - Los módulos son componentes gigantes: hay que editarlos de forma quirúrgica y respetar su estilo (estado local con `useState`, `fetch` directo a `/api/*`).
 - `README.md` y `docs/plans/modulos-documentacion.md` mencionan Next 14/15 y better-sqlite3. **La fuente de verdad es el código**.
 - `check-button-responses` está desactivada a propósito: el proveedor actual (Ultramsg) entrega las respuestas por webhook.
 
+## Marca
+
+- Marca: **Rodrigo Ulloa · Kinesiólogo Deportivo**, con verde `#2AD636` (acento de toda la UI, `--accent`) y fondo de marca `#0E0F0E`. La fuente única es `src/lib/marca.ts` (`MARCA`, incluye las rutas de logos).
+  - Usar `nombreMarca(valorConfig)` para el nombre visible: devuelve `nombre_centro` si fue personalizado. Los valores legacy sembrados (`NAGO-KINE`, `KINE-CITAS`) cuentan como "sin configurar".
+- Assets oficiales en `/brand-kit` (ver su README):
+  - Ya copiados: favicons, `apple-touch-icon`, `android-chrome-*`, `maskable-512` y `og-image` a `/public`, y los logos SVG a `/public/brand`.
+  - Uso de logos: login con `logo-vertical-oscuro`, header con `logo-horizontal-oscuro`, pantalla de carga con `isotipo`.
+  - `public/icon-*.png` se regeneran con sharp desde `brand-kit/svg/app-icon.svg`.
+- No usar `#3FFF00` (era el verde neón anterior).
+- `logo_url` de configuración ya no define favicon ni íconos; solo se usa en el PDF de la ficha.
+- Sesión: "Mantener sesión iniciada" del login, 30 días marcado y 1 día sin marcar (`DIAS_SESION_*` en `auth.ts`).
+
 ## UI mobile-first (en curso)
 
 - Los tokens de diseño están en `src/app/globals.css` (`--surface-*`, `--accent`, `--estado-*`, `--space-*`, `--tap`, `--sat/--sab` safe areas). Usarlos en CSS nuevo en vez de colores hardcodeados.
 - El CSS nuevo va con base para móvil y `@media (min-width: 768px/769px)` para escritorio. Ya migrado: el shell del dashboard (al inicio de `dashboard.css`), los modales (bottom-sheet en móvil), los toasts (`.toast--ok/--error`) y el módulo Citas (`.citas-module` en `calendario.css`).
 - Las zonas con scroll horizontal propio deben llevar `data-no-swipe` para no disparar el swipe entre módulos.
+- La navegación entre módulos está en `components/SidebarNav.tsx`, un drawer que se abre con ☰ en el header o deslizando desde los 24 px del borde izquierdo (`BORDE_SIDEBAR_PX`). Ya no existe la fila de chips de módulos; el swipe entre módulos y la flecha ← se mantienen.
 - La vista semanal de Citas es `components/SemanaCalendario.tsx`, al estilo Google Calendar: citas con posición absoluta por hora y duración, solapes en columnas y línea de hora actual. Interacciones:
   - Arrastrar mueve la cita y estirar cambia la duración, con pasos de 15 minutos.
   - En touch, el arrastre se activa con un toque largo de 400 ms.

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { nombreMarca } from '@/lib/marca';
 import { formatearFechaLocal } from '../utils';
 import { generarFichaPDF } from '../utils/generarFichaPDF';
 
@@ -200,7 +201,7 @@ export default function FichaCompletaModal({
       paciente: pacienteSeleccionado,
       sesiones: sesionesPaciente,
       logoUrl: getConfigValue('logo_url', ''),
-      nombreCentro: getConfigValue('nombre_centro', 'NAGO-KINE'),
+      nombreCentro: nombreMarca(getConfigValue('nombre_centro', '')),
     });
   };
 
@@ -516,8 +517,8 @@ export default function FichaCompletaModal({
                             fontSize: '0.62rem',
                             padding: '1px 6px',
                             borderRadius: '10px',
-                            background: esActual ? 'rgba(63, 255, 0, 0.15)' : 'rgba(148, 163, 184, 0.15)',
-                            color: esActual ? '#3FFF00' : '#94a3b8',
+                            background: esActual ? 'rgba(42, 214, 54, 0.15)' : 'rgba(148, 163, 184, 0.15)',
+                            color: esActual ? '#2AD636' : '#94a3b8',
                             textTransform: 'uppercase'
                           }}>
                             {esActual ? 'Actual' : 'Cerrado'}
@@ -540,7 +541,7 @@ export default function FichaCompletaModal({
               }}>
                 {[
                   { label: 'Citas', value: estadisticasPaciente.totalCitas, color: '#3b82f6' },
-                  { label: 'Sesiones', value: `${estadisticasPaciente.sesionesCompletadas}/${estadisticasPaciente.totalSesiones}`, color: '#3FFF00' },
+                  { label: 'Sesiones', value: `${estadisticasPaciente.sesionesCompletadas}/${estadisticasPaciente.totalSesiones}`, color: '#2AD636' },
                   { label: 'Pagos', value: `$${(estadisticasPaciente.totalPagado || 0).toLocaleString()}`, color: '#f59e0b' },
                   { label: 'Pendientes', value: estadisticasPaciente.citasPendientes, color: '#ef4444' },
                 ].map((stat, i) => (
@@ -567,7 +568,7 @@ export default function FichaCompletaModal({
                 marginBottom: '1.5rem',
                 border: '1px solid #333'
               }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: '#3FFF00', fontSize: '0.9rem' }}>
+                <h4 style={{ margin: '0 0 1rem 0', color: '#2AD636', fontSize: '0.9rem' }}>
                   Evolución del Dolor
                 </h4>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', height: '120px', padding: '0 0.5rem' }}>
@@ -601,12 +602,12 @@ export default function FichaCompletaModal({
                           <div style={{
                             flex: 1,
                             height: `${alturaFinal}%`,
-                            background: mejoro ? 'rgba(63, 255, 0, 0.4)' : 'rgba(239, 68, 68, 0.6)',
+                            background: mejoro ? 'rgba(42, 214, 54, 0.4)' : 'rgba(239, 68, 68, 0.6)',
                             borderRadius: '3px 3px 0 0',
                             minHeight: '4px',
                             position: 'relative'
                           }} title={`Final: ${punto.dolorFinal}/10`}>
-                            <span style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.6rem', color: mejoro ? '#3FFF00' : '#ef4444' }}>
+                            <span style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.6rem', color: mejoro ? '#2AD636' : '#ef4444' }}>
                               {punto.dolorFinal}
                             </span>
                           </div>
@@ -627,10 +628,10 @@ export default function FichaCompletaModal({
                     <div style={{
                       marginTop: '0.75rem',
                       padding: '0.5rem 0.75rem',
-                      background: 'rgba(63, 255, 0, 0.1)',
+                      background: 'rgba(42, 214, 54, 0.1)',
                       borderRadius: '8px',
                       fontSize: '0.8rem',
-                      color: '#3FFF00'
+                      color: '#2AD636'
                     }}>
                       Mejoría del <strong>{mejoriaPct}%</strong> en dolor (de {primero.dolorInicial}/10 a {ultimo.dolorFinal}/10)
                     </div>
@@ -794,7 +795,7 @@ export default function FichaCompletaModal({
                     <div key={cita.id} style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       padding: '0.75rem', background: '#1a1a1a', borderRadius: '8px',
-                      borderLeft: `3px solid ${cita.estado === 'completada' ? '#10b981' : cita.estado === 'confirmada' ? '#3FFF00' : cita.estado === 'cancelada' ? '#ef4444' : '#3b82f6'}`
+                      borderLeft: `3px solid ${cita.estado === 'completada' ? '#10b981' : cita.estado === 'confirmada' ? '#2AD636' : cita.estado === 'cancelada' ? '#ef4444' : '#3b82f6'}`
                     }}>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formatearFechaLocal(cita.fecha)} - {cita.hora}</div>
@@ -802,8 +803,8 @@ export default function FichaCompletaModal({
                       </div>
                       <span style={{
                         padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase',
-                        background: cita.estado === 'completada' ? 'rgba(16, 185, 129, 0.15)' : cita.estado === 'confirmada' ? 'rgba(63, 255, 0, 0.15)' : cita.estado === 'cancelada' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                        color: cita.estado === 'completada' ? '#10b981' : cita.estado === 'confirmada' ? '#3FFF00' : cita.estado === 'cancelada' ? '#ef4444' : '#3b82f6'
+                        background: cita.estado === 'completada' ? 'rgba(16, 185, 129, 0.15)' : cita.estado === 'confirmada' ? 'rgba(42, 214, 54, 0.15)' : cita.estado === 'cancelada' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                        color: cita.estado === 'completada' ? '#10b981' : cita.estado === 'confirmada' ? '#2AD636' : cita.estado === 'cancelada' ? '#ef4444' : '#3b82f6'
                       }}>{cita.estado}</span>
                     </div>
                   ))}
@@ -847,7 +848,7 @@ export default function FichaCompletaModal({
               <h3 className="section-title">
                 Historial de Sesiones 
                 {sesionesFiltradas.length > 0 && (
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#3FFF00' }}>({sesionesFiltradas.length})</span>
+                  <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#2AD636' }}>({sesionesFiltradas.length})</span>
                 )}
               </h3>
               <div className="sesiones-list">
@@ -877,7 +878,7 @@ export default function FichaCompletaModal({
                             {formatearFechaLocal(sesion.fecha)} - {sesion.hora}
                           </div>
                           <span className="badge" style={{ 
-                            backgroundColor: sesion.estado === 'completada' ? '#10b981' : sesion.estado === 'programada' ? '#3b82f6' : sesion.estado === 'confirmada' ? '#3FFF00' : '#ef4444'
+                            backgroundColor: sesion.estado === 'completada' ? '#10b981' : sesion.estado === 'programada' ? '#3b82f6' : sesion.estado === 'confirmada' ? '#2AD636' : '#ef4444'
                           }}>{sesion.estado}</span>
                         </div>
                         
@@ -936,7 +937,7 @@ export default function FichaCompletaModal({
                           {sesion.progresoGeneral && (
                             <div className="sesion-info-row">
                               <strong>Progreso:</strong> 
-                              <span style={{ marginLeft: '0.5rem', color: '#3FFF00', textTransform: 'capitalize' }}>
+                              <span style={{ marginLeft: '0.5rem', color: '#2AD636', textTransform: 'capitalize' }}>
                                 {sesion.progresoGeneral.replace(/_/g, ' ')}
                               </span>
                             </div>
@@ -949,14 +950,14 @@ export default function FichaCompletaModal({
                                 {sesion.ejerciciosRealizados.map((ejercicio: any, idx: number) => {
                                   if (typeof ejercicio === 'string') {
                                     return (
-                                      <div key={idx} style={{ padding: '0.5rem', background: 'rgba(63, 255, 0, 0.1)', borderLeft: '3px solid #3FFF00', borderRadius: '4px' }}>
+                                      <div key={idx} style={{ padding: '0.5rem', background: 'rgba(42, 214, 54, 0.1)', borderLeft: '3px solid #2AD636', borderRadius: '4px' }}>
                                         <strong>{ejercicio}</strong>
                                       </div>
                                     );
                                   }
                                   return (
-                                    <div key={idx} style={{ padding: '0.75rem', background: 'rgba(63, 255, 0, 0.1)', borderLeft: '3px solid #3FFF00', borderRadius: '4px' }}>
-                                      <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#3FFF00' }}>{ejercicio.nombre}</div>
+                                    <div key={idx} style={{ padding: '0.75rem', background: 'rgba(42, 214, 54, 0.1)', borderLeft: '3px solid #2AD636', borderRadius: '4px' }}>
+                                      <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#2AD636' }}>{ejercicio.nombre}</div>
                                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.25rem', fontSize: '0.85rem', color: '#ccc' }}>
                                         {ejercicio.peso && <div><strong>Peso:</strong> {ejercicio.peso}</div>}
                                         {ejercicio.repeticiones && <div><strong>Repeticiones:</strong> {ejercicio.repeticiones}</div>}
@@ -1062,7 +1063,7 @@ export default function FichaCompletaModal({
 
             {/* Estado de Tratamiento */}
             <div className="ficha-section" style={{ marginTop: '2rem' }}>
-              <h3 className="section-title" style={{ color: '#3FFF00', borderBottom: '2px solid #3FFF00', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+              <h3 className="section-title" style={{ color: '#2AD636', borderBottom: '2px solid #2AD636', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
                 Estado del Tratamiento
               </h3>
               {modoEdicion ? (
@@ -1089,16 +1090,16 @@ export default function FichaCompletaModal({
                       background: esAlta ? 'rgba(16, 185, 129, 0.15)' :
                                   esSeguimiento ? 'rgba(59, 130, 246, 0.15)' :
                                   esAbandono ? 'rgba(239, 68, 68, 0.15)' :
-                                  'rgba(63, 255, 0, 0.15)',
+                                  'rgba(42, 214, 54, 0.15)',
                       color: esAlta ? '#10b981' :
                              esSeguimiento ? '#3b82f6' :
                              esAbandono ? '#ef4444' :
-                             '#3FFF00',
+                             '#2AD636',
                       border: `1px solid ${
                         esAlta ? '#10b981' :
                         esSeguimiento ? '#3b82f6' :
                         esAbandono ? '#ef4444' :
-                        '#3FFF00'
+                        '#2AD636'
                       }40`
                     }}>
                       {esAlta ? 'Alta' :
@@ -1119,7 +1120,7 @@ export default function FichaCompletaModal({
               if (!evalFinal) return null;
               return (
                 <div className="ficha-section" style={{ marginTop: '2rem' }}>
-                  <h3 className="section-title" style={{ color: '#3FFF00', borderBottom: '2px solid #3FFF00', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                  <h3 className="section-title" style={{ color: '#2AD636', borderBottom: '2px solid #2AD636', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
                     Evaluación Final del Tratamiento
                     {episodioSeleccionado && (
                       <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: '#8b5cf6' }}>
@@ -1128,7 +1129,7 @@ export default function FichaCompletaModal({
                     )}
                   </h3>
                   <div style={{
-                    background: '#0a0a0a', border: '1px solid #3FFF00', borderRadius: '8px',
+                    background: '#0a0a0a', border: '1px solid #2AD636', borderRadius: '8px',
                     padding: '1.5rem', whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#e0e0e0'
                   }}>
                     {evalFinal}

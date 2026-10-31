@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { nombreMarca } from '@/lib/marca';
 import { formatearFechaLocal, fechaAString } from '../utils';
 import { generarFichaPDF } from '../utils/generarFichaPDF';
 import FichaCompletaModal from './FichaCompletaModal';
@@ -420,7 +421,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
       paciente: pacienteSeleccionado,
       sesiones: sesionesPaciente,
       logoUrl: getConfigValue('logo_url', ''),
-      nombreCentro: getConfigValue('nombre_centro', 'NAGO-KINE'),
+      nombreCentro: nombreMarca(getConfigValue('nombre_centro', '')),
     });
   };
 
@@ -604,7 +605,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
           
           <div style={{
             background: '#1a1a1a',
-            border: filtroEstado === 'todos' ? '1px solid #3FFF00' : '1px solid rgba(255, 255, 255, 0.06)',
+            border: filtroEstado === 'todos' ? '1px solid #2AD636' : '1px solid rgba(255, 255, 255, 0.06)',
             borderRadius: '8px',
             padding: '1rem',
             cursor: 'pointer',
@@ -614,7 +615,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
               fontSize: '0.7rem', 
               fontWeight: 600,
               letterSpacing: '0.05em',
-              color: filtroEstado === 'todos' ? '#3FFF00' : '#888', 
+              color: filtroEstado === 'todos' ? '#2AD636' : '#888', 
               marginBottom: '0.5rem',
               textTransform: 'uppercase'
             }}>
@@ -755,16 +756,16 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                           background: esAlta ? 'rgba(16, 185, 129, 0.15)' :
                                       esSeguimiento ? 'rgba(59, 130, 246, 0.15)' :
                                       esAbandono ? 'rgba(239, 68, 68, 0.15)' :
-                                      'rgba(63, 255, 0, 0.15)',
+                                      'rgba(42, 214, 54, 0.15)',
                           color: esAlta ? '#10b981' :
                                  esSeguimiento ? '#3b82f6' :
                                  esAbandono ? '#ef4444' :
-                                 '#3FFF00',
+                                 '#2AD636',
                           border: `1px solid ${
                             esAlta ? '#10b981' :
                             esSeguimiento ? '#3b82f6' :
                             esAbandono ? '#ef4444' :
-                            '#3FFF00'
+                            '#2AD636'
                           }40`
                         }}>
                           {esAlta ? 'Alta' :
@@ -1106,7 +1107,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
         <div className="modal-overlay" onClick={() => { setShowMiniSesion(false); setPacienteCreado(null); }}>
           <div onClick={(e) => e.stopPropagation()} style={{
             background: '#1a1a1a',
-            border: '2px solid #3FFF00',
+            border: '2px solid #2AD636',
             borderRadius: '16px',
             padding: '2rem',
             width: '100%',
@@ -1118,7 +1119,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
             <h3 style={{ color: '#fff', margin: '0 0 0.25rem 0', fontSize: '1.2rem' }}>
               Paciente creado
             </h3>
-            <p style={{ color: '#3FFF00', fontWeight: 600, margin: '0 0 0.25rem 0', fontSize: '1.05rem' }}>
+            <p style={{ color: '#2AD636', fontWeight: 600, margin: '0 0 0.25rem 0', fontSize: '1.05rem' }}>
               {pacienteCreado.nombre}
             </p>
             {pacienteCreado.sesionesProgramadas && (
@@ -1204,7 +1205,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                 style={{
                   flex: 2,
                   padding: '0.65rem',
-                  background: !miniSesionData.hora ? '#333' : '#3FFF00',
+                  background: !miniSesionData.hora ? '#333' : '#2AD636',
                   border: 'none',
                   borderRadius: '8px',
                   color: !miniSesionData.hora ? '#666' : '#0a0a0a',
@@ -1380,7 +1381,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                 }}>
                   {[
                     { label: 'Citas', value: estadisticasPaciente.totalCitas, color: '#3b82f6' },
-                    { label: 'Sesiones', value: `${estadisticasPaciente.sesionesCompletadas}/${estadisticasPaciente.totalSesiones}`, color: '#3FFF00' },
+                    { label: 'Sesiones', value: `${estadisticasPaciente.sesionesCompletadas}/${estadisticasPaciente.totalSesiones}`, color: '#2AD636' },
                     { label: 'Pagos', value: `$${(estadisticasPaciente.totalPagado || 0).toLocaleString()}`, color: '#f59e0b' },
                     { label: 'Pendientes', value: estadisticasPaciente.citasPendientes, color: '#ef4444' },
                   ].map((stat, i) => (
@@ -1407,7 +1408,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                   marginBottom: '1.5rem',
                   border: '1px solid #333'
                 }}>
-                  <h4 style={{ margin: '0 0 1rem 0', color: '#3FFF00', fontSize: '0.9rem' }}>
+                  <h4 style={{ margin: '0 0 1rem 0', color: '#2AD636', fontSize: '0.9rem' }}>
                     Evolución del Dolor
                   </h4>
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', height: '120px', padding: '0 0.5rem' }}>
@@ -1441,12 +1442,12 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                             <div style={{
                               flex: 1,
                               height: `${alturaFinal}%`,
-                              background: mejoro ? 'rgba(63, 255, 0, 0.5)' : 'rgba(239, 68, 68, 0.7)',
+                              background: mejoro ? 'rgba(42, 214, 54, 0.5)' : 'rgba(239, 68, 68, 0.7)',
                               borderRadius: '3px 3px 0 0',
                               minHeight: '4px',
                               position: 'relative'
                             }} title={`Final: ${punto.dolorFinal}/10`}>
-                              <span style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.6rem', color: mejoro ? '#3FFF00' : '#ef4444' }}>
+                              <span style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.6rem', color: mejoro ? '#2AD636' : '#ef4444' }}>
                                 {punto.dolorFinal}
                               </span>
                             </div>
@@ -1458,7 +1459,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                   </div>
                   <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '0.75rem', fontSize: '0.7rem', color: '#888' }}>
                     <span><span style={{ display: 'inline-block', width: '10px', height: '10px', background: 'rgba(239, 68, 68, 0.4)', borderRadius: '2px', marginRight: '4px' }}></span>Inicial</span>
-                    <span><span style={{ display: 'inline-block', width: '10px', height: '10px', background: 'rgba(63, 255, 0, 0.5)', borderRadius: '2px', marginRight: '4px' }}></span>Final</span>
+                    <span><span style={{ display: 'inline-block', width: '10px', height: '10px', background: 'rgba(42, 214, 54, 0.5)', borderRadius: '2px', marginRight: '4px' }}></span>Final</span>
                   </div>
                   {(() => {
                     const datos = estadisticasPaciente.evolucionDolor;
@@ -1472,10 +1473,10 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                         textAlign: 'center',
                         marginTop: '0.75rem',
                         padding: '0.5rem',
-                        background: 'rgba(63, 255, 0, 0.05)',
+                        background: 'rgba(42, 214, 54, 0.05)',
                         borderRadius: '8px',
                         fontSize: '0.8rem',
-                        color: '#3FFF00'
+                        color: '#2AD636'
                       }}>
                         Mejoría del <strong>{mejoriaPct}%</strong> en dolor (de {primero.dolorInicial}/10 a {ultimo.dolorFinal}/10)
                       </div>
@@ -1784,7 +1785,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                         borderRadius: '8px',
                         borderLeft: `3px solid ${
                           cita.estado === 'completada' ? '#10b981' :
-                          cita.estado === 'confirmada' ? '#3FFF00' :
+                          cita.estado === 'confirmada' ? '#2AD636' :
                           cita.estado === 'cancelada' ? '#ef4444' : '#3b82f6'
                         }`
                       }}>
@@ -1801,11 +1802,11 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                           fontWeight: 600,
                           textTransform: 'uppercase',
                           background: cita.estado === 'completada' ? 'rgba(16, 185, 129, 0.15)' :
-                                      cita.estado === 'confirmada' ? 'rgba(63, 255, 0, 0.15)' :
+                                      cita.estado === 'confirmada' ? 'rgba(42, 214, 54, 0.15)' :
                                       cita.estado === 'cancelada' ? 'rgba(239, 68, 68, 0.15)' :
                                       'rgba(59, 130, 246, 0.15)',
                           color: cita.estado === 'completada' ? '#10b981' :
-                                 cita.estado === 'confirmada' ? '#3FFF00' :
+                                 cita.estado === 'confirmada' ? '#2AD636' :
                                  cita.estado === 'cancelada' ? '#ef4444' : '#3b82f6'
                         }}>
                           {cita.estado}
@@ -1871,7 +1872,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                 <h3 className="section-title">
                   Historial de Sesiones 
                   {sesionesPaciente.length > 0 && (
-                    <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#3FFF00' }}>
+                    <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#2AD636' }}>
                       ({sesionesPaciente.length})
                     </span>
                   )}
@@ -1910,7 +1911,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                                 backgroundColor: 
                                   sesion.estado === 'completada' ? '#10b981' :
                                   sesion.estado === 'programada' ? '#3b82f6' :
-                                  sesion.estado === 'confirmada' ? '#3FFF00' : '#ef4444'
+                                  sesion.estado === 'confirmada' ? '#2AD636' : '#ef4444'
                               }}
                             >
                               {sesion.estado}
@@ -1978,7 +1979,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                                 <strong>Progreso:</strong> 
                                 <span style={{ 
                                   marginLeft: '0.5rem',
-                                  color: '#3FFF00',
+                                  color: '#2AD636',
                                   textTransform: 'capitalize'
                                 }}>
                                   {sesion.progresoGeneral.replace(/_/g, ' ')}
@@ -1996,8 +1997,8 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                                       return (
                                         <div key={idx} style={{
                                           padding: '0.5rem',
-                                          background: 'rgba(63, 255, 0, 0.1)',
-                                          borderLeft: '3px solid #3FFF00',
+                                          background: 'rgba(42, 214, 54, 0.1)',
+                                          borderLeft: '3px solid #2AD636',
                                           borderRadius: '4px'
                                         }}>
                                           <strong>{ejercicio}</strong>
@@ -2008,11 +2009,11 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                                     return (
                                       <div key={idx} style={{
                                         padding: '0.75rem',
-                                        background: 'rgba(63, 255, 0, 0.1)',
-                                        borderLeft: '3px solid #3FFF00',
+                                        background: 'rgba(42, 214, 54, 0.1)',
+                                        borderLeft: '3px solid #2AD636',
                                         borderRadius: '4px'
                                       }}>
-                                        <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#3FFF00' }}>
+                                        <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#2AD636' }}>
                                           {ejercicio.nombre}
                                         </div>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.25rem', fontSize: '0.85rem', color: '#ccc' }}>
@@ -2186,8 +2187,8 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
               {/* Estado de Tratamiento */}
               <div className="ficha-section" style={{ marginTop: '2rem' }}>
                 <h3 className="section-title" style={{ 
-                  color: '#3FFF00', 
-                  borderBottom: '2px solid #3FFF00',
+                  color: '#2AD636', 
+                  borderBottom: '2px solid #2AD636',
                   paddingBottom: '0.5rem',
                   marginBottom: '1rem'
                 }}>
@@ -2230,16 +2231,16 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                         background: esAlta ? 'rgba(16, 185, 129, 0.15)' :
                                     esSeguimiento ? 'rgba(59, 130, 246, 0.15)' :
                                     esAbandono ? 'rgba(239, 68, 68, 0.15)' :
-                                    'rgba(63, 255, 0, 0.15)',
+                                    'rgba(42, 214, 54, 0.15)',
                         color: esAlta ? '#10b981' :
                                esSeguimiento ? '#3b82f6' :
                                esAbandono ? '#ef4444' :
-                               '#3FFF00',
+                               '#2AD636',
                         border: `1px solid ${
                           esAlta ? '#10b981' :
                           esSeguimiento ? '#3b82f6' :
                           esAbandono ? '#ef4444' :
-                          '#3FFF00'
+                          '#2AD636'
                         }40`
                       }}>
                         {esAlta ? 'Alta' :
@@ -2256,8 +2257,8 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
               {pacienteSeleccionado?.evaluacion_final && (
                 <div className="ficha-section" style={{ marginTop: '2rem' }}>
                   <h3 className="section-title" style={{ 
-                    color: '#3FFF00', 
-                    borderBottom: '2px solid #3FFF00',
+                    color: '#2AD636', 
+                    borderBottom: '2px solid #2AD636',
                     paddingBottom: '0.5rem',
                     marginBottom: '1rem'
                   }}>
@@ -2265,7 +2266,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                   </h3>
                   <div style={{
                     background: '#0a0a0a',
-                    border: '1px solid #3FFF00',
+                    border: '1px solid #2AD636',
                     borderRadius: '8px',
                     padding: '1.5rem',
                     whiteSpace: 'pre-wrap',
@@ -2368,7 +2369,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                           <span style={{ color: '#aaa' }}>
-                            {h.estadoAnterior || 'Nuevo'} → <strong style={{ color: '#3FFF00' }}>{h.estadoNuevo}</strong>
+                            {h.estadoAnterior || 'Nuevo'} → <strong style={{ color: '#2AD636' }}>{h.estadoNuevo}</strong>
                           </span>
                           <span style={{ color: '#666', fontSize: '0.75rem' }}>
                             {new Date(h.fecha).toLocaleDateString()}

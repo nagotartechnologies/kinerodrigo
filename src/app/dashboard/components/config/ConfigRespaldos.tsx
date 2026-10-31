@@ -180,7 +180,7 @@ export default function ConfigRespaldos() {
                   background: '#2a2a2a',
                   border: '1px solid #3a3a3a',
                   borderRadius: '6px',
-                  color: '#3FFF00',
+                  color: '#2AD636',
                   fontSize: '0.85rem',
                   textDecoration: 'none',
                   cursor: 'pointer',

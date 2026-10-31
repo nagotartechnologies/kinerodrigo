@@ -1,6 +1,7 @@
 'use client';
 
 import { ConfigSectionProps } from '../../types';
+import { nombreMarca } from '@/lib/marca';
 
 export default function ConfigGeneral({ getConfigValue, handleEditarConfig }: ConfigSectionProps) {
   return (
@@ -33,7 +34,7 @@ export default function ConfigGeneral({ getConfigValue, handleEditarConfig }: Co
         <div className="config-item">
           <div className="config-item-info">
             <p className="config-item-label">Nombre del Centro</p>
-            <p className="config-item-desc">{getConfigValue('nombre_centro', 'NAGO-KINE')}</p>
+            <p className="config-item-desc">{nombreMarca(getConfigValue('nombre_centro', ''))}</p>
           </div>
           <button className="btn-secondary" onClick={() => handleEditarConfig('nombre_centro')}>Editar</button>
         </div>

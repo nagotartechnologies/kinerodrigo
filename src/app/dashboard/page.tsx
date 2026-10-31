@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { MARCA, nombreMarca } from '@/lib/marca';
+import SidebarNav from './components/SidebarNav';
 import './dashboard.css';
 import './calendario.css';
 
@@ -25,6 +27,9 @@ const RelojDashboard = dynamic(() => import('./components/RelojDashboard'), { ss
 
 type Module = 'pacientes' | 'citas' | 'sesiones' | 'pagos' | 'configuracion';
 
+// Ancho de la franja del borde izquierdo que abre la sidebar al deslizar
+const BORDE_SIDEBAR_PX = 24;
+
 export default function DashboardPage() {
   const router = useRouter();
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
@@ -34,6 +39,33 @@ export default function DashboardPage() {
     setNavigateContext(context || null);
     setSelectedModule(modulo as Module);
   };
+
+  // === SIDEBAR ===
+  const [sidebarAbierta, setSidebarAbierta] = useState(false);
+  const cerrarSidebar = useCallback(() => setSidebarAbierta(false), []);
+
+  // Deslizar desde el borde izquierdo abre la sidebar (en cualquier pantalla del dashboard)
+  useEffect(() => {
+    let inicio: { x: number; y: number } | null = null;
+    const onTouchStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      inicio = t.clientX <= BORDE_SIDEBAR_PX && !document.querySelector('.modal-overlay') ? { x: t.clientX, y: t.clientY } : null;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!inicio) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - inicio.x;
+      const dy = Math.abs(t.clientY - inicio.y);
+      inicio = null;
+      if (dx > 50 && dx > dy * 1.2) setSidebarAbierta(true);
+    };
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }, []);
 
   // === SWIPE NAVIGATION ===
   const moduleOrder: Module[] = ['pacientes', 'citas', 'sesiones', 'pagos', 'configuracion'];
@@ -67,7 +99,7 @@ export default function DashboardPage() {
       endX = startX;
       endY = startY;
       // Las zonas con scroll horizontal propio (ej. semana de Citas) marcan data-no-swipe para no cambiar de modulo
-      ignorarGesto = !!(e.target as Element | null)?.closest?.('[data-no-swipe], .modal-overlay');
+      ignorarGesto = startX < BORDE_SIDEBAR_PX || !!(e.target as Element | null)?.closest?.('[data-no-swipe], .modal-overlay, .sidebar');
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -171,17 +203,11 @@ export default function DashboardPage() {
     };
   }, [selectedModule]);
 
-  const dotsRef = useRef<HTMLDivElement>(null);
   const [menuUsuario, setMenuUsuario] = useState(false);
 
-  // Mantiene visible el chip del modulo activo y cierra el menu de usuario al cambiar de modulo
+  // Cierra el menu de usuario al cambiar de modulo
   useEffect(() => {
     setMenuUsuario(false);
-    const cont = dotsRef.current;
-    const activo = cont?.querySelector<HTMLElement>('.swipe-dot.active');
-    if (cont && activo) {
-      cont.scrollTo({ left: activo.offsetLeft - (cont.clientWidth - activo.offsetWidth) / 2, behavior: 'smooth' });
-    }
   }, [selectedModule]);
 
   const [user, setUser] = useState<any>(null);
@@ -336,9 +362,8 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="loading-screen">
-        <div className="spinner-large"></div>
-        <p>Cargando...</p>
+      <div className="loading-screen" role="status" aria-label="Cargando">
+        <img className="loading-isotipo" src={MARCA.logos.isotipo} alt="" width={1369} height={976} />
       </div>
     );
   }
@@ -383,12 +408,41 @@ export default function DashboardPage() {
     </div>
   );
 
+  const botonMenu = (
+    <button
+      type="button"
+      className="menu-button"
+      onClick={() => setSidebarAbierta(true)}
+      aria-label="Abrir menú"
+      aria-expanded={sidebarAbierta}
+      aria-controls="sidebar-nav"
+    >
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    </button>
+  );
+
+  const sidebar = (
+    <SidebarNav
+      abierta={sidebarAbierta}
+      onCerrar={cerrarSidebar}
+      activo={selectedModule}
+      onIr={(modulo) => { setNavigateContext(null); setSelectedModule(modulo); }}
+      user={user}
+      onLogout={handleLogout}
+      citasHoy={stats.citasHoy}
+    />
+  );
+
   // Si hay un modulo activo, se renderiza solo ese modulo ocupando toda la pantalla
   if (selectedModule) {
     return (
       <div className="dashboard-container">
+        {sidebar}
         <header className="dashboard-header dashboard-header--module">
           <div className="header-left">
+            {botonMenu}
             <button
               className="back-button"
               onClick={() => { setNavigateContext(null); setSelectedModule(null); }}
@@ -405,20 +459,6 @@ export default function DashboardPage() {
             {userMenu}
           </div>
         </header>
-
-        {/* Puntitos de navegacion entre modulos, solo visibles en movil */}
-        <div className="swipe-nav-dots" ref={dotsRef}>
-          {moduleOrder.map((mod, i) => (
-            <button
-              key={mod}
-              onClick={() => { setNavigateContext(null); setSelectedModule(mod); }}
-              className={`swipe-dot ${mod === selectedModule ? 'active' : ''}`}
-              title={moduleNames[mod]}
-            >
-              <span className="swipe-dot-label">{moduleNames[mod]}</span>
-            </button>
-          ))}
-        </div>
 
         {/* Mensaje que aparece brevemente al deslizar entre modulos */}
         {swipeIndicator && (
@@ -442,28 +482,18 @@ export default function DashboardPage() {
   return (
     <div className="dashboard-container">
       {/* Header */}
+      {sidebar}
       <header className="dashboard-header dashboard-header--home">
         <div className="header-left">
-          {getConfigValue('logo_url', '') ? (
-            <div className="header-logo">
-              <img 
-                src={getConfigValue('logo_url', '')} 
-                alt={getConfigValue('nombre_centro', 'NAGO-KINE')}
-              />
-            </div>
-          ) : (
-            <div className="logo-circle-small">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2"/>
-                <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2"/>
-                <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-            </div>
-          )}
-          <div className="header-titles">
-            <h1>{getConfigValue('nombre_centro', 'NAGO-KINE')}</h1>
-            <p>Sistema de Gestión Kinesiológica</p>
-          </div>
+          {botonMenu}
+          <img
+            className="header-logo-marca"
+            src={MARCA.logos.horizontal}
+            alt=""
+            width={2534}
+            height={652}
+          />
+          <h1 className="sr-only">{nombreMarca(getConfigValue('nombre_centro', ''))}</h1>
         </div>
         <div className="header-right">
           <RelojDashboard />

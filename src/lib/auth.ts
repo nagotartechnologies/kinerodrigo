@@ -19,8 +19,12 @@ export async function comparePassword(password: string, hash: string): Promise<b
   return bcrypt.compare(password, hash);
 }
 
-export function generateToken(user: UserPayload): string {
-  return jwt.sign(user, JWT_SECRET, { expiresIn: '7d' });
+// Duración de la sesión: 30 días con "Recordarme", 1 día sin él
+export const DIAS_SESION_RECORDADA = 30;
+export const DIAS_SESION_NORMAL = 1;
+
+export function generateToken(user: UserPayload, dias: number = 7): string {
+  return jwt.sign(user, JWT_SECRET, { expiresIn: `${dias}d` });
 }
 
 export function verifyToken(token: string): UserPayload | null {
@@ -31,13 +35,13 @@ export function verifyToken(token: string): UserPayload | null {
   }
 }
 
-export async function setAuthCookie(token: string) {
+export async function setAuthCookie(token: string, dias: number = 7) {
   const cookieStore = await cookies();
   cookieStore.set('auth-token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 días
+    maxAge: 60 * 60 * 24 * dias,
     path: '/',
   });
 }

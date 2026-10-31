@@ -1851,13 +1851,13 @@ export default function CitasModule() {
               {recurrenteData.diasSemana.length > 0 && (
                 <div style={{
                   padding: '0.75rem',
-                  background: 'rgba(63, 255, 0, 0.05)',
-                  border: '1px solid rgba(63, 255, 0, 0.2)',
+                  background: 'rgba(42, 214, 54, 0.05)',
+                  border: '1px solid rgba(42, 214, 54, 0.2)',
                   borderRadius: '8px',
                   fontSize: '0.85rem',
                   color: '#ccc'
                 }}>
-                  Se crearán aprox. <strong style={{ color: '#3FFF00' }}>{recurrenteData.diasSemana.length * parseInt(recurrenteData.cantidadSemanas || '0')}</strong> citas
+                  Se crearán aprox. <strong style={{ color: '#2AD636' }}>{recurrenteData.diasSemana.length * parseInt(recurrenteData.cantidadSemanas || '0')}</strong> citas
                   ({['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].filter((_, i) => recurrenteData.diasSemana.includes(i)).join(', ')} 
                   a las {recurrenteData.horaInicio} por {recurrenteData.cantidadSemanas} semanas)
                 </div>

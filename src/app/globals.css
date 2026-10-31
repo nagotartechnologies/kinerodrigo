@@ -13,10 +13,10 @@
   --text-subtle: #737373;
 
   /* Acento */
-  --accent: #3FFF00;
-  --accent-hover: #32CC00;
-  --accent-soft: rgba(63, 255, 0, 0.12);
-  --accent-ring: rgba(63, 255, 0, 0.35);
+  --accent: #2AD636;
+  --accent-hover: #22B52D;
+  --accent-soft: rgba(42, 214, 54, 0.12);
+  --accent-ring: rgba(42, 214, 54, 0.35);
   --on-accent: #0a0a0a;
 
   /* Estados */
@@ -126,6 +126,18 @@ select {
   font-family: inherit;
   /* 16px evita el zoom automático de iOS al enfocar */
   font-size: 16px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 :focus-visible {

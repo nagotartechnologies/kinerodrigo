@@ -75,8 +75,8 @@ export default function ConfigCitas({ getConfigValue, handleEditarConfig, handle
 
         {/* Sistema de Recordatorios (Cron) */}
         <div className="config-item" style={{ 
-          background: cronEstado?.activo ? 'rgba(63, 255, 0, 0.05)' : 'rgba(255, 0, 0, 0.05)',
-          border: `1px solid ${cronEstado?.activo ? '#3FFF00' : '#ff4444'}`
+          background: cronEstado?.activo ? 'rgba(42, 214, 54, 0.05)' : 'rgba(255, 0, 0, 0.05)',
+          border: `1px solid ${cronEstado?.activo ? '#2AD636' : '#ff4444'}`
         }}>
           <div className="config-item-info">
             <p className="config-item-label">
