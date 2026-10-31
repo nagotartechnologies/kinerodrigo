@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { formatearFechaLocal, fechaAString } from '../utils';
-import useTouchDrag from '../hooks/useTouchDrag';
+import SemanaCalendario from './SemanaCalendario';
 
 
 // Módulo Citas
@@ -18,7 +18,6 @@ export default function CitasModule() {
   const [successMessage, setSuccessMessage] = useState('');
   const [menuAcciones, setMenuAcciones] = useState(false);
   const [diaSeleccionadoMes, setDiaSeleccionadoMes] = useState<Date>(() => new Date());
-  const semanaScrollRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
     pacienteId: '',
@@ -500,10 +499,14 @@ export default function CitasModule() {
     }
   };
 
-  // Mover cita via API (callback para el hook y para desktop drop)
-  const moverCitaAPI = useCallback(async (cita: any, nuevaFecha: Date, nuevaHora: string) => {
+  // Mover o redimensionar una cita desde el calendario semanal
+  const moverCitaAPI = useCallback(async (cita: any, nuevaFecha: Date, nuevaHora: string, nuevaDuracion?: number) => {
     const fechaStr = fechaAString(nuevaFecha);
     const fechaOriginal = cita.fecha;
+    const duracion = nuevaDuracion ?? cita.duracion;
+
+    // Actualizacion optimista: la cita queda en su nuevo lugar mientras responde la API
+    setCitas(prev => prev.map(c => c.id === cita.id ? { ...c, fecha: fechaStr, hora: nuevaHora, duracion } : c));
     
     try {
       const response = await fetch(`/api/citas/${cita.id}`, {
@@ -513,7 +516,7 @@ export default function CitasModule() {
           pacienteId: cita.pacienteId,
           fecha: fechaStr,
           hora: nuevaHora,
-          duracion: cita.duracion,
+          duracion,
           tipo: cita.tipo,
           notas: cita.notas
         })
@@ -524,7 +527,9 @@ export default function CitasModule() {
       if (data.success) {
         await cargarCitas(false);
         const cambioDeDay = fechaOriginal !== fechaStr;
-        if (cambioDeDay) {
+        if (nuevaDuracion !== undefined && !cambioDeDay && nuevaHora === cita.hora) {
+          mostrarMensaje(`Duración cambiada a ${nuevaDuracion} min`);
+        } else if (cambioDeDay) {
           const diasNombres = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
           const mesesNombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
           const f = new Date(nuevaFecha);
@@ -533,44 +538,15 @@ export default function CitasModule() {
           mostrarMensaje(`Cita movida a ${nuevaHora}`);
         }
       } else {
+        await cargarCitas(false);
         mostrarMensaje(data.error || 'Error al mover la cita', true);
       }
     } catch (error) {
       console.error('Error:', error);
+      await cargarCitas(false);
       mostrarMensaje('Error al mover la cita', true);
     }
   }, []);
-
-  // Hook de touch/drag (extrae ~290 lineas de logica touch, long-press, auto-scroll)
-  const touchDrag = useTouchDrag({
-    onDrop: moverCitaAPI,
-    onCrearCita: handleCrearCitaDesdeCalendario,
-    onBloquearHorario: handleBloquearHorario,
-    onEliminarBloqueo: handleEliminarBloqueo,
-    obtenerDiasSemana: () => diasSemana,
-  });
-
-  // Desktop drop handler (vista mes)
-  const handleDrop = useCallback(async (e: React.DragEvent, nuevaFecha: Date) => {
-    e.preventDefault();
-    if (touchDrag.citaArrastrada) {
-      await moverCitaAPI(touchDrag.citaArrastrada, nuevaFecha, touchDrag.citaArrastrada.hora);
-      touchDrag.setCitaArrastrada(null);
-    }
-  }, [moverCitaAPI, touchDrag]);
-
-  // Aliases para compatibilidad con el JSX existente
-  const { citaArrastrada, isReallyDragging, isDraggingTouch, touchPosition, isLongPressing, longPressTarget, longPressTimer } = touchDrag;
-  const handleDragStart = touchDrag.handleDragStart;
-  const handleDragOver = touchDrag.handleDragOver;
-  const handleTouchStart = touchDrag.handleTouchStart;
-  const handleTouchMove = touchDrag.handleTouchMove;
-  const handleTouchEnd = touchDrag.handleTouchEnd;
-  const handleTouchCancel = touchDrag.handleTouchCancel;
-  const handleSlotTouchStart = touchDrag.handleSlotTouchStart;
-  const handleSlotTouchMove = touchDrag.handleSlotTouchMove;
-  const handleSlotTouchEnd = touchDrag.handleSlotTouchEnd;
-  const handleSlotTouchCancel = touchDrag.handleSlotTouchCancel;
 
   const handleCrearSesionDesdeCita = async (cita: any) => {
     try {
@@ -796,35 +772,6 @@ export default function CitasModule() {
     }
     return mapa;
   }, [horariosBloqueados]);
-
-  // Bloqueos de la semana visible indexados por "diaIndex-HH:00" para no recalcularlos en cada slot del render
-  const bloqueosSemana = useMemo(() => {
-    const mapa = new Map<string, any>();
-    diasSemana.forEach((dia, diaIndex) => {
-      const bloqueosDelDia = horariosBloqueadosPorFecha.get(fechaAString(dia));
-      if (!bloqueosDelDia) return;
-      for (let h = 8; h < 22; h++) {
-        const horaStr = `${h.toString().padStart(2, '0')}:00`;
-        const bloqueo = bloqueosDelDia.find(b => horaStr >= b.hora_inicio && horaStr < b.hora_fin);
-        if (bloqueo) mapa.set(`${diaIndex}-${horaStr}`, bloqueo);
-      }
-    });
-    return mapa;
-  }, [diasSemana, horariosBloqueadosPorFecha]);
-
-  // En movil la semana scrollea en ambos ejes: se centra en el dia de hoy y en la hora actual al abrirla
-  useEffect(() => {
-    if (vistaCalendario !== 'semana' || loading) return;
-    const cont = semanaScrollRef.current;
-    if (!cont || cont.scrollWidth <= cont.clientWidth + 1) return;
-    const columnaHora = cont.querySelector<HTMLElement>('.hora-column-header');
-    const columnaHoy = cont.querySelector<HTMLElement>('.dia-column-header.hoy');
-    cont.scrollLeft = columnaHoy ? columnaHoy.offsetLeft - (columnaHora?.offsetWidth || 0) : 0;
-    const horaObjetivo = Math.min(Math.max(new Date().getHours() - 1, 8), 21);
-    const fila = cont.querySelector<HTMLElement>(`.hora-row[data-hora="${horaObjetivo}"]`);
-    const encabezado = cont.querySelector<HTMLElement>('.semana-horarios-header');
-    if (columnaHoy && fila) cont.scrollTop = fila.offsetTop - (encabezado?.offsetHeight || 0);
-  }, [vistaCalendario, loading, diasSemana]);
 
   // Memoizar citas de hoy y conteos por estado para la vista "hoy"
   const citasHoyMemo = useMemo(() => {
@@ -1210,190 +1157,18 @@ export default function CitasModule() {
           </>
         )}
 
-        {/* Vista Semanal: 7 columnas; en movil scrollea en ambos ejes con horas y dias fijos */}
+        {/* Vista Semanal estilo Google Calendar */}
         {!loading && vistaCalendario === 'semana' && (
-          <div className="calendario-semana-horarios" ref={semanaScrollRef} data-no-swipe>
-            {/* Header con días */}
-            <div className="semana-horarios-header">
-              <div className="hora-column-header">Hora</div>
-              {obtenerDiasSemana().map((dia, index) => (
-                <div
-                  key={index}
-                  className={`dia-column-header ${esHoy(dia) ? 'hoy' : ''}`}
-                >
-                  <div className="dia-nombre">
-                    {dia.toLocaleDateString('es-CL', { weekday: 'short' })}
-                  </div>
-                  <div className="dia-numero">{dia.getDate()}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Grid de horarios */}
-            <div className="semana-horarios-grid">
-              {/* Generar filas de horarios de 8:00 a 21:00 (slots de 1 hora visualmente) */}
-              {Array.from({ length: 14 }, (_, i) => i + 8).map(hora => (
-                <div key={hora} className="hora-row" data-hora={hora}>
-                  {/* Columna de hora */}
-                  <div className="hora-label">
-                    {`${hora.toString().padStart(2, '0')}:00`}
-                  </div>
-                  
-                  {/* Columnas de días */}
-                  {obtenerDiasSemana().map((dia, diaIndex) => {
-                    const horaStr = `${hora.toString().padStart(2, '0')}:00`;
-                    // Buscar citas que empiecen en esta hora (cualquier minuto: 00, 15, 30, 45)
-                    const citasEnHora = obtenerCitasDia(dia).filter(cita => {
-                      const horaCita = cita.hora.split(':')[0];
-                      const horaSlot = hora.toString().padStart(2, '0');
-                      return horaCita === horaSlot;
-                    });
-                    
-                    const bloqueado = bloqueosSemana.get(`${diaIndex}-${horaStr}`);
-                    
-                    return (
-                      <div 
-                        key={diaIndex}
-                        className={`hora-slot ${citaArrastrada ? 'drop-zone' : ''} ${esHoy(dia) ? 'es-hoy' : ''} ${bloqueado ? 'bloqueado' : ''} ${isLongPressing && longPressTarget?.hora === horaStr ? 'long-pressing' : ''}`}
-                        data-dia-index={diaIndex}
-                        data-hora={horaStr}
-                        onDragOver={handleDragOver}
-                        onTouchStart={(e) => {
-                          // Si el slot está vacío, detectar long press para bloquear
-                          if (citasEnHora.length === 0) {
-                            handleSlotTouchStart(e, dia, horaStr, bloqueado, citasEnHora);
-                          }
-                        }}
-                        onTouchMove={(e) => {
-                          if (citasEnHora.length === 0 && longPressTimer) {
-                            handleSlotTouchMove(e);
-                          }
-                        }}
-                        onTouchEnd={(e) => {
-                          if (citasEnHora.length === 0) {
-                            handleSlotTouchEnd(e, dia, horaStr, bloqueado, citasEnHora);
-                          }
-                        }}
-                        onTouchCancel={() => {
-                          if (citasEnHora.length === 0) {
-                            handleSlotTouchCancel();
-                          }
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (citaArrastrada) {
-                            // Calcular en qué cuarto del slot (15 minutos) soltó la cita
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const relativeY = e.clientY - rect.top;
-                            const slotHeight = rect.height;
-                            const quarter = Math.floor((relativeY / slotHeight) * 4); // 0, 1, 2, 3
-                            
-                            // Convertir quarter a minutos (0=00, 1=15, 2=30, 3=45)
-                            const minutos = Math.min(quarter * 15, 45);
-                            
-                            // Construir la hora completa (HH:MM)
-                            const [horaNum] = horaStr.split(':');
-                            const horaCompleta = `${horaNum}:${minutos.toString().padStart(2, '0')}`;
-                            
-                            moverCitaAPI(citaArrastrada, dia, horaCompleta).then(() => touchDrag.setCitaArrastrada(null));
-                          }
-                        }}
-                        onClick={(e) => {
-                          // Solo crear cita si no hay citas, no está bloqueado y no se está arrastrando
-                          if (citasEnHora.length === 0 && !bloqueado && !citaArrastrada && !isDraggingTouch) {
-                            // Calcular en qué cuarto del slot (15 minutos) hizo clic
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const relativeY = e.clientY - rect.top;
-                            const slotHeight = rect.height;
-                            const quarter = Math.floor((relativeY / slotHeight) * 4); // 0, 1, 2, 3
-                            
-                            // Convertir quarter a minutos (0=00, 1=15, 2=30, 3=45)
-                            const minutos = Math.min(quarter * 15, 45);
-                            
-                            // Construir la hora completa (HH:MM)
-                            const [horaNum] = horaStr.split(':');
-                            const horaCompleta = `${horaNum}:${minutos.toString().padStart(2, '0')}`;
-                            
-                            handleCrearCitaDesdeCalendario(dia, horaCompleta);
-                          }
-                        }}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          if (bloqueado) {
-                            // Si está bloqueado, desbloquear
-                            handleEliminarBloqueo(bloqueado.id);
-                          } else if (citasEnHora.length === 0) {
-                            // Si está vacío, bloquear
-                            handleBloquearHorario(dia, horaStr);
-                          }
-                        }}
-                        style={{ cursor: citasEnHora.length === 0 && !bloqueado ? 'pointer' : bloqueado ? 'not-allowed' : 'default' }}
-                      >
-                        {bloqueado && (
-                          <div className="horario-bloqueado-indicator">
-                            <svg viewBox="0 0 24 24" fill="none" className="icono-16" aria-hidden="true">
-                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" fill="currentColor"/>
-                            </svg>
-                            <span>{bloqueado.motivo || 'Bloqueado'}</span>
-                          </div>
-                        )}
-                        {citasEnHora.map(cita => (
-                          <div 
-                            key={cita.id}
-                            className={`cita-horario ${cita.estado} ${citaArrastrada?.id === cita.id ? 'dragging' : ''} ${isDraggingTouch ? 'touch-dragging' : ''} ${cita.tieneSesion ? 'con-sesion' : ''}`}
-                            style={{ touchAction: 'none' }}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, cita)}
-                            onTouchStart={(e) => handleTouchStart(e, cita)}
-                            onTouchMove={handleTouchMove}
-                            onTouchEnd={handleTouchEnd}
-                            onTouchCancel={handleTouchCancel}
-                            onClick={() => !isDraggingTouch && handleEditarCita(cita)}
-                            title={cita.tieneSesion ? `Tiene sesión registrada (${cita.sesionEstado})` : 'Sin sesión registrada'}
-                          >
-                            <div className="cita-horario-hora">
-                              {cita.hora}
-                              {cita.tieneSesion && (
-                                <svg viewBox="0 0 24 24" fill="none" className="cita-horario-icono cita-horario-icono--sesion" aria-hidden="true">
-                                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" strokeWidth="2"/>
-                                </svg>
-                              )}
-                              {cita.tienePago && (
-                                <svg viewBox="0 0 24 24" fill="none" className="cita-horario-icono cita-horario-icono--pago" aria-hidden="true">
-                                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                </svg>
-                              )}
-                              {cita.recordatorio && (
-                                <span className="cita-horario-recordatorio" title={
-                                  cita.recordatorio.respuesta === 'CONFIRMAR' ? 'Confirmado por WhatsApp' :
-                                  cita.recordatorio.respuesta === 'CANCELAR' ? 'Cancelado por WhatsApp' :
-                                  cita.recordatorio.respuesta === 'REAGENDAR' ? 'Pidió reagendar' :
-                                  'Recordatorio enviado'
-                                }>
-                                  {cita.recordatorio.respuesta === 'CONFIRMAR' ? '✅' :
-                                   cita.recordatorio.respuesta === 'CANCELAR' ? '❌' :
-                                   cita.recordatorio.respuesta === 'REAGENDAR' ? '📅' : '📤'}
-                                </span>
-                              )}
-                            </div>
-                            <div className="cita-horario-paciente">{cita.paciente}</div>
-                            <div className="cita-horario-tipo">
-                              {cita.tipo}
-                              {cita.tienePago && cita.totalPagado > 0 && (
-                                <span className="cita-horario-monto">
-                                  ${new Intl.NumberFormat('es-CL').format(cita.totalPagado)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
+          <SemanaCalendario
+            dias={diasSemana}
+            citasPorFecha={citasPorFecha}
+            bloqueosPorFecha={horariosBloqueadosPorFecha}
+            onEditar={handleEditarCita}
+            onCrear={handleCrearCitaDesdeCalendario}
+            onMover={moverCitaAPI}
+            onBloquear={handleBloquearHorario}
+            onDesbloquear={handleEliminarBloqueo}
+          />
         )}
 
         {/* Vista Hoy - Citas del Día con acciones rápidas */}
@@ -2101,22 +1876,6 @@ export default function CitasModule() {
         </div>
       )}
 
-      {/* Elemento flotante que sigue el dedo durante el drag */}
-      {isReallyDragging && touchPosition && citaArrastrada && (
-        <div 
-          className="drag-ghost"
-          style={{
-            left: `${touchPosition.x}px`,
-            top: `${touchPosition.y}px`,
-          }}
-        >
-          <div className="cita-horario" style={{ margin: 0 }}>
-            <div className="cita-horario-hora">{citaArrastrada.hora}</div>
-            <div className="cita-horario-paciente">{citaArrastrada.paciente}</div>
-            <div className="cita-horario-tipo">{citaArrastrada.tipo}</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

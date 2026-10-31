@@ -135,6 +135,11 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
 - Los tokens de diseño están en `src/app/globals.css` (`--surface-*`, `--accent`, `--estado-*`, `--space-*`, `--tap`, `--sat/--sab` safe areas). Usarlos en CSS nuevo en vez de colores hardcodeados.
 - El CSS nuevo va con base para móvil y `@media (min-width: 768px/769px)` para escritorio. Ya migrado: el shell del dashboard (al inicio de `dashboard.css`), los modales (bottom-sheet en móvil), los toasts (`.toast--ok/--error`) y el módulo Citas (`.citas-module` en `calendario.css`).
 - Las zonas con scroll horizontal propio deben llevar `data-no-swipe` para no disparar el swipe entre módulos.
+- La vista semanal de Citas es `components/SemanaCalendario.tsx`, al estilo Google Calendar: citas con posición absoluta por hora y duración, solapes en columnas y línea de hora actual. Interacciones:
+  - Arrastrar mueve la cita y estirar cambia la duración, con pasos de 15 minutos.
+  - En touch, el arrastre se activa con un toque largo de 400 ms.
+  - Mueve y redimensiona con `moverCitaAPI(cita, fecha, hora, duracion?)`, que actualiza la pantalla antes de que responda la API.
+  - `hooks/useTouchDrag.ts` ya no se usa.
 - Pendiente de migrar: Pacientes, Sesiones, Finanzas, Configuración y Login.
 
 ## Reglas de trabajo (preferencias del usuario)

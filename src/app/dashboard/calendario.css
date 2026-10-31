@@ -1212,34 +1212,6 @@ body.dragging {
   cursor: pointer;
 }
 
-/* --- Colores de estado en la grilla semanal --- */
-.citas-module .cita-horario.pendiente { border-color: var(--estado-pendiente); }
-.citas-module .cita-horario.confirmada { border-color: var(--accent); }
-.citas-module .cita-horario.completada { border-color: var(--estado-completada); }
-.citas-module .cita-horario.cancelada { border-color: var(--estado-cancelada); }
-.citas-module .cita-horario.reagendar { border-color: var(--estado-reagendar); }
-
-.cita-horario-icono {
-  width: 12px;
-  height: 12px;
-  margin-left: 4px;
-  flex-shrink: 0;
-}
-
-.cita-horario-icono--sesion { color: var(--accent); }
-.cita-horario-icono--pago { color: var(--pago); }
-
-.cita-horario-recordatorio {
-  margin-left: 4px;
-  font-size: 10px;
-}
-
-.cita-horario-monto {
-  font-size: 0.65rem;
-  color: var(--pago);
-  margin-left: 4px;
-}
-
 /* --- Vista Mes: celdas tocables + detalle del dia --- */
 button.dia-celda {
   font: inherit;
@@ -1692,193 +1664,6 @@ body.dragging .citas-fab {
     bottom: calc(92px + var(--sab));
   }
 
-  /* Semana: un solo contenedor que scrollea en ambos ejes, con horas y dias fijos */
-  .citas-module .calendario-semana-horarios {
-    position: relative;
-    display: block;
-    overflow: auto;
-    max-height: calc(100vh - 260px);
-    max-height: calc(100dvh - var(--sat) - 250px);
-    min-height: 360px;
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .citas-module .semana-horarios-header,
-  .citas-module .hora-row {
-    display: grid;
-    grid-template-columns: 48px repeat(7, minmax(108px, 1fr));
-    width: max-content;
-    min-width: 100%;
-    padding: 0;
-  }
-
-  .citas-module .semana-horarios-header {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .citas-module .semana-horarios-grid {
-    max-height: none;
-    overflow: visible;
-    width: max-content;
-    min-width: 100%;
-    background: transparent;
-  }
-
-  .citas-module .hora-column-header,
-  .citas-module .hora-label {
-    position: sticky;
-    left: 0;
-    z-index: 3;
-    width: 48px;
-    min-width: 48px;
-    padding: var(--space-2) 2px;
-    background: var(--surface-2);
-    border-right: 1px solid var(--border);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-subtle);
-    text-align: center;
-  }
-
-  .citas-module .hora-column-header {
-    z-index: 6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .citas-module .dia-column-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    min-width: 0;
-    padding: var(--space-2) var(--space-1);
-    border-right: 1px solid var(--border);
-  }
-
-  .citas-module .dia-column-header .dia-nombre {
-    margin: 0;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .citas-module .dia-column-header .dia-numero {
-    width: 30px;
-    height: 30px;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-size: var(--fs-md);
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  .citas-module .dia-column-header.hoy {
-    background: var(--accent-soft);
-  }
-
-  .citas-module .dia-column-header.hoy .dia-nombre {
-    color: var(--accent);
-  }
-
-  .citas-module .dia-column-header.hoy .dia-numero {
-    background: var(--accent);
-    color: var(--on-accent);
-  }
-
-  .citas-module .hora-row {
-    min-height: 72px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .citas-module .hora-row:hover {
-    background: transparent;
-  }
-
-  .citas-module .hora-slot {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-    min-height: 72px;
-    padding: 2px;
-    border: none;
-    border-right: 1px solid var(--border);
-    background: transparent;
-  }
-
-  .citas-module .hora-slot.es-hoy {
-    background: rgba(63, 255, 0, 0.03);
-  }
-
-  .citas-module .hora-slot:empty::after {
-    display: none;
-  }
-
-  .citas-module .cita-horario {
-    flex: 1;
-    min-height: 0;
-    justify-content: flex-start;
-    gap: 2px;
-    padding: 6px;
-    border-width: 0 0 0 3px;
-    border-style: solid;
-    border-radius: 6px;
-    background: var(--surface-3);
-    font-size: 12px;
-    -webkit-user-drag: none;
-  }
-
-  .citas-module .cita-horario:hover {
-    transform: none;
-    box-shadow: none;
-  }
-
-  .citas-module .cita-horario-hora {
-    margin: 0;
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-
-  .citas-module .cita-horario-paciente {
-    font-size: 12.5px;
-    font-weight: 600;
-    line-height: 1.25;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-  }
-
-  .citas-module .cita-horario-tipo {
-    display: none;
-  }
-
-  .citas-module .cita-horario.con-sesion::after {
-    top: 6px;
-    right: 6px;
-    box-shadow: none;
-  }
-
-  .citas-module .horario-bloqueado-indicator {
-    flex-direction: column;
-    gap: 2px;
-    padding: 4px;
-    font-size: 11px;
-  }
-
   /* Mes: mini calendario con puntos por estado */
   .citas-module .calendario-mes {
     padding: var(--space-2);
@@ -2156,5 +1941,391 @@ body.dragging .citas-fab {
     overflow: visible;
     margin: 0;
     padding: var(--space-3) 0 0;
+  }
+}
+
+/* ============================================
+   CALENDARIO SEMANAL (estilo Google Calendar, mobile-first)
+   ============================================ */
+.gcal {
+  --col-hora: 48px;
+  --col-min: 104px;
+  position: relative;
+  overflow: auto;
+  max-height: calc(100vh - 250px);
+  max-height: calc(100dvh - var(--sat) - 240px);
+  min-height: 380px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.gcal-head,
+.gcal-body {
+  display: grid;
+  grid-template-columns: var(--col-hora) repeat(7, minmax(var(--col-min), 1fr));
+  width: max-content;
+  min-width: 100%;
+}
+
+/* Cabecera de dias */
+.gcal-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.gcal-esquina {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface-1);
+  border-right: 1px solid var(--border);
+}
+
+.gcal-dia-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-2) 0;
+}
+
+.gcal-dia-nombre {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.gcal-dia-num {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.gcal-dia-head.hoy .gcal-dia-nombre {
+  color: var(--accent);
+}
+
+.gcal-dia-head.hoy .gcal-dia-num {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+/* Cuerpo: columna de horas + 7 columnas de dia */
+.gcal-body {
+  position: relative;
+}
+
+.gcal-horas {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: var(--surface-1);
+  border-right: 1px solid var(--border);
+}
+
+.gcal-hora {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+}
+
+.gcal-hora span {
+  position: absolute;
+  right: 6px;
+  top: -7px;
+  padding: 0 2px;
+  font-size: 10.5px;
+  color: var(--text-subtle);
+  background: var(--surface-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.gcal-hora:first-child span {
+  top: 3px;
+}
+
+.gcal-col {
+  position: relative;
+  border-left: 1px solid var(--border);
+  background-image:
+    linear-gradient(to bottom, var(--border) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 100% var(--hora-px), 100% var(--hora-px);
+  background-position: 0 0, 0 calc(var(--hora-px) / 2);
+  cursor: pointer;
+}
+
+.gcal-horas + .gcal-col {
+  border-left: none;
+}
+
+.gcal-col.hoy {
+  background-color: rgba(63, 255, 0, 0.025);
+}
+
+.gcal-col.pasado {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Citas */
+.gcal-ev {
+  --ev-color: var(--estado-pendiente);
+  --ev-bg: #4a3717;
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 6px;
+  overflow: hidden;
+  background: var(--ev-bg);
+  border-left: 3px solid var(--ev-color);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  cursor: grab;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: box-shadow 0.15s var(--ease), opacity 0.15s var(--ease), filter 0.15s var(--ease);
+}
+
+.gcal-ev--pendiente { --ev-color: var(--estado-pendiente); --ev-bg: #4a3717; }
+.gcal-ev--confirmada { --ev-color: var(--accent); --ev-bg: #224c14; }
+.gcal-ev--completada { --ev-color: var(--estado-completada); --ev-bg: #21314a; }
+.gcal-ev--cancelada { --ev-color: var(--estado-cancelada); --ev-bg: #492323; opacity: 0.6; }
+.gcal-ev--reagendar { --ev-color: var(--estado-reagendar); --ev-bg: #39274b; }
+
+.gcal-ev--cancelada .gcal-ev__titulo {
+  text-decoration: line-through;
+}
+
+.gcal-ev.is-pasada {
+  filter: saturate(0.55) brightness(0.82);
+}
+
+.gcal-ev:focus-visible {
+  z-index: 5;
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.gcal-ev.is-origen {
+  opacity: 0.35;
+}
+
+.gcal-ev.is-fantasma {
+  z-index: 6;
+  opacity: 0.95;
+  outline: 2px solid var(--ev-color);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.gcal-ev.is-corta {
+  justify-content: center;
+  padding: 2px 6px;
+}
+
+.gcal-ev__titulo {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gcal-ev:not(.is-corta) .gcal-ev__titulo {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.gcal-ev__hora-inline {
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.gcal-ev__hora {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.gcal-ev__tipo {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gcal-ev__icono {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.gcal-ev__icono--sesion {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.gcal-ev__icono--pago {
+  color: var(--pago);
+  font-weight: 800;
+}
+
+/* Tirador para cambiar la duracion */
+.gcal-ev__resize {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.gcal-ev__resize::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 18px;
+  height: 3px;
+  margin-left: -9px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  transition: opacity 0.15s var(--ease);
+}
+
+@media (hover: hover) {
+  .gcal-ev:hover {
+    z-index: 4;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  }
+
+  .gcal-ev:hover .gcal-ev__resize::after {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .gcal-ev__resize {
+    height: 14px;
+  }
+
+  .gcal-ev__resize::after {
+    opacity: 0.7;
+  }
+
+  .gcal-ev.is-corta .gcal-ev__resize {
+    height: 8px;
+  }
+}
+
+/* Horarios bloqueados */
+.gcal-bloqueo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  border-top: 1px solid rgba(239, 68, 68, 0.35);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.35);
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.13) 0 8px,
+    rgba(239, 68, 68, 0.04) 8px 16px
+  );
+  color: #f87171;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gcal-bloqueo span {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Linea de la hora actual */
+.gcal-ahora {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 7;
+  height: 2px;
+  background: #ef4444;
+  pointer-events: none;
+}
+
+.gcal-ahora__punto {
+  position: absolute;
+  left: -6px;
+  top: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+/* Durante el arrastre */
+body.gcal-arrastrando,
+body.gcal-arrastrando * {
+  cursor: grabbing !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+@media (min-width: 769px) {
+  .gcal {
+    --col-hora: 60px;
+    --col-min: 0px;
+    max-height: min(760px, calc(100dvh - 300px));
+  }
+
+  .gcal-hora span {
+    font-size: 11px;
+  }
+
+  .gcal-ev__titulo {
+    font-size: 13px;
   }
 }
