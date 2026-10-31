@@ -59,12 +59,15 @@ export default function DashboardPage() {
     let startY = 0;
     let endX = 0;
     let endY = 0;
+    let ignorarGesto = false;
 
     const onTouchStart = (e: TouchEvent) => {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       endX = startX;
       endY = startY;
+      // Las zonas con scroll horizontal propio (ej. semana de Citas) marcan data-no-swipe para no cambiar de modulo
+      ignorarGesto = !!(e.target as Element | null)?.closest?.('[data-no-swipe], .modal-overlay');
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -73,6 +76,7 @@ export default function DashboardPage() {
     };
 
     const onTouchEnd = () => {
+      if (ignorarGesto) return;
       const deltaX = startX - endX;
       const deltaY = startY - endY;
       const minSwipeDistance = 80;
@@ -165,6 +169,19 @@ export default function DashboardPage() {
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
     };
+  }, [selectedModule]);
+
+  const dotsRef = useRef<HTMLDivElement>(null);
+  const [menuUsuario, setMenuUsuario] = useState(false);
+
+  // Mantiene visible el chip del modulo activo y cierra el menu de usuario al cambiar de modulo
+  useEffect(() => {
+    setMenuUsuario(false);
+    const cont = dotsRef.current;
+    const activo = cont?.querySelector<HTMLElement>('.swipe-dot.active');
+    if (cont && activo) {
+      cont.scrollTo({ left: activo.offsetLeft - (cont.clientWidth - activo.offsetWidth) / 2, behavior: 'smooth' });
+    }
   }, [selectedModule]);
 
   const [user, setUser] = useState<any>(null);
@@ -326,38 +343,71 @@ export default function DashboardPage() {
     );
   }
 
-  // Si hay un modulo activo, se renderiza solo ese modulo ocupando toda la pantalla
-  if (selectedModule) {
-    const currentModuleIndex = moduleOrder.indexOf(selectedModule);
-    return (
-      <div className="dashboard-container">
-        <header className="dashboard-header">
-          <div className="header-left">
-            <button className="back-button" onClick={() => { setNavigateContext(null); setSelectedModule(null); }}>
+  // Bloque de usuario: en desktop muestra nombre y boton de salir; en movil el avatar abre un menu
+  const userMenu = (
+    <div className="user-menu">
+      <button
+        type="button"
+        className="user-info"
+        onClick={() => setMenuUsuario(v => !v)}
+        aria-haspopup="menu"
+        aria-expanded={menuUsuario}
+        aria-label="Menú de usuario"
+      >
+        <div className="user-avatar">
+          {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
+        </div>
+        <div className="user-text">
+          <p className="user-name">{user?.nombre} {user?.apellido}</p>
+          <p className="user-email">{user?.email}</p>
+        </div>
+      </button>
+      <button onClick={handleLogout} className="logout-btn">
+        Cerrar Sesión
+      </button>
+      {menuUsuario && (
+        <>
+          <div className="user-menu-backdrop" onClick={() => setMenuUsuario(false)} />
+          <div className="user-menu-panel" role="menu">
+            <p className="user-menu-name">{user?.nombre} {user?.apellido}</p>
+            <p className="user-menu-email">{user?.email}</p>
+            <button type="button" role="menuitem" className="user-menu-logout" onClick={handleLogout}>
               <svg viewBox="0 0 24 24" fill="none">
-                <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2"/>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              Volver al Dashboard
+              Cerrar sesión
             </button>
           </div>
-          <div className="header-right">
-            <div className="user-info">
-              <div className="user-avatar">
-                {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
-              </div>
-              <div>
-                <p className="user-name">{user?.nombre} {user?.apellido}</p>
-                <p className="user-email">{user?.email}</p>
-              </div>
-            </div>
-            <button onClick={handleLogout} className="logout-btn">
-              Cerrar Sesión
+        </>
+      )}
+    </div>
+  );
+
+  // Si hay un modulo activo, se renderiza solo ese modulo ocupando toda la pantalla
+  if (selectedModule) {
+    return (
+      <div className="dashboard-container">
+        <header className="dashboard-header dashboard-header--module">
+          <div className="header-left">
+            <button
+              className="back-button"
+              onClick={() => { setNavigateContext(null); setSelectedModule(null); }}
+              aria-label="Volver al Dashboard"
+            >
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="back-button-label">Volver al Dashboard</span>
             </button>
+            <h1 className="header-module-title">{moduleNames[selectedModule]}</h1>
+          </div>
+          <div className="header-right">
+            {userMenu}
           </div>
         </header>
 
         {/* Puntitos de navegacion entre modulos, solo visibles en movil */}
-        <div className="swipe-nav-dots">
+        <div className="swipe-nav-dots" ref={dotsRef}>
           {moduleOrder.map((mod, i) => (
             <button
               key={mod}
@@ -392,18 +442,13 @@ export default function DashboardPage() {
   return (
     <div className="dashboard-container">
       {/* Header */}
-      <header className="dashboard-header">
+      <header className="dashboard-header dashboard-header--home">
         <div className="header-left">
           {getConfigValue('logo_url', '') ? (
-            <div style={{ marginRight: '1rem' }}>
+            <div className="header-logo">
               <img 
                 src={getConfigValue('logo_url', '')} 
                 alt={getConfigValue('nombre_centro', 'NAGO-KINE')}
-                style={{ 
-                  maxHeight: '70px', 
-                  maxWidth: '220px', 
-                  objectFit: 'contain' 
-                }}
               />
             </div>
           ) : (
@@ -415,25 +460,14 @@ export default function DashboardPage() {
               </svg>
             </div>
           )}
-          <div>
+          <div className="header-titles">
             <h1>{getConfigValue('nombre_centro', 'NAGO-KINE')}</h1>
             <p>Sistema de Gestión Kinesiológica</p>
           </div>
         </div>
         <div className="header-right">
           <RelojDashboard />
-          <div className="user-info">
-            <div className="user-avatar">
-              {user?.nombre?.charAt(0)}{user?.apellido?.charAt(0)}
-            </div>
-            <div>
-              <p className="user-name">{user?.nombre} {user?.apellido}</p>
-              <p className="user-email">{user?.email}</p>
-            </div>
-          </div>
-          <button onClick={handleLogout} className="logout-btn">
-            Cerrar Sesión
-          </button>
+          {userMenu}
         </div>
       </header>
 
