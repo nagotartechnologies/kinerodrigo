@@ -304,9 +304,20 @@ export default function FichaCompletaModal({
     <>
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content ficha-completa-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>Ficha Completa - {pacienteSeleccionado.nombre}</h2>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="modal-header ficha-header">
+            <h2>
+              <span className="ficha-header__prefijo">Ficha Completa - </span>
+              {pacienteSeleccionado.nombre}
+            </h2>
+            <button className="modal-close" aria-label="Cerrar ficha" onClick={() => {
+              setModoEdicion(false);
+              onClose();
+            }}>
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
+              </svg>
+            </button>
+            <div className="ficha-acciones" data-no-swipe>
               {!modoEdicion ? (
                 <>
                   {onNavigate && (
@@ -443,14 +454,6 @@ export default function FichaCompletaModal({
                   </button>
                 </>
               )}
-              <button className="modal-close" onClick={() => {
-                setModoEdicion(false);
-                onClose();
-              }}>
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-              </button>
             </div>
           </div>
           

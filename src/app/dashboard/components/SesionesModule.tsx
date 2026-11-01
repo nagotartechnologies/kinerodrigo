@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Paginacion, { usePaginacion } from './Paginacion';
 import { formatearFechaLocal, fechaAString } from '../utils';
 import FichaCompletaModal from './FichaCompletaModal';
 
@@ -915,78 +916,70 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
     );
   }, [sesionesPorPaciente, busquedaPaciente]);
 
+  const pagSesiones = usePaginacion(sesionesFiltradas, `${busquedaPaciente}|${filtros.estado}`);
+
   return (
-    <div className="module-container">
-      <div className="module-header">
+    <div className="module-container sesiones-module">
+      <div className="module-header pac-header">
         <h2>Sesiones</h2>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <button className="btn-primary" onClick={() => setShowModal(true)}>
-            + Nueva Sesión
-          </button>
-        </div>
+        <button className="btn-primary pac-nuevo-desktop" onClick={() => setShowModal(true)}>
+          + Nueva Sesión
+        </button>
       </div>
 
       {/* Mensajes */}
       {mensaje.texto && (
-        <div className={`mensaje ${mensaje.tipo}`}>
+        <div className={`toast ${mensaje.tipo === 'error' ? 'toast--error' : 'toast--ok'}`} role={mensaje.tipo === 'error' ? 'alert' : 'status'}>
           {mensaje.texto}
         </div>
       )}
 
       <div className="module-content">
         {/* Buscador + Filtros */}
-        <div className="filtros-container" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: '1 1 250px', maxWidth: '350px' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', pointerEvents: 'none' }}>
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        <div className="pac-toolbar ses-toolbar">
+          <div className="pac-buscador">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
+              <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
             <input
-              type="text"
+              type="search"
               value={busquedaPaciente}
               onChange={(e) => setBusquedaPaciente(e.target.value)}
-              placeholder="Buscar paciente..."
-              style={{
-                width: '100%',
-                padding: '0.6rem 0.75rem 0.6rem 2.25rem',
-                background: '#0a0a0a',
-                border: '1px solid #2a2a2a',
-                borderRadius: '8px',
-                color: '#fff',
-                fontSize: '0.9rem',
-                outline: 'none'
-              }}
+              placeholder="Buscar paciente"
+              aria-label="Buscar paciente"
+              autoComplete="off"
             />
             {busquedaPaciente && (
-              <button
-                onClick={() => setBusquedaPaciente('')}
-                style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '1.1rem', padding: '0.25rem' }}
-              >
-                ×
+              <button type="button" className="pac-buscador__limpiar" onClick={() => setBusquedaPaciente('')} aria-label="Limpiar búsqueda">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
               </button>
             )}
           </div>
 
-          <select
-            value={filtros.estado}
-            onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
-            className="filtro-select"
-          >
-            <option value="">Todos los estados</option>
-            <option value="programada">Programada</option>
-            <option value="confirmada">Confirmada</option>
-            <option value="completada">Completada</option>
-            <option value="cancelada">Cancelada</option>
-          </select>
-
-          {(busquedaPaciente || filtros.estado) && (
-            <button
-              onClick={() => { setBusquedaPaciente(''); setFiltros({ pacienteId: '', estado: '', fechaDesde: '', fechaHasta: '' }); }}
-              className="btn-secondary"
-              style={{ fontSize: '0.85rem' }}
-            >
-              Limpiar
-            </button>
-          )}
+          <div className="pac-filtros" role="tablist" aria-label="Filtrar por estado de sesión" data-no-swipe>
+            {[
+              { id: '', etiqueta: 'Todas' },
+              { id: 'programada', etiqueta: 'Programadas' },
+              { id: 'confirmada', etiqueta: 'Confirmadas' },
+              { id: 'completada', etiqueta: 'Completadas' },
+              { id: 'cancelada', etiqueta: 'Canceladas' },
+            ].map(f => (
+              <button
+                key={f.id || 'todas'}
+                type="button"
+                role="tab"
+                aria-selected={filtros.estado === f.id}
+                className={`pac-filtro ses-filtro--${f.id || 'todas'} ${filtros.estado === f.id ? 'activo' : ''}`}
+                onClick={() => setFiltros({ ...filtros, estado: f.id })}
+              >
+                <span className="pac-filtro__punto" aria-hidden="true" />
+                {f.etiqueta}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Loading */}
@@ -1010,8 +1003,8 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
 
         {/* Tarjetas por paciente */}
         {!loading && sesionesFiltradas.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {sesionesFiltradas.map((grupo: any) => {
+          <div className="ses-lista">
+            {pagSesiones.visibles.map((grupo: any) => {
               const isExpanded = pacienteExpandido === String(grupo.pacienteId);
               const progresoPct = grupo.sesionesProgramadas 
                 ? Math.round((grupo.completadas / grupo.sesionesProgramadas) * 100) 
@@ -1019,26 +1012,20 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
               const tienePendiente = !!grupo.proximaPendiente;
 
               return (
-                <div key={grupo.pacienteId} style={{
-                  background: '#1a1a1a',
-                  border: isExpanded ? '2px solid #2AD636' : '1px solid #2a2a2a',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s ease'
-                }}>
+                <div key={grupo.pacienteId} className={`ses-card ${isExpanded ? 'is-expandida' : ''}`}>
                   {/* Tarjeta colapsada — Header */}
                   <div
+                    className="ses-card__cabecera"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
                     onClick={() => setPacienteExpandido(isExpanded ? null : String(grupo.pacienteId))}
-                    style={{
-                      padding: '1rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '1rem',
-                      transition: 'background 0.2s'
+                    onKeyDown={(e) => {
+                      if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        setPacienteExpandido(isExpanded ? null : String(grupo.pacienteId));
+                      }
                     }}
-                    onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = 'rgba(42, 214, 54, 0.03)'; }}
-                    onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}
                   >
                     {/* Fila superior: Nombre + Flecha */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
@@ -1605,7 +1592,24 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
             })}
           </div>
         )}
+        {!loading && (
+          <Paginacion
+            pagina={pagSesiones.pagina}
+            totalPaginas={pagSesiones.totalPaginas}
+            total={pagSesiones.total}
+            porPagina={pagSesiones.porPagina}
+            onCambiar={(p) => { setPacienteExpandido(null); pagSesiones.setPagina(p); }}
+            etiqueta="pacientes"
+          />
+        )}
       </div>
+
+      {/* Botón flotante para crear sesión (solo móvil) */}
+      <button type="button" className="fab" onClick={() => setShowModal(true)} aria-label="Nueva sesión">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+        </svg>
+      </button>
 
       {/* Modal */}
       {showModal && (

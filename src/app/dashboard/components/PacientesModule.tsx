@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import Paginacion, { usePaginacion } from './Paginacion';
 import { nombreMarca } from '@/lib/marca';
 import { formatearFechaLocal, fechaAString } from '../utils';
 import { generarFichaPDF } from '../utils/generarFichaPDF';
@@ -480,369 +481,182 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
     return filtrados;
   }, [pacientes, busqueda, filtroEstado]);
 
+  const pagPacientes = usePaginacion(pacientesFiltrados, `${busqueda}|${filtroEstado}`);
+
+  // Estado visible de cada paciente (estado_paciente nuevo o estado_tratamiento legacy)
+  const estadoDe = (paciente: any) => paciente.estado_paciente || paciente.estado_tratamiento || 'activo';
+  const ETIQUETA_ESTADO: Record<string, string> = {
+    activo: 'En tratamiento',
+    alta: 'Alta',
+    abandono: 'Receso',
+    seguimiento: 'Seguimiento',
+  };
+
+  const filtrosEstado = [
+    { id: 'todos', etiqueta: 'Todos', total: estadisticasEstados?.estadisticas.total ?? pacientes.length },
+    { id: 'activo', etiqueta: 'Activos', total: estadisticasEstados?.estadisticas.activo },
+    { id: 'alta', etiqueta: 'Alta', total: estadisticasEstados?.estadisticas.alta },
+    { id: 'abandono', etiqueta: 'Receso', total: estadisticasEstados?.estadisticas.abandono },
+  ];
+
   return (
-    <div className="module-container">
-      <div className="module-header">
+    <div className="module-container pacientes-module">
+      <div className="module-header pac-header">
         <h2>Gestión de Pacientes</h2>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn-primary pac-nuevo-desktop" onClick={() => setShowModal(true)}>
           + Nuevo Paciente
         </button>
       </div>
 
       {/* Mensajes */}
       {mensaje.texto && (
-        <div className={`mensaje ${mensaje.tipo}`}>
+        <div className={`toast ${mensaje.tipo === 'error' ? 'toast--error' : 'toast--ok'}`} role={mensaje.tipo === 'error' ? 'alert' : 'status'}>
           {mensaje.texto}
         </div>
       )}
 
-      {/* Estadísticas de Estados */}
-      {estadisticasEstados && (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-          gap: '0.75rem',
-          marginBottom: '1rem'
-        }}>
-          <div style={{
-            background: '#1a1a1a',
-            border: filtroEstado === 'activo' ? '1px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.06)',
-            borderRadius: '8px',
-            padding: '1rem',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            ...(filtroEstado !== 'activo' && {
-              ':hover': { borderColor: 'rgba(255, 255, 255, 0.1)' }
-            })
-          }} onClick={() => setFiltroEstado('activo')}>
-            <div style={{ 
-              fontSize: '0.7rem', 
-              fontWeight: 600,
-              letterSpacing: '0.05em',
-              color: filtroEstado === 'activo' ? '#3b82f6' : '#888', 
-              marginBottom: '0.5rem',
-              textTransform: 'uppercase'
-            }}>
-              Activos
-            </div>
-            <div style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 700, 
-              color: '#fff',
-              lineHeight: 1,
-              marginBottom: '0.5rem'
-            }}>
-              {estadisticasEstados.estadisticas.activo}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#666' }}>
-              {estadisticasEstados.porcentajes.activo}% del total
-            </div>
-          </div>
-          
-          <div style={{
-            background: '#1a1a1a',
-            border: filtroEstado === 'alta' ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.06)',
-            borderRadius: '8px',
-            padding: '1rem',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease'
-          }} onClick={() => setFiltroEstado('alta')}>
-            <div style={{ 
-              fontSize: '0.7rem', 
-              fontWeight: 600,
-              letterSpacing: '0.05em',
-              color: filtroEstado === 'alta' ? '#10b981' : '#888', 
-              marginBottom: '0.5rem',
-              textTransform: 'uppercase'
-            }}>
-              Alta
-            </div>
-            <div style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 700, 
-              color: '#fff',
-              lineHeight: 1,
-              marginBottom: '0.5rem'
-            }}>
-              {estadisticasEstados.estadisticas.alta}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#666' }}>
-              {estadisticasEstados.porcentajes.alta}% del total
-            </div>
-          </div>
-          
-          <div style={{
-            background: '#1a1a1a',
-            border: filtroEstado === 'abandono' ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.06)',
-            borderRadius: '8px',
-            padding: '1rem',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease'
-          }} onClick={() => setFiltroEstado('abandono')}>
-            <div style={{ 
-              fontSize: '0.7rem', 
-              fontWeight: 600,
-              letterSpacing: '0.05em',
-              color: filtroEstado === 'abandono' ? '#ef4444' : '#888', 
-              marginBottom: '0.5rem',
-              textTransform: 'uppercase'
-            }}>
-              Receso
-            </div>
-            <div style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 700, 
-              color: '#fff',
-              lineHeight: 1,
-              marginBottom: '0.5rem'
-            }}>
-              {estadisticasEstados.estadisticas.abandono}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#666' }}>
-              {estadisticasEstados.porcentajes.abandono}% del total
-            </div>
-          </div>
-          
-          <div style={{
-            background: '#1a1a1a',
-            border: filtroEstado === 'todos' ? '1px solid #2AD636' : '1px solid rgba(255, 255, 255, 0.06)',
-            borderRadius: '8px',
-            padding: '1rem',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease'
-          }} onClick={() => setFiltroEstado('todos')}>
-            <div style={{ 
-              fontSize: '0.7rem', 
-              fontWeight: 600,
-              letterSpacing: '0.05em',
-              color: filtroEstado === 'todos' ? '#2AD636' : '#888', 
-              marginBottom: '0.5rem',
-              textTransform: 'uppercase'
-            }}>
-              Todos
-            </div>
-            <div style={{ 
-              fontSize: '1.75rem', 
-              fontWeight: 700, 
-              color: '#fff',
-              lineHeight: 1,
-              marginBottom: '0.5rem'
-            }}>
-              {estadisticasEstados.estadisticas.total}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#666' }}>
-              Total pacientes
-            </div>
-          </div>
+      {/* Buscador y filtros por estado */}
+      <div className="pac-toolbar">
+        <div className="pac-buscador">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2"/>
+            <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          <input
+            type="search"
+            placeholder="Buscar por nombre, RUT, teléfono u ocupación"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            aria-label="Buscar pacientes"
+            autoComplete="off"
+          />
+          {busqueda && (
+            <button type="button" className="pac-buscador__limpiar" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          )}
         </div>
-      )}
 
-      {/* Barra de búsqueda */}
-      <div className="filtros-container" style={{ padding: '1rem', background: '#1a1a1a', borderRadius: '8px', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <div className="search-box" style={{ flex: 1 }}>
-            <svg viewBox="0 0 24 24" fill="none" style={{ width: '20px', height: '20px', color: '#666' }}>
-              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
-              <path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar por nombre, RUT, teléfono u ocupación..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="search-input"
-            />
-            {busqueda && (
-              <button 
-                onClick={() => setBusqueda('')}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  color: '#666', 
-                  cursor: 'pointer',
-                  padding: '0.5rem'
-                }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" style={{ width: '20px', height: '20px' }}>
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-              </button>
-            )}
-          </div>
-          
-          <select
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            style={{
-              padding: '0.65rem 1rem',
-              background: '#0a0a0a',
-              border: '1px solid #333',
-              borderRadius: '8px',
-              color: '#fff',
-              fontSize: '0.9rem',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="todos">Todos</option>
-            <option value="activo">Activos</option>
-            <option value="alta">Alta</option>
-            <option value="abandono">Receso</option>
-          </select>
+        <div className="pac-filtros" role="tablist" aria-label="Filtrar por estado" data-no-swipe>
+          {filtrosEstado.map(f => (
+            <button
+              key={f.id}
+              type="button"
+              role="tab"
+              aria-selected={filtroEstado === f.id}
+              className={`pac-filtro pac-filtro--${f.id} ${filtroEstado === f.id ? 'activo' : ''}`}
+              onClick={() => setFiltroEstado(f.id)}
+            >
+              <span className="pac-filtro__punto" aria-hidden="true" />
+              {f.etiqueta}
+              {f.total !== undefined && <span className="pac-filtro__total">{f.total}</span>}
+            </button>
+          ))}
         </div>
-        
-        {(busqueda || filtroEstado !== 'todos') && (
-          <p style={{ color: '#666', fontSize: '0.9rem' }}>
+
+        {(busqueda || filtroEstado !== 'todos') && !loading && (
+          <p className="pac-resultados">
             {pacientesFiltrados.length} {pacientesFiltrados.length === 1 ? 'paciente encontrado' : 'pacientes encontrados'}
-            {filtroEstado !== 'todos' && ` (${filtroEstado})`}
           </p>
         )}
       </div>
 
       <div className="module-content">
-        {error && (
-          <div style={{ 
-            padding: '1rem', 
-            background: '#fee2e2', 
-            color: '#dc2626', 
-            borderRadius: '8px',
-            marginBottom: '1rem'
-          }}>
-            {error}
-          </div>
-        )}
+        {error && <div className="pac-error" role="alert">{error}</div>}
 
         {loading ? (
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            minHeight: '300px',
-            flexDirection: 'column',
-            gap: '1rem'
-          }}>
+          <div className="pac-cargando">
             <div className="spinner-large"></div>
             <p>Cargando pacientes...</p>
           </div>
         ) : pacientesFiltrados.length === 0 ? (
-          <p className="empty-state">
-            {busqueda ? 'No se encontraron pacientes con ese criterio de búsqueda.' : 'No hay pacientes registrados. Crea el primero.'}
-          </p>
-        ) : (
-          <div className="pacientes-grid">
-            {pacientesFiltrados.map((paciente) => (
-              <div key={paciente.id} className="paciente-card">
-                <div className="paciente-header">
-                  <div className="paciente-avatar">
-                    {paciente.nombre.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="paciente-header-info">
-                    <h3>{paciente.nombre}</h3>
-                    <p>{paciente.edad} años • {paciente.ocupacion}</p>
-                    {(() => {
-                      const estado = paciente.estado_paciente || paciente.estado_tratamiento || 'activo';
-                      const esAlta = estado === 'alta';
-                      const esAbandono = estado === 'abandono';
-                      const esSeguimiento = estado === 'seguimiento';
-                      return (
-                        <span style={{
-                          display: 'inline-block',
-                          marginTop: '0.25rem',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          fontSize: '0.7rem',
-                          fontWeight: 600,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          background: esAlta ? 'rgba(16, 185, 129, 0.15)' :
-                                      esSeguimiento ? 'rgba(59, 130, 246, 0.15)' :
-                                      esAbandono ? 'rgba(239, 68, 68, 0.15)' :
-                                      'rgba(42, 214, 54, 0.15)',
-                          color: esAlta ? '#10b981' :
-                                 esSeguimiento ? '#3b82f6' :
-                                 esAbandono ? '#ef4444' :
-                                 '#2AD636',
-                          border: `1px solid ${
-                            esAlta ? '#10b981' :
-                            esSeguimiento ? '#3b82f6' :
-                            esAbandono ? '#ef4444' :
-                            '#2AD636'
-                          }40`
-                        }}>
-                          {esAlta ? 'Alta' :
-                           esSeguimiento ? 'Seguimiento' :
-                           esAbandono ? 'Receso' :
-                           'En tratamiento'}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                </div>
-                <div className="paciente-info">
-                  <div className="info-row">
-                    <span>RUT:</span>
-                    <strong>{paciente.rut || 'No especificado'}</strong>
-                  </div>
-                  <div className="info-row">
-                    <span>Teléfono:</span>
-                    <strong>{paciente.telefono || 'No especificado'}</strong>
-                  </div>
-                  <div className="info-row">
-                    <span>Altura:</span>
-                    <strong>{paciente.altura ? `${paciente.altura} cm` : 'No especificado'}</strong>
-                  </div>
-                  <div className="info-row">
-                    <span>Peso:</span>
-                    <strong>{paciente.peso ? `${paciente.peso} kg` : 'No especificado'}</strong>
-                  </div>
-                  <div className="info-row info-row-lesion">
-                    <span>Lesión:</span>
-                    <strong className="lesion-text">{paciente.lesion_consulta || 'No especificado'}</strong>
-                  </div>
-                </div>
-                <div className="paciente-actions" style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                  <button 
-                    className="btn-secondary btn-ver-ficha" 
-                    style={{ flex: 1 }}
-                    onClick={() => handleVerFicha(paciente)}
-                  >
-                    Ver Ficha
-                  </button>
-                  <button 
-                    className="btn-danger btn-eliminar"
-                    style={{ 
-                      flex: '0 0 auto',
-                      background: '#dc2626',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      padding: '0.5rem 1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      minHeight: '36px'
-                    }}
-                    onClick={() => handleEliminarPaciente(paciente)}
-                    title="Eliminar paciente"
-                  >
-                    <svg 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round"
-                      style={{ width: '18px', height: '18px' }}
-                    >
-                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="pac-vacio">
+            <p>{busqueda || filtroEstado !== 'todos' ? 'No hay pacientes con ese criterio.' : 'Aún no hay pacientes registrados.'}</p>
+            {!busqueda && filtroEstado === 'todos' && (
+              <button type="button" className="btn-primary" onClick={() => setShowModal(true)}>+ Crear el primero</button>
+            )}
           </div>
+        ) : (
+          <ul className="pac-lista">
+            {pagPacientes.visibles.map((paciente) => {
+              const estado = estadoDe(paciente);
+              const subtitulo = [paciente.edad ? `${paciente.edad} años` : '', paciente.ocupacion].filter(Boolean).join(' · ');
+              return (
+                <li key={paciente.id} className="pac-card">
+                  <button
+                    type="button"
+                    className="pac-card__principal"
+                    onClick={() => handleVerFicha(paciente)}
+                    aria-label={`Ver ficha de ${paciente.nombre}`}
+                  >
+                    <span className={`pac-avatar pac-avatar--${estado}`} aria-hidden="true">
+                      {paciente.nombre?.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="pac-card__info">
+                      <span className="pac-card__nombre">{paciente.nombre}</span>
+                      {subtitulo && <span className="pac-card__sub">{subtitulo}</span>}
+                      {paciente.lesion_consulta && <span className="pac-card__lesion">{paciente.lesion_consulta}</span>}
+                    </span>
+                    <span className={`estado-pill estado-pill--pac-${estado}`}>{ETIQUETA_ESTADO[estado] || estado}</span>
+                  </button>
+
+                  <dl className="pac-card__datos">
+                    <div><dt>RUT</dt><dd>{paciente.rut || '—'}</dd></div>
+                    <div><dt>Altura</dt><dd>{paciente.altura ? `${paciente.altura} cm` : '—'}</dd></div>
+                    <div><dt>Peso</dt><dd>{paciente.peso ? `${paciente.peso} kg` : '—'}</dd></div>
+                  </dl>
+
+                  <div className="pac-card__acciones">
+                    {paciente.telefono ? (
+                      <a className="pac-accion" href={`tel:${paciente.telefono}`} aria-label={`Llamar a ${paciente.nombre}`}>
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+                        </svg>
+                        <span>{paciente.telefono}</span>
+                      </a>
+                    ) : (
+                      <span className="pac-accion pac-accion--vacia">Sin teléfono</span>
+                    )}
+                    <button type="button" className="pac-accion pac-accion--ficha" onClick={() => handleVerFicha(paciente)}>
+                      Ver ficha
+                    </button>
+                    <button
+                      type="button"
+                      className="pac-accion pac-accion--eliminar"
+                      onClick={() => handleEliminarPaciente(paciente)}
+                      aria-label={`Eliminar a ${paciente.nombre}`}
+                      title="Eliminar paciente"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
+                      </svg>
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {!loading && (
+          <Paginacion
+            pagina={pagPacientes.pagina}
+            totalPaginas={pagPacientes.totalPaginas}
+            total={pagPacientes.total}
+            porPagina={pagPacientes.porPagina}
+            onCambiar={pagPacientes.setPagina}
+            etiqueta="pacientes"
+          />
         )}
       </div>
+
+      {/* Botón flotante para crear paciente (solo móvil) */}
+      <button type="button" className="fab" onClick={() => setShowModal(true)} aria-label="Nuevo paciente">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+        </svg>
+      </button>
 
       {/* Modal Ficha de Paciente */}
       {showModal && (

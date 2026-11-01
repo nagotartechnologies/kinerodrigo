@@ -164,15 +164,15 @@ export default function ConfiguracionModule() {
   }
 
   return (
-    <div className="module-container">
+    <div className="module-container configuracion-module">
       {mensaje.texto && (
-        <div className={`mensaje ${mensaje.tipo}`}>
+        <div className={`toast ${mensaje.tipo === 'error' ? 'toast--error' : 'toast--ok'}`} role={mensaje.tipo === 'error' ? 'alert' : 'status'}>
           {mensaje.texto}
         </div>
       )}
 
-      <div className="module-header">
-        <h2>Configuracion del Sistema</h2>
+      <div className="module-header pac-header">
+        <h2>Configuración del Sistema</h2>
       </div>
       <div className="module-content">
         <div className="config-grid">

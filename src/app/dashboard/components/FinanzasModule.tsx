@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Paginacion, { usePaginacion } from './Paginacion';
 import { formatearFechaLocal, fechaAString } from '../utils';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -331,40 +332,63 @@ export default function FinanzasModule() {
     return cat?.color || '#6b7280';
   };
 
+  const pagMovimientos = usePaginacion(movimientosFiltrados, `${filtroTipo}|${mesLabel}`);
+  const pagFijos = usePaginacion(gastosFijos);
+
+  const estadoClase = (estado: string) =>
+    estado === 'completado' || estado === 'pagado' ? 'ok' : estado === 'pendiente' ? 'pendiente' : 'error';
+
+  const iconoEditar = (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  );
+  const iconoEliminar = (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+    </svg>
+  );
+
   return (
-    <div className="module-container">
+    <div className="module-container finanzas-module">
       {/* Header */}
-      <div className="module-header">
-        <h2>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '28px', height: '28px', marginRight: '0.5rem', verticalAlign: 'middle' }}>
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-          </svg>
-          Finanzas
-        </h2>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <button className="btn-primary" style={{ background: '#10b981' }} onClick={handleNuevoIngreso}>
+      <div className="module-header fin-header">
+        <h2>Finanzas</h2>
+        <div className="fin-acciones">
+          <button className="btn-primary fin-btn fin-btn--ingreso" onClick={handleNuevoIngreso}>
             + Ingreso
           </button>
-          <button className="btn-primary" style={{ background: '#ef4444' }} onClick={handleNuevoGasto}>
+          <button className="btn-primary fin-btn fin-btn--gasto" onClick={handleNuevoGasto}>
             + Gasto
           </button>
         </div>
       </div>
 
       {mensaje.texto && (
-        <div className={`mensaje ${mensaje.tipo}`}>{mensaje.texto}</div>
+        <div className={`toast ${mensaje.tipo === 'error' ? 'toast--error' : 'toast--ok'}`} role={mensaje.tipo === 'error' ? 'alert' : 'status'}>
+          {mensaje.texto}
+        </div>
       )}
 
       {/* Selector de mes */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', margin: '1rem 0', padding: '0.75rem', background: '#1a1a1a', borderRadius: '8px' }}>
-        <button onClick={mesAnterior} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer', padding: '0.25rem 0.5rem' }}>◀</button>
-        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', minWidth: '200px', textAlign: 'center' }}>{mesLabel}</span>
-        <button onClick={mesSiguiente} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer', padding: '0.25rem 0.5rem' }}>▶</button>
+      <div className="calendario-nav fin-mes">
+        <button type="button" className="cal-nav-btn" onClick={mesAnterior} aria-label="Mes anterior">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <h3 className="calendario-titulo">{mesLabel}</h3>
+        <button type="button" className="cal-nav-btn" onClick={mesSiguiente} aria-label="Mes siguiente">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
       </div>
 
       {/* Tarjetas de resumen */}
       {resumen && (
-        <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
+        <div className="stats-grid fin-resumen">
           <div className="stat-card">
             <div className="stat-icon" style={{ background: '#10b981' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -418,21 +442,35 @@ export default function FinanzasModule() {
         </div>
       )}
 
-      {/* Selector de vista */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        <div className="vista-selector">
-          <button className={vista === 'movimientos' ? 'vista-btn active' : 'vista-btn'} onClick={() => setVista('movimientos')}>
+      {/* Selector de vista y filtro por tipo */}
+      <div className="fin-controles">
+        <div className="vista-selector fin-vistas" role="tablist" aria-label="Vista de finanzas">
+          <button role="tab" aria-selected={vista === 'movimientos'} className={vista === 'movimientos' ? 'vista-btn active' : 'vista-btn'} onClick={() => setVista('movimientos')}>
             Movimientos
           </button>
-          <button className={vista === 'gastos-fijos' ? 'vista-btn active' : 'vista-btn'} onClick={() => setVista('gastos-fijos')}>
-            Gastos Fijos
+          <button role="tab" aria-selected={vista === 'gastos-fijos'} className={vista === 'gastos-fijos' ? 'vista-btn active' : 'vista-btn'} onClick={() => setVista('gastos-fijos')}>
+            Gastos fijos
           </button>
         </div>
         {vista === 'movimientos' && (
-          <div className="vista-selector" style={{ marginLeft: 'auto' }}>
-            <button className={filtroTipo === '' ? 'vista-btn active' : 'vista-btn'} onClick={() => setFiltroTipo('')}>Todos</button>
-            <button className={filtroTipo === 'ingreso' ? 'vista-btn active' : 'vista-btn'} onClick={() => setFiltroTipo('ingreso')} style={{ color: filtroTipo === 'ingreso' ? '#10b981' : undefined }}>Ingresos</button>
-            <button className={filtroTipo === 'gasto' ? 'vista-btn active' : 'vista-btn'} onClick={() => setFiltroTipo('gasto')} style={{ color: filtroTipo === 'gasto' ? '#ef4444' : undefined }}>Gastos</button>
+          <div className="pac-filtros fin-filtros" role="tablist" aria-label="Filtrar por tipo" data-no-swipe>
+            {[
+              { id: '', etiqueta: 'Todos' },
+              { id: 'ingreso', etiqueta: 'Ingresos' },
+              { id: 'gasto', etiqueta: 'Gastos' },
+            ].map(f => (
+              <button
+                key={f.id || 'todos'}
+                type="button"
+                role="tab"
+                aria-selected={filtroTipo === f.id}
+                className={`pac-filtro fin-filtro--${f.id || 'todos'} ${filtroTipo === f.id ? 'activo' : ''}`}
+                onClick={() => setFiltroTipo(f.id as any)}
+              >
+                <span className="pac-filtro__punto" aria-hidden="true" />
+                {f.etiqueta}
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -442,172 +480,130 @@ export default function FinanzasModule() {
         {vista === 'movimientos' && (
           <>
             {loading ? (
-              <div className="loading">Cargando...</div>
+              <div className="pac-cargando"><div className="spinner"></div></div>
             ) : movimientosFiltrados.length === 0 ? (
-              <div className="empty-state">
+              <div className="pac-vacio">
                 <p>No hay movimientos en {mesLabel}</p>
               </div>
             ) : (
-              <div className="table-container">
-                <table className="data-table finanzas-table">
-                  <thead>
-                    <tr>
-                      <th>Fecha</th>
-                      <th>Descripcion</th>
-                      <th>Categoria</th>
-                      <th>Monto</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {movimientosFiltrados.map((mov: any, idx: number) => (
-                      <tr key={`${mov.tipo}-${mov.id}-${idx}`}>
-                        <td>{formatearFechaLocal(mov.fecha)}</td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{
-                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
-                              background: mov.tipo === 'ingreso' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
-                              color: mov.tipo === 'ingreso' ? '#10b981' : '#ef4444',
-                              fontWeight: 'bold', fontSize: '1rem'
-                            }}>
-                              {mov.tipo === 'ingreso' ? '↑' : '↓'}
-                            </span>
-                            <div style={{ minWidth: 0 }}>
-                              <strong style={{ display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{mov.descripcion}</strong>
-                              <small style={{ color: '#888', fontSize: '0.8rem' }}>
-                                {mov.detalle || ''}{mov.detalle && mov.metodo_pago ? ' · ' : ''}{mov.metodo_pago || ''}
-                              </small>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="badge" style={{ background: mov.tipo === 'gasto' ? getColorCategoria(mov.categoria) : '#3b82f6', color: '#fff', fontSize: '0.75rem', padding: '3px 8px' }}>
-                            {mov.categoria || 'Pago'}
-                          </span>
-                        </td>
-                        <td>
-                          <strong style={{ color: mov.tipo === 'ingreso' ? '#10b981' : '#ef4444', whiteSpace: 'nowrap' }}>
-                            {mov.tipo === 'ingreso' ? '+' : '-'}{formatearMonto(mov.monto)}
-                          </strong>
-                        </td>
-                        <td>
-                          <span className={`badge ${
-                            mov.estado === 'completado' || mov.estado === 'pagado' ? 'badge-success' :
-                            mov.estado === 'pendiente' ? 'badge-warning' : 'badge-danger'
-                          }`} style={{ fontSize: '0.75rem', padding: '3px 8px' }}>
-                            {mov.estado.toUpperCase()}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="action-buttons" style={{ justifyContent: 'center' }}>
-                            <button className="btn-icon" onClick={() => mov.tipo === 'ingreso' ? handleEditarIngreso(mov) : handleEditarGasto(mov)} title="Editar">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                              </svg>
-                            </button>
-                            <button className="btn-icon btn-danger" onClick={() => handleEliminarMovimiento(mov)} title="Eliminar">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ul className="fin-lista">
+                {pagMovimientos.visibles.map((mov: any, idx: number) => (
+                  <li key={`${mov.tipo}-${mov.id}-${idx}`} className={`fin-mov fin-mov--${mov.tipo}`}>
+                    <span className="fin-mov__icono" aria-hidden="true">{mov.tipo === 'ingreso' ? '↑' : '↓'}</span>
+                    <div className="fin-mov__info">
+                      <span className="fin-mov__desc">{mov.descripcion}</span>
+                      <span className="fin-mov__meta">
+                        {formatearFechaLocal(mov.fecha)}
+                        {mov.detalle ? ` · ${mov.detalle}` : ''}
+                        {mov.metodo_pago ? ` · ${mov.metodo_pago}` : ''}
+                      </span>
+                      <span className="fin-mov__etiquetas">
+                        <span className="fin-categoria" style={{ background: mov.tipo === 'gasto' ? getColorCategoria(mov.categoria) : '#3b82f6' }}>
+                          {mov.categoria || 'Pago'}
+                        </span>
+                        <span className={`fin-estado fin-estado--${estadoClase(mov.estado)}`}>{mov.estado}</span>
+                      </span>
+                    </div>
+                    <div className="fin-mov__lado">
+                      <strong className="fin-mov__monto">
+                        {mov.tipo === 'ingreso' ? '+' : '-'}{formatearMonto(mov.monto)}
+                      </strong>
+                      <div className="fin-mov__acciones">
+                        <button className="btn-icon" onClick={() => mov.tipo === 'ingreso' ? handleEditarIngreso(mov) : handleEditarGasto(mov)} title="Editar" aria-label="Editar movimiento">
+                          {iconoEditar}
+                        </button>
+                        <button className="btn-icon btn-danger" onClick={() => handleEliminarMovimiento(mov)} title="Eliminar" aria-label="Eliminar movimiento">
+                          {iconoEliminar}
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!loading && (
+              <Paginacion
+                pagina={pagMovimientos.pagina}
+                totalPaginas={pagMovimientos.totalPaginas}
+                total={pagMovimientos.total}
+                porPagina={pagMovimientos.porPagina}
+                onCambiar={pagMovimientos.setPagina}
+                etiqueta="movimientos"
+              />
             )}
           </>
         )}
 
         {vista === 'gastos-fijos' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <p style={{ color: '#888', margin: 0 }}>Gastos que se generan automaticamente cada mes como pendientes.</p>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button className="btn-primary" style={{ background: '#f59e0b' }} onClick={handleGenerarGastosMes}>
+            <div className="fin-fijos-cabecera">
+              <p>Gastos que se generan automáticamente cada mes como pendientes.</p>
+              <div className="fin-fijos-botones">
+                <button className="btn-secondary" onClick={handleGenerarGastosMes}>
                   Generar {mesLabel}
                 </button>
                 <button className="btn-primary" onClick={handleNuevoGastoFijo}>
-                  + Gasto Fijo
+                  + Gasto fijo
                 </button>
               </div>
             </div>
 
             {gastosFijos.length === 0 ? (
-              <div className="empty-state">
+              <div className="pac-vacio">
                 <p>No hay gastos fijos configurados</p>
                 <button className="btn-primary" onClick={handleNuevoGastoFijo}>Crear primer gasto fijo</button>
               </div>
             ) : (
-              <div className="table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Categoria</th>
-                      <th>Descripcion</th>
-                      <th>Monto</th>
-                      <th>Dia del mes</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {gastosFijos.map((gf) => (
-                      <tr key={gf.id} style={{ opacity: gf.activo ? 1 : 0.5 }}>
-                        <td>
-                          <span className="badge" style={{ background: getColorCategoria(gf.categoria), color: '#fff' }}>
-                            {gf.categoria}
-                          </span>
-                        </td>
-                        <td><strong>{gf.descripcion}</strong></td>
-                        <td><strong>{formatearMonto(gf.monto)}</strong></td>
-                        <td>Dia {gf.dia_generacion}</td>
-                        <td>
-                          <button
-                            onClick={() => handleToggleGastoFijo(gf)}
-                            style={{
-                              background: gf.activo ? '#10b981' : '#6b7280',
-                              color: '#fff', border: 'none', borderRadius: '12px',
-                              padding: '4px 12px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold'
-                            }}
-                          >
-                            {gf.activo ? 'ACTIVO' : 'INACTIVO'}
-                          </button>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <button className="btn-icon" onClick={() => {
-                              setEditandoGastoFijo(gf);
-                              setFormGastoFijo({
-                                categoria: gf.categoria, descripcion: gf.descripcion,
-                                monto: gf.monto.toString(), diaGeneracion: gf.dia_generacion.toString()
-                              });
-                              setShowModalGastoFijo(true);
-                            }} title="Editar">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                              </svg>
-                            </button>
-                            <button className="btn-icon btn-danger" onClick={() => handleEliminarGastoFijo(gf.id)} title="Eliminar">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ul className="fin-lista">
+                {pagFijos.visibles.map((gf) => (
+                  <li key={gf.id} className={`fin-mov fin-mov--fijo ${gf.activo ? '' : 'is-inactivo'}`}>
+                    <span className="fin-mov__icono fin-mov__icono--dia" aria-label={`Día ${gf.dia_generacion}`}>{gf.dia_generacion}</span>
+                    <div className="fin-mov__info">
+                      <span className="fin-mov__desc">{gf.descripcion}</span>
+                      <span className="fin-mov__meta">Se genera el día {gf.dia_generacion} de cada mes</span>
+                      <span className="fin-mov__etiquetas">
+                        <span className="fin-categoria" style={{ background: getColorCategoria(gf.categoria) }}>{gf.categoria}</span>
+                        <button
+                          type="button"
+                          className={`fin-estado fin-estado--toggle ${gf.activo ? 'fin-estado--ok' : 'fin-estado--off'}`}
+                          onClick={() => handleToggleGastoFijo(gf)}
+                          aria-pressed={!!gf.activo}
+                          title="Toca para activar o desactivar"
+                        >
+                          {gf.activo ? 'Activo' : 'Inactivo'}
+                        </button>
+                      </span>
+                    </div>
+                    <div className="fin-mov__lado">
+                      <strong className="fin-mov__monto">{formatearMonto(gf.monto)}</strong>
+                      <div className="fin-mov__acciones">
+                        <button className="btn-icon" onClick={() => {
+                          setEditandoGastoFijo(gf);
+                          setFormGastoFijo({
+                            categoria: gf.categoria, descripcion: gf.descripcion,
+                            monto: gf.monto.toString(), diaGeneracion: gf.dia_generacion.toString()
+                          });
+                          setShowModalGastoFijo(true);
+                        }} title="Editar" aria-label="Editar gasto fijo">
+                          {iconoEditar}
+                        </button>
+                        <button className="btn-icon btn-danger" onClick={() => handleEliminarGastoFijo(gf.id)} title="Eliminar" aria-label="Eliminar gasto fijo">
+                          {iconoEliminar}
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
+            <Paginacion
+              pagina={pagFijos.pagina}
+              totalPaginas={pagFijos.totalPaginas}
+              total={pagFijos.total}
+              porPagina={pagFijos.porPagina}
+              onCambiar={pagFijos.setPagina}
+              etiqueta="gastos fijos"
+            />
           </div>
         )}
       </div>

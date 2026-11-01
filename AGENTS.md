@@ -153,7 +153,13 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
   - En touch, el arrastre se activa con un toque largo de 400 ms.
   - Mueve y redimensiona con `moverCitaAPI(cita, fecha, hora, duracion?)`, que actualiza la pantalla antes de que responda la API.
   - `hooks/useTouchDrag.ts` ya no se usa.
-- Pendiente de migrar: Pacientes, Sesiones, Finanzas, Configuración y Login.
+- Pacientes (`.pac-*`), Sesiones (`.ses-*`), Finanzas (`.fin-*`) y Configuración (`.configuracion-module`) ya tienen cabecera, toolbar y listas mobile-first. Clases compartidas:
+  - `.fab`: botón flotante, solo en móvil.
+  - `.pac-buscador`: buscador.
+  - `.pac-filtros` / `.pac-filtro`: chips de filtro, coloreados con `--filtro-color`.
+  - `.toast`: mensajes.
+- Las listas de tarjetas se paginan en el cliente, 10 por página, con `usePaginacion(items, claveReinicio)` y `<Paginacion />` de `components/Paginacion.tsx`. La página vuelve a 1 cuando cambia la clave (búsqueda, filtro, mes). Se usa en Pacientes, Sesiones y Finanzas (movimientos y gastos fijos).
+- Pendiente: el interior de los modales grandes de Sesiones (formulario de sesión, progreso, evaluación) y de `FichaCompletaModal` todavía tiene muchos estilos inline, aunque ya hereda el bottom-sheet.
 
 ## Reglas de trabajo (preferencias del usuario)
 
