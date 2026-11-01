@@ -1703,48 +1703,38 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 <h4>Evaluación</h4>
                 
                 {/* Dolor - Sliders visuales */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ fontSize: '0.9rem', color: '#aaa', display: 'block', marginBottom: '0.75rem' }}>Dolor (EVA 0-10)</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>
-                        Inicial: <strong style={{ color: getDolorColor(formData.dolorInicial), fontSize: '1.25rem' }}>{formData.dolorInicial}</strong>
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="10"
-                        value={formData.dolorInicial}
-                        onChange={(e) => setFormData({ ...formData, dolorInicial: parseInt(e.target.value) })}
-                        style={{ width: '100%', height: '8px', borderRadius: '4px', outline: 'none', cursor: 'pointer', accentColor: getDolorColor(formData.dolorInicial) }}
-                      />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#666', marginTop: '0.25rem' }}>
-                        <span>Sin dolor</span><span>Máximo</span>
+                <div className="ses-bloque">
+                  <span className="ses-bloque__titulo">Dolor (EVA 0-10)</span>
+                  <div className="ses-dolor-grid">
+                    {([
+                      { campo: 'dolorInicial', etiqueta: 'Inicial' },
+                      { campo: 'dolorFinal', etiqueta: 'Final' }
+                    ] as const).map(({ campo, etiqueta }) => (
+                      <div key={campo} style={{ '--dolor-color': getDolorColor(formData[campo]) } as React.CSSProperties}>
+                        <label className="ses-dolor__label" htmlFor={`ses-${campo}`}>
+                          {etiqueta}: <strong className="ses-dolor__valor">{formData[campo]}</strong>
+                        </label>
+                        <input
+                          id={`ses-${campo}`}
+                          className="ses-rango"
+                          type="range"
+                          min="0"
+                          max="10"
+                          value={formData[campo]}
+                          onChange={(e) => setFormData({ ...formData, [campo]: parseInt(e.target.value) })}
+                        />
+                        <div className="ses-rango__extremos">
+                          <span>Sin dolor</span><span>Máximo</span>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>
-                        Final: <strong style={{ color: getDolorColor(formData.dolorFinal), fontSize: '1.25rem' }}>{formData.dolorFinal}</strong>
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="10"
-                        value={formData.dolorFinal}
-                        onChange={(e) => setFormData({ ...formData, dolorFinal: parseInt(e.target.value) })}
-                        style={{ width: '100%', height: '8px', borderRadius: '4px', outline: 'none', cursor: 'pointer', accentColor: getDolorColor(formData.dolorFinal) }}
-                      />
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#666', marginTop: '0.25rem' }}>
-                        <span>Sin dolor</span><span>Máximo</span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* Progreso General - Chips */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ fontSize: '0.9rem', color: '#aaa', display: 'block', marginBottom: '0.75rem' }}>Progreso General</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div className="ses-bloque">
+                  <span className="ses-bloque__titulo">Progreso General</span>
+                  <div className="ses-chips">
                     {[
                       { value: 'sin_cambios', label: 'Sin cambios', icon: '↔' },
                       { value: 'leve_mejoria', label: 'Leve mejoría', icon: '↗' },
@@ -1756,17 +1746,8 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                         key={opcion.value}
                         type="button"
                         onClick={() => setFormData({ ...formData, progresoGeneral: opcion.value })}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          borderRadius: '20px',
-                          border: formData.progresoGeneral === opcion.value ? '2px solid #2AD636' : '1px solid #333',
-                          background: formData.progresoGeneral === opcion.value ? 'rgba(42, 214, 54, 0.15)' : '#1a1a1a',
-                          color: formData.progresoGeneral === opcion.value ? '#2AD636' : '#ccc',
-                          cursor: 'pointer',
-                          fontSize: '0.85rem',
-                          fontWeight: formData.progresoGeneral === opcion.value ? 600 : 400,
-                          transition: 'all 0.2s'
-                        }}
+                        className={`ses-chip ${formData.progresoGeneral === opcion.value ? 'is-activo' : ''}`}
+                        aria-pressed={formData.progresoGeneral === opcion.value}
                       >
                         {opcion.icon} {opcion.label}
                       </button>
@@ -1775,13 +1756,12 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 </div>
 
                 {/* Movilidad + Fuerza - en línea */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>Movilidad</label>
+                <div className="ses-par-grid">
+                  <div className="form-field">
+                    <label>Movilidad</label>
                     <select
                       value={formData.movilidad}
                       onChange={(e) => setFormData({ ...formData, movilidad: e.target.value })}
-                      style={{ width: '100%', padding: '0.6rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff' }}
                     >
                       <option value="">Seleccionar</option>
                       <option value="limitada">Limitada</option>
@@ -1791,12 +1771,11 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                       <option value="excelente">Excelente</option>
                     </select>
                   </div>
-                  <div>
-                    <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>Fuerza (Escala Daniels)</label>
+                  <div className="form-field">
+                    <label>Fuerza (Escala Daniels)</label>
                     <select
                       value={formData.fuerza}
                       onChange={(e) => setFormData({ ...formData, fuerza: e.target.value })}
-                      style={{ width: '100%', padding: '0.6rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff' }}
                     >
                       <option value="">Seleccionar</option>
                       <option value="0">0 - Sin contracción</option>
@@ -1812,13 +1791,12 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
 
               {/* Ejercicios */}
               <div className="form-section">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h4 style={{ margin: 0 }}>Ejercicios Realizados</h4>
+                <div className="ses-seccion-cabecera">
+                  <h4>Ejercicios Realizados</h4>
                   <button 
                     type="button" 
                     onClick={() => setMostrarGestionBiblioteca(true)} 
-                    className="btn-secondary"
-                    style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    className="btn-secondary btn-sm btn-con-icono"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -1832,26 +1810,18 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                   <button 
                     type="button" 
                     onClick={() => setMostrarSelectorEjercicio(true)} 
-                    className="btn-secondary"
-                    style={{ marginBottom: '1rem' }}
+                    className="btn-secondary ses-agregar-ejercicio"
                   >
                     + Agregar Ejercicio
                   </button>
                 ) : (
-                  <div style={{ 
-                    border: '1px solid #2AD636', 
-                    borderRadius: '8px', 
-                    padding: '1rem', 
-                    marginBottom: '1rem',
-                    background: '#1a1a1a'
-                  }}>
+                  <div className="ses-selector">
                     {/* Toggle entre seleccionar y crear */}
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <div className="ses-selector__modos">
                       <button
                         type="button"
                         onClick={() => setModoCrearEjercicio(false)}
                         className={!modoCrearEjercicio ? 'btn-primary' : 'btn-secondary'}
-                        style={{ flex: 1 }}
                       >
                         Seleccionar de Biblioteca
                       </button>
@@ -1859,7 +1829,6 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                         type="button"
                         onClick={() => setModoCrearEjercicio(true)}
                         className={modoCrearEjercicio ? 'btn-primary' : 'btn-secondary'}
-                        style={{ flex: 1 }}
                       >
                         Crear Nuevo
                       </button>
@@ -1878,69 +1847,44 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                               setBusquedaEjercicio(e.target.value);
                               setEjercicioSeleccionado(null);
                             }}
-                            style={{
-                              padding: '0.75rem',
-                              fontSize: '0.95rem',
-                              border: '1px solid #333',
-                              borderRadius: '8px',
-                              background: '#1a1a1a',
-                              color: '#fff'
-                            }}
                           />
                         </div>
 
-                        {busquedaEjercicio && (
-                          <div style={{
-                            maxHeight: '200px',
-                            overflowY: 'auto',
-                            border: '1px solid #333',
-                            borderRadius: '8px',
-                            background: '#1a1a1a',
-                            marginTop: '0.5rem'
-                          }}>
-                            {bibliotecaEjercicios
-                              .filter(ej => 
-                                ej.nombre.toLowerCase().includes(busquedaEjercicio.toLowerCase()) ||
-                                (ej.categoria && ej.categoria.toLowerCase().includes(busquedaEjercicio.toLowerCase()))
-                              )
-                              .map(ej => (
-                                <div
+                        {busquedaEjercicio && (() => {
+                          const termino = busquedaEjercicio.toLowerCase();
+                          const resultados = bibliotecaEjercicios.filter(ej =>
+                            ej.nombre.toLowerCase().includes(termino) ||
+                            (ej.categoria && ej.categoria.toLowerCase().includes(termino))
+                          );
+                          return (
+                            <div className="ses-resultados">
+                              {resultados.map(ej => (
+                                <button
                                   key={ej.id}
+                                  type="button"
+                                  className={`ses-resultado ${ejercicioSeleccionado?.id === ej.id ? 'is-activo' : ''}`}
                                   onClick={() => {
                                     setEjercicioSeleccionado(ej);
                                     setBusquedaEjercicio(ej.nombre);
                                   }}
-                                  style={{
-                                    padding: '0.75rem',
-                                    cursor: 'pointer',
-                                    borderBottom: '1px solid #333',
-                                    background: ejercicioSeleccionado?.id === ej.id ? '#2a2a2a' : 'transparent',
-                                    transition: 'background 0.2s'
-                                  }}
-                                  onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
-                                  onMouseLeave={(e) => e.currentTarget.style.background = ejercicioSeleccionado?.id === ej.id ? '#2a2a2a' : 'transparent'}
                                 >
-                                  <div style={{ fontWeight: '500' }}>{ej.nombre}</div>
+                                  <span className="ses-resultado__nombre">{ej.nombre}</span>
                                   {ej.categoria && (
-                                    <div style={{ fontSize: '0.85rem', color: '#888', marginTop: '0.25rem' }}>
-                                      {ej.categoria}
-                                    </div>
+                                    <span className="ses-resultado__cat">{ej.categoria}</span>
                                   )}
-                                </div>
+                                </button>
                               ))}
-                            {bibliotecaEjercicios.filter(ej => 
-                              ej.nombre.toLowerCase().includes(busquedaEjercicio.toLowerCase()) ||
-                              (ej.categoria && ej.categoria.toLowerCase().includes(busquedaEjercicio.toLowerCase()))
-                            ).length === 0 && (
-                              <div style={{ padding: '1rem', textAlign: 'center', color: '#888' }}>
-                                No se encontraron ejercicios
-                              </div>
-                            )}
-                          </div>
-                        )}
+                              {resultados.length === 0 && (
+                                <div className="ses-resultados__vacio">
+                                  No se encontraron ejercicios
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         {ejercicioSeleccionado && (
-                          <div className="form-grid" style={{ marginTop: '1rem' }}>
+                          <div className="form-grid ses-params">
                             <div className="form-field">
                               <label>Peso (opcional)</label>
                               <input
@@ -2004,13 +1948,13 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                             onChange={(e) => setNombreNuevoEjercicio(e.target.value)}
                             autoFocus
                           />
-                          <small style={{ color: '#888', fontSize: '0.85rem', marginTop: '0.25rem', display: 'block' }}>
+                          <small className="campo-ayuda">
                             Este ejercicio se guardará en tu biblioteca para uso futuro
                           </small>
                         </div>
 
                         {nombreNuevoEjercicio.trim() && (
-                          <div className="form-grid" style={{ marginTop: '1rem' }}>
+                          <div className="form-grid ses-params">
                             <div className="form-field">
                               <label>Peso</label>
                               <input
@@ -2063,7 +2007,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                       </>
                     )}
 
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                    <div className="ses-selector__acciones">
                       <button 
                         type="button" 
                         onClick={modoCrearEjercicio ? crearYAgregarEjercicio : agregarEjercicioDesdeSelector} 
@@ -2097,45 +2041,27 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
 
                 <div className="ejercicios-lista">
                   {formData.ejerciciosRealizados.map((ejercicio, index) => (
-                    <div key={index} style={{
-                      border: '1px solid #2a2a2a',
-                      borderRadius: '8px',
-                      padding: '1rem',
-                      marginBottom: '0.5rem',
-                      background: '#0f0f0f'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 'bold', color: '#2AD636', marginBottom: '0.5rem' }}>
-                            {ejercicio.nombre}
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', fontSize: '0.85rem', color: '#888' }}>
-                            {ejercicio.peso && <div><strong>Peso:</strong> {ejercicio.peso}</div>}
-                            {ejercicio.repeticiones && <div><strong>Repeticiones:</strong> {ejercicio.repeticiones}</div>}
-                            {ejercicio.tiempo && <div><strong>Tiempo:</strong> {ejercicio.tiempo}</div>}
-                            {ejercicio.carga && <div><strong>Carga:</strong> {ejercicio.carga}</div>}
-                          </div>
-                          {ejercicio.notas && (
-                            <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#aaa', fontStyle: 'italic' }}>
-                              {ejercicio.notas}
-                            </div>
-                          )}
+                    <div key={index} className="ses-ejercicio">
+                      <div className="ses-ejercicio__cuerpo">
+                        <div className="ses-ejercicio__nombre">{ejercicio.nombre}</div>
+                        <div className="ses-ejercicio__datos">
+                          {ejercicio.peso && <div><strong>Peso:</strong> {ejercicio.peso}</div>}
+                          {ejercicio.repeticiones && <div><strong>Repeticiones:</strong> {ejercicio.repeticiones}</div>}
+                          {ejercicio.tiempo && <div><strong>Tiempo:</strong> {ejercicio.tiempo}</div>}
+                          {ejercicio.carga && <div><strong>Carga:</strong> {ejercicio.carga}</div>}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => eliminarEjercicio(index)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#ef4444',
-                            fontSize: '1.5rem',
-                            cursor: 'pointer',
-                            padding: '0 0.5rem'
-                          }}
-                        >
-                          ×
-                        </button>
+                        {ejercicio.notas && (
+                          <div className="ses-ejercicio__notas">{ejercicio.notas}</div>
+                        )}
                       </div>
+                      <button
+                        type="button"
+                        className="ses-ejercicio__quitar"
+                        onClick={() => eliminarEjercicio(index)}
+                        aria-label={`Quitar ${ejercicio.nombre}`}
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -2192,152 +2118,72 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
         <div className="modal-overlay" onClick={() => setMostrarGestionBiblioteca(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                 </svg>
                 Biblioteca de Ejercicios
-              </h2>
-              <button className="modal-close" onClick={() => setMostrarGestionBiblioteca(false)}>
+              </h3>
+              <button className="modal-close" onClick={() => setMostrarGestionBiblioteca(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
               </button>
             </div>
             
-            <div style={{ padding: '1.5rem' }}>
-              <p style={{ color: '#888', marginBottom: '1rem' }}>
-                Total de ejercicios: <strong style={{ color: '#2AD636' }}>{bibliotecaEjercicios.length}</strong>
+            <div className="modal-body">
+              <p className="modal-texto">
+                Total de ejercicios: <strong className="texto-acento">{bibliotecaEjercicios.length}</strong>
               </p>
 
               {bibliotecaEjercicios.length === 0 ? (
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '3rem', 
-                  color: '#666',
-                  border: '2px dashed #2a2a2a',
-                  borderRadius: '8px'
-                }}>
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin: '0 auto 1rem', opacity: 0.3 }}>
+                <div className="ses-bib-vacio">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                     <polyline points="14 2 14 8 20 8"/>
                     <line x1="12" y1="18" x2="12" y2="12"/>
                     <line x1="9" y1="15" x2="15" y2="15"/>
                   </svg>
-                  <p style={{ margin: 0 }}>No hay ejercicios en la biblioteca</p>
-                  <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                    Crea ejercicios desde el formulario de sesiones
-                  </p>
+                  <p>No hay ejercicios en la biblioteca</p>
+                  <p className="campo-ayuda">Crea ejercicios desde el formulario de sesiones</p>
                 </div>
               ) : (
-                <div style={{ 
-                  display: 'grid', 
-                  gap: '0.75rem',
-                  maxHeight: '60vh',
-                  overflowY: 'auto'
-                }}>
+                <div className="ses-bib-lista">
                   {bibliotecaEjercicios.map((ejercicio) => (
-                    <div 
-                      key={ejercicio.id}
-                      style={{
-                        border: '1px solid #2a2a2a',
-                        borderRadius: '8px',
-                        padding: '1rem',
-                        background: '#0f0f0f',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        transition: 'border-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.borderColor = '#2AD636'}
-                      onMouseLeave={(e) => e.currentTarget.style.borderColor = '#2a2a2a'}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ 
-                          fontWeight: 'bold', 
-                          color: '#fff', 
-                          marginBottom: '0.25rem',
-                          fontSize: '1rem'
-                        }}>
-                          {ejercicio.nombre}
-                        </div>
+                    <div key={ejercicio.id} className="ses-bib-item">
+                      <div className="ses-bib-item__info">
+                        <div className="ses-bib-item__nombre">{ejercicio.nombre}</div>
                         {ejercicio.categoria && (
-                          <div style={{ 
-                            display: 'inline-block',
-                            fontSize: '0.75rem', 
-                            color: '#2AD636',
-                            background: 'rgba(42, 214, 54, 0.1)',
-                            padding: '0.2rem 0.6rem',
-                            borderRadius: '12px',
-                            marginTop: '0.25rem'
-                          }}>
-                            {ejercicio.categoria}
-                          </div>
+                          <span className="ses-bib-item__cat">{ejercicio.categoria}</span>
                         )}
                         {ejercicio.descripcion && (
-                          <div style={{ 
-                            fontSize: '0.85rem', 
-                            color: '#888',
-                            marginTop: '0.5rem'
-                          }}>
-                            {ejercicio.descripcion}
-                          </div>
+                          <div className="ses-bib-item__desc">{ejercicio.descripcion}</div>
                         )}
                       </div>
                       <button
+                        className="ses-bib-eliminar"
                         onClick={() => eliminarEjercicioDeBiblioteca(ejercicio.id)}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid #ef4444',
-                          color: '#ef4444',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          transition: 'all 0.2s',
-                          marginLeft: '1rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#ef4444';
-                          e.currentTarget.style.color = '#fff';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = '#ef4444';
-                        }}
+                        aria-label={`Eliminar ${ejercicio.nombre}`}
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                           <polyline points="3 6 5 6 21 6"/>
                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                           <line x1="10" y1="11" x2="10" y2="17"/>
                           <line x1="14" y1="11" x2="14" y2="17"/>
                         </svg>
-                        Eliminar
+                        <span>Eliminar</span>
                       </button>
                     </div>
                   ))}
                 </div>
               )}
+            </div>
 
-              <div style={{ 
-                marginTop: '1.5rem', 
-                paddingTop: '1rem', 
-                borderTop: '1px solid #2a2a2a',
-                display: 'flex',
-                justifyContent: 'flex-end'
-              }}>
-                <button 
-                  onClick={() => setMostrarGestionBiblioteca(false)} 
-                  className="btn-primary"
-                >
-                  Cerrar
-                </button>
-              </div>
+            <div className="modal-actions">
+              <button onClick={() => setMostrarGestionBiblioteca(false)} className="btn-primary">
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
@@ -2354,40 +2200,24 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
             
             <div className="modal-body">
               {pacienteEvaluacion && (
-                <div style={{ marginBottom: '1rem', padding: '1rem', background: '#0a0a0a', borderRadius: '8px', border: '1px solid #2AD636' }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#2AD636' }}>
-                    {pacienteEvaluacion.nombre}
-                  </h4>
-                  <p style={{ margin: 0, color: '#888', fontSize: '0.875rem' }}>
-                    Completó todas las sesiones programadas del tratamiento
-                  </p>
+                <div className="ses-eval-paciente">
+                  <h4>{pacienteEvaluacion.nombre}</h4>
+                  <p>Completó todas las sesiones programadas del tratamiento</p>
                 </div>
               )}
 
               <div className="form-field full-width">
-                <label style={{ fontSize: '1rem', marginBottom: '0.75rem', display: 'block', color: '#e0e0e0' }}>
-                  Evaluación Final *
-                </label>
+                <label htmlFor="ses-evaluacion-final">Evaluación Final *</label>
                 <textarea
+                  id="ses-evaluacion-final"
+                  className="ses-eval-texto"
                   value={evaluacionTexto}
                   onChange={(e) => setEvaluacionTexto(e.target.value)}
                   rows={12}
                   placeholder="Describe la evaluación final del tratamiento del paciente...&#10;&#10;Incluye:&#10;- Progreso general&#10;- Objetivos alcanzados&#10;- Estado final del paciente&#10;- Recomendaciones finales&#10;- Observaciones importantes"
-                  style={{
-                    width: '100%',
-                    padding: '1rem',
-                    background: '#0a0a0a',
-                    border: '1px solid #2a2a2a',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '0.95rem',
-                    lineHeight: '1.6',
-                    resize: 'vertical',
-                    fontFamily: 'inherit'
-                  }}
                   required
                 />
-                <small style={{ color: '#888', fontSize: '0.8rem', marginTop: '0.5rem', display: 'block' }}>
+                <small className="campo-ayuda">
                   Esta evaluación se mostrará en la ficha del paciente y en el PDF
                 </small>
               </div>
@@ -2417,326 +2247,173 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
       {/* Modal de Progreso del Paciente */}
       {showModalProgreso && pacienteProgreso && (
         <div className="modal-overlay" onClick={() => setShowModalProgreso(false)}>
-          <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px' }}>
+          <div className="modal-content modal-large ses-progreso-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '24px', height: '24px', color: '#2AD636' }}>
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--accent)' }} aria-hidden="true">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
                 </svg>
                 Progreso del Tratamiento
               </h3>
-              <button className="modal-close" onClick={() => setShowModalProgreso(false)}>×</button>
+              <button className="modal-close" onClick={() => setShowModalProgreso(false)} aria-label="Cerrar">×</button>
             </div>
             
-            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <div className="modal-body">
               {/* Información del Paciente */}
-              <div style={{ 
-                marginBottom: '1.5rem', 
-                padding: '1.5rem', 
-                background: 'linear-gradient(135deg, rgba(42, 214, 54, 0.1) 0%, rgba(42, 214, 54, 0.05) 100%)', 
-                borderRadius: '12px', 
-                border: '2px solid #2AD636' 
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                      <h4 style={{ margin: 0, color: '#2AD636', fontSize: '1.5rem' }}>
-                        {pacienteProgreso.nombre}
-                      </h4>
-                      {pacienteProgreso.estado_paciente === 'alta' && (
-                        <span style={{
-                          padding: '0.25rem 0.75rem',
-                          background: 'rgba(16, 185, 129, 0.2)',
-                          border: '1.5px solid #10b981',
-                          borderRadius: '16px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          color: '#10b981',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}>
-                          ✓ Alta
-                        </span>
-                      )}
-                      {pacienteProgreso.estado_paciente === 'abandono' && (
-                        <span style={{
-                          padding: '0.25rem 0.75rem',
-                          background: 'rgba(239, 68, 68, 0.2)',
-                          border: '1.5px solid #ef4444',
-                          borderRadius: '16px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          color: '#ef4444',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}>
-                          Receso
-                        </span>
-                      )}
-                    </div>
-                    <p style={{ margin: 0, color: '#888', fontSize: '0.9rem' }}>
-                      RUT: {pacienteProgreso.rut} • Teléfono: {pacienteProgreso.telefono}
-                    </p>
+              <div className="ses-prog-cabecera">
+                <div className="ses-prog-cabecera__info">
+                  <div className="ses-prog-cabecera__nombre">
+                    <h4>{pacienteProgreso.nombre}</h4>
+                    {pacienteProgreso.estado_paciente === 'alta' && (
+                      <span className="ses-prog-pill ses-prog-pill--alta">✓ Alta</span>
+                    )}
+                    {pacienteProgreso.estado_paciente === 'abandono' && (
+                      <span className="ses-prog-pill ses-prog-pill--receso">Receso</span>
+                    )}
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#2AD636' }}>
-                      {sesionesProgreso.length}
-                    </div>
-                    <div style={{ fontSize: '0.875rem', color: '#888' }}>
-                      {sesionesProgreso.length === 1 ? 'Sesión' : 'Sesiones'}
-                    </div>
-                  </div>
+                  <p className="ses-prog-cabecera__datos">
+                    RUT: {pacienteProgreso.rut} • Teléfono: {pacienteProgreso.telefono}
+                  </p>
+                </div>
+                <div className="ses-prog-cabecera__total">
+                  <strong>{sesionesProgreso.length}</strong>
+                  <span>{sesionesProgreso.length === 1 ? 'Sesión' : 'Sesiones'}</span>
                 </div>
               </div>
 
               {/* Métricas de Progreso */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{ marginBottom: '1rem', color: '#e0e0e0', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2AD636" strokeWidth="2">
-                    <path d="M3 3v18h18M7 16l4-4 4 4 6-6"/>
-                  </svg>
-                  Métricas Generales
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                  {/* Dolor Inicial Promedio */}
-                  <div style={{ 
-                    background: '#1a1a1a', 
-                    border: '1px solid #2a2a2a', 
-                    borderRadius: '8px', 
-                    padding: '1rem',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.5rem' }}>Dolor Inicial Promedio</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#ef4444' }}>
-                      {calcularPromedioMetrica('dolorInicial')}
+              <h4 className="ses-prog-titulo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M3 3v18h18M7 16l4-4 4 4 6-6"/>
+                </svg>
+                Métricas Generales
+              </h4>
+              <div className="ses-prog-metricas">
+                {[
+                  { label: 'Dolor Inicial Promedio', metrica: 'dolorInicial', color: 'var(--danger)', texto: false },
+                  { label: 'Dolor Final Promedio', metrica: 'dolorFinal', color: 'var(--estado-confirmada)', texto: false },
+                  { label: 'Movilidad Actual', metrica: 'movilidad', color: 'var(--estado-completada)', texto: true },
+                  { label: 'Fuerza Actual', metrica: 'fuerza', color: 'var(--estado-pendiente)', texto: true }
+                ].map(m => (
+                  <div key={m.metrica} className="ses-prog-metrica" style={{ '--metrica-color': m.color } as React.CSSProperties}>
+                    <div className="ses-prog-metrica__label">{m.label}</div>
+                    <div className={`ses-prog-metrica__valor ${m.texto ? 'ses-prog-metrica__valor--texto' : ''}`}>
+                      {calcularPromedioMetrica(m.metrica)}
                     </div>
                   </div>
-
-                  {/* Dolor Final Promedio */}
-                  <div style={{ 
-                    background: '#1a1a1a', 
-                    border: '1px solid #2a2a2a', 
-                    borderRadius: '8px', 
-                    padding: '1rem',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.5rem' }}>Dolor Final Promedio</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#10b981' }}>
-                      {calcularPromedioMetrica('dolorFinal')}
-                    </div>
-                  </div>
-
-                  {/* Movilidad Actual */}
-                  <div style={{ 
-                    background: '#1a1a1a', 
-                    border: '1px solid #2a2a2a', 
-                    borderRadius: '8px', 
-                    padding: '1rem',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.5rem' }}>Movilidad Actual</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#3b82f6', textTransform: 'capitalize' }}>
-                      {calcularPromedioMetrica('movilidad')}
-                    </div>
-                  </div>
-
-                  {/* Fuerza Actual */}
-                  <div style={{ 
-                    background: '#1a1a1a', 
-                    border: '1px solid #2a2a2a', 
-                    borderRadius: '8px', 
-                    padding: '1rem',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.5rem' }}>Fuerza Actual</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f59e0b', textTransform: 'capitalize' }}>
-                      {calcularPromedioMetrica('fuerza')}
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
 
               {/* Historial de Sesiones */}
-              <div>
-                <h4 style={{ marginBottom: '1rem', color: '#e0e0e0', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2AD636" strokeWidth="2">
-                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                  </svg>
-                  Historial de Sesiones
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {sesionesProgreso.map((sesion: any, index: number) => (
-                    <div key={sesion.id} style={{
-                      background: '#1a1a1a',
-                      border: '1px solid #2a2a2a',
-                      borderRadius: '8px',
-                      padding: '1.25rem',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      {/* Header de la sesión */}
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        marginBottom: '1rem',
-                        paddingBottom: '0.75rem',
-                        borderBottom: '1px solid #2a2a2a'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <div style={{
-                            width: '40px',
-                            height: '40px',
-                            background: '#2AD636',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#0a0a0a',
-                            fontWeight: 700,
-                            fontSize: '1.1rem'
-                          }}>
-                            {sesionesProgreso.length - index}
+              <h4 className="ses-prog-titulo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Historial de Sesiones
+              </h4>
+              <div className="ses-prog-lista">
+                {sesionesProgreso.map((sesion: any, index: number) => (
+                  <div key={sesion.id} className="ses-prog-sesion">
+                    {/* Header de la sesión */}
+                    <div className="ses-prog-sesion__cabecera">
+                      <div className="ses-prog-sesion__id">
+                        <div className="ses-prog-sesion__num">{sesionesProgreso.length - index}</div>
+                        <div>
+                          <div className="ses-prog-sesion__fecha">
+                            {formatearFechaLocal(sesion.fecha)} • {sesion.hora}
                           </div>
-                          <div>
-                            <div style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>
-                              {formatearFechaLocal(sesion.fecha)} • {sesion.hora}
-                            </div>
-                            <div style={{ fontSize: '0.875rem', color: '#888' }}>
-                              {sesion.tipo} • {sesion.duracion} min
-                            </div>
+                          <div className="ses-prog-sesion__meta">
+                            {sesion.tipo} • {sesion.duracion} min
                           </div>
                         </div>
-                        <span 
-                          className="badge"
-                          style={{ 
-                            backgroundColor: obtenerColorEstado(sesion.estado),
-                            fontSize: '0.75rem',
-                            padding: '0.375rem 0.75rem'
-                          }}
-                        >
-                          {sesion.estado}
-                        </span>
                       </div>
+                      <span className="badge" style={{ backgroundColor: obtenerColorEstado(sesion.estado) }}>
+                        {sesion.estado}
+                      </span>
+                    </div>
 
-                      {/* Métricas de la sesión */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
-                        {sesion.dolorInicial !== null && sesion.dolorInicial !== undefined && (
-                          <div>
-                            <div style={{ fontSize: '0.7rem', color: '#888', marginBottom: '0.25rem' }}>Dolor Inicial</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#ef4444' }}>{sesion.dolorInicial}/10</div>
-                          </div>
-                        )}
-                        {sesion.dolorFinal !== null && sesion.dolorFinal !== undefined && (
-                          <div>
-                            <div style={{ fontSize: '0.7rem', color: '#888', marginBottom: '0.25rem' }}>Dolor Final</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#10b981' }}>{sesion.dolorFinal}/10</div>
-                          </div>
-                        )}
-                        {sesion.movilidad && (
-                          <div>
-                            <div style={{ fontSize: '0.7rem', color: '#888', marginBottom: '0.25rem' }}>Movilidad</div>
-                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#3b82f6', textTransform: 'capitalize' }}>{sesion.movilidad}</div>
-                          </div>
-                        )}
-                        {sesion.fuerza && (
-                          <div>
-                            <div style={{ fontSize: '0.7rem', color: '#888', marginBottom: '0.25rem' }}>Fuerza (Daniels)</div>
-                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: getDanielsInfo(sesion.fuerza).color }}>
-                              {getDanielsInfo(sesion.fuerza).label} - {getDanielsInfo(sesion.fuerza).desc}
-                            </div>
-                          </div>
-                        )}
-                        {sesion.progresoGeneral && (
-                          <div>
-                            <div style={{ fontSize: '0.7rem', color: '#888', marginBottom: '0.25rem' }}>Progreso</div>
-                            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2AD636', textTransform: 'capitalize' }}>{sesion.progresoGeneral}</div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Ejercicios realizados */}
-                      {sesion.ejerciciosRealizados && sesion.ejerciciosRealizados.length > 0 && (
-                        <div style={{ marginBottom: '0.75rem' }}>
-                          <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.5rem' }}>Ejercicios:</div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {sesion.ejerciciosRealizados.map((ejercicio: any, idx: number) => {
-                              // Formato antiguo (string) - mostrar como badge
-                              if (typeof ejercicio === 'string') {
-                                return (
-                                  <span key={idx} style={{
-                                    background: 'rgba(42, 214, 54, 0.1)',
-                                    color: '#2AD636',
-                                    padding: '0.25rem 0.75rem',
-                                    borderRadius: '12px',
-                                    fontSize: '0.8rem',
-                                    border: '1px solid rgba(42, 214, 54, 0.3)',
-                                    display: 'inline-block',
-                                    width: 'fit-content'
-                                  }}>
-                                    {ejercicio}
-                                  </span>
-                                );
-                              }
-                              // Formato nuevo (objeto) - mostrar con detalles
-                              return (
-                                <div key={idx} style={{
-                                  background: 'rgba(42, 214, 54, 0.05)',
-                                  border: '1px solid rgba(42, 214, 54, 0.2)',
-                                  borderRadius: '8px',
-                                  padding: '0.5rem',
-                                  fontSize: '0.8rem'
-                                }}>
-                                  <div style={{ fontWeight: 600, color: '#2AD636', marginBottom: '0.25rem' }}>
-                                    {ejercicio.nombre}
-                                  </div>
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: '#aaa' }}>
-                                    {ejercicio.peso && <span>💪 {ejercicio.peso}</span>}
-                                    {ejercicio.repeticiones && <span>🔄 {ejercicio.repeticiones}</span>}
-                                    {ejercicio.tiempo && <span>⏱️ {ejercicio.tiempo}</span>}
-                                    {ejercicio.carga && <span>📊 {ejercicio.carga}</span>}
-                                  </div>
-                                  {ejercicio.notas && (
-                                    <div style={{ marginTop: '0.25rem', fontSize: '0.7rem', color: '#888', fontStyle: 'italic' }}>
-                                      {ejercicio.notas}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
+                    {/* Métricas de la sesión */}
+                    <div className="ses-prog-datos">
+                      {sesion.dolorInicial !== null && sesion.dolorInicial !== undefined && (
+                        <div style={{ '--dato-color': 'var(--danger)' } as React.CSSProperties}>
+                          <div className="ses-prog-dato__label">Dolor Inicial</div>
+                          <div className="ses-prog-dato__valor">{sesion.dolorInicial}/10</div>
+                        </div>
+                      )}
+                      {sesion.dolorFinal !== null && sesion.dolorFinal !== undefined && (
+                        <div style={{ '--dato-color': 'var(--estado-confirmada)' } as React.CSSProperties}>
+                          <div className="ses-prog-dato__label">Dolor Final</div>
+                          <div className="ses-prog-dato__valor">{sesion.dolorFinal}/10</div>
+                        </div>
+                      )}
+                      {sesion.movilidad && (
+                        <div style={{ '--dato-color': 'var(--estado-completada)' } as React.CSSProperties}>
+                          <div className="ses-prog-dato__label">Movilidad</div>
+                          <div className="ses-prog-dato__valor">{sesion.movilidad}</div>
+                        </div>
+                      )}
+                      {sesion.fuerza && (
+                        <div style={{ '--dato-color': getDanielsInfo(sesion.fuerza).color } as React.CSSProperties}>
+                          <div className="ses-prog-dato__label">Fuerza (Daniels)</div>
+                          <div className="ses-prog-dato__valor">
+                            {getDanielsInfo(sesion.fuerza).label} - {getDanielsInfo(sesion.fuerza).desc}
                           </div>
                         </div>
                       )}
-
-                      {/* Notas y observaciones */}
-                      {(sesion.notasSesion || sesion.observaciones || sesion.recomendaciones) && (
-                        <div style={{ 
-                          background: '#0a0a0a', 
-                          padding: '0.75rem', 
-                          borderRadius: '6px',
-                          fontSize: '0.875rem',
-                          color: '#ccc',
-                          lineHeight: '1.5'
-                        }}>
-                          {sesion.notasSesion && (
-                            <div style={{ marginBottom: '0.5rem' }}>
-                              <strong style={{ color: '#2AD636' }}>Notas:</strong> {sesion.notasSesion}
-                            </div>
-                          )}
-                          {sesion.observaciones && (
-                            <div style={{ marginBottom: '0.5rem' }}>
-                              <strong style={{ color: '#3b82f6' }}>Observaciones:</strong> {sesion.observaciones}
-                            </div>
-                          )}
-                          {sesion.recomendaciones && (
-                            <div>
-                              <strong style={{ color: '#f59e0b' }}>Recomendaciones:</strong> {sesion.recomendaciones}
-                            </div>
-                          )}
+                      {sesion.progresoGeneral && (
+                        <div style={{ '--dato-color': 'var(--accent)' } as React.CSSProperties}>
+                          <div className="ses-prog-dato__label">Progreso</div>
+                          <div className="ses-prog-dato__valor">{sesion.progresoGeneral}</div>
                         </div>
                       )}
                     </div>
-                  ))}
-                </div>
+
+                    {/* Ejercicios realizados */}
+                    {sesion.ejerciciosRealizados && sesion.ejerciciosRealizados.length > 0 && (
+                      <div className="ses-prog-ejercicios">
+                        <div className="ses-prog-dato__label">Ejercicios:</div>
+                        <div className="ses-prog-ejercicios__lista">
+                          {sesion.ejerciciosRealizados.map((ejercicio: any, idx: number) => {
+                            // Formato antiguo (string) - mostrar como badge
+                            if (typeof ejercicio === 'string') {
+                              return <span key={idx} className="ses-prog-ej-tag">{ejercicio}</span>;
+                            }
+                            // Formato nuevo (objeto) - mostrar con detalles
+                            return (
+                              <div key={idx} className="ses-prog-ej">
+                                <div className="ses-prog-ej__nombre">{ejercicio.nombre}</div>
+                                <div className="ses-prog-ej__datos">
+                                  {ejercicio.peso && <span>💪 {ejercicio.peso}</span>}
+                                  {ejercicio.repeticiones && <span>🔄 {ejercicio.repeticiones}</span>}
+                                  {ejercicio.tiempo && <span>⏱️ {ejercicio.tiempo}</span>}
+                                  {ejercicio.carga && <span>📊 {ejercicio.carga}</span>}
+                                </div>
+                                {ejercicio.notas && (
+                                  <div className="ses-prog-ej__notas">{ejercicio.notas}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Notas y observaciones */}
+                    {(sesion.notasSesion || sesion.observaciones || sesion.recomendaciones) && (
+                      <div className="ses-prog-notas">
+                        {sesion.notasSesion && (
+                          <div><strong>Notas:</strong> {sesion.notasSesion}</div>
+                        )}
+                        {sesion.observaciones && (
+                          <div className="ses-prog-notas__obs"><strong>Observaciones:</strong> {sesion.observaciones}</div>
+                        )}
+                        {sesion.recomendaciones && (
+                          <div className="ses-prog-notas__rec"><strong>Recomendaciones:</strong> {sesion.recomendaciones}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -2745,7 +2422,6 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 type="button" 
                 onClick={() => setShowModalProgreso(false)} 
                 className="btn-primary"
-                style={{ width: '100%' }}
               >
                 Cerrar
               </button>
@@ -2757,136 +2433,93 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
       {/* Mini-Modal Completar Sesión */}
       {showModalCompletar && sesionCompletar && (
         <div className="modal-overlay" onClick={handleCerrarCompletar}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
-            <div className="modal-header" style={{ borderBottom: '2px solid #10b981' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" style={{ width: '24px', height: '24px' }}>
+          <div className="modal-content ses-completar" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header ses-completar__header">
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--estado-confirmada)' }} aria-hidden="true">
                   <path d="M20 6L9 17l-5-5"/>
                 </svg>
                 Completar Sesión
                 {sesionCompletar.numeroSesion && (
-                  <span style={{ color: '#2AD636', fontSize: '0.9rem' }}>
+                  <span className="ses-completar__num">
                     #{sesionCompletar.numeroSesion}{sesionCompletar.sesionesProgramadas ? ` / ${sesionCompletar.sesionesProgramadas}` : ''}
                   </span>
                 )}
               </h3>
-              <button className="modal-close" onClick={handleCerrarCompletar}>×</button>
+              <button className="modal-close" onClick={handleCerrarCompletar} aria-label="Cerrar">×</button>
             </div>
 
             {/* Info de la sesión (solo lectura) */}
-            <div style={{ 
-              padding: '1rem 1.5rem', 
-              background: '#0a0a0a', 
-              borderBottom: '1px solid #2a2a2a',
-              display: 'flex',
-              gap: '2rem',
-              flexWrap: 'wrap',
-              fontSize: '0.9rem'
-            }}>
-              <div><strong style={{ color: '#888' }}>Paciente:</strong> <span style={{ color: '#fff' }}>{sesionCompletar.paciente}</span></div>
-              <div><strong style={{ color: '#888' }}>Fecha:</strong> <span style={{ color: '#fff' }}>{formatearFechaLocal(sesionCompletar.fecha)}</span></div>
-              <div><strong style={{ color: '#888' }}>Hora:</strong> <span style={{ color: '#fff' }}>{sesionCompletar.hora}</span></div>
-              <div><strong style={{ color: '#888' }}>Tipo:</strong> <span style={{ color: '#fff' }}>{sesionCompletar.tipo}</span></div>
-            </div>
+            <dl className="ses-completar-info">
+              <div><dt>Paciente</dt><dd>{sesionCompletar.paciente}</dd></div>
+              <div><dt>Fecha</dt><dd>{formatearFechaLocal(sesionCompletar.fecha)}</dd></div>
+              <div><dt>Hora</dt><dd>{sesionCompletar.hora}</dd></div>
+              <div><dt>Tipo</dt><dd>{sesionCompletar.tipo}</dd></div>
+            </dl>
 
-            <div style={{ padding: '1.5rem', maxHeight: '65vh', overflowY: 'auto' }}>
+            <div className="modal-body">
               {/* Dolor - Sliders visuales */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: '#e0e0e0', fontSize: '1rem' }}>Dolor (EVA 0-10)</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                  {/* Dolor Inicial */}
-                  <div>
-                    <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>
-                      Dolor Inicial: <strong style={{ color: getDolorColor(completarForm.dolorInicial), fontSize: '1.25rem' }}>{completarForm.dolorInicial}</strong>
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      value={completarForm.dolorInicial}
-                      onChange={(e) => setCompletarForm(prev => ({ ...prev, dolorInicial: parseInt(e.target.value) }))}
-                      style={{
-                        width: '100%',
-                        height: '8px',
-                        borderRadius: '4px',
-                        outline: 'none',
-                        cursor: 'pointer',
-                        accentColor: getDolorColor(completarForm.dolorInicial)
-                      }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#666', marginTop: '0.25rem' }}>
-                      <span>Sin dolor</span><span>Máximo</span>
+              <div className="ses-bloque">
+                <h4 className="ses-subtitulo">Dolor (EVA 0-10)</h4>
+                <div className="ses-dolor-grid">
+                  {([
+                    { campo: 'dolorInicial', etiqueta: 'Dolor Inicial' },
+                    { campo: 'dolorFinal', etiqueta: 'Dolor Final' }
+                  ] as const).map(({ campo, etiqueta }) => (
+                    <div key={campo} style={{ '--dolor-color': getDolorColor(completarForm[campo]) } as React.CSSProperties}>
+                      <label className="ses-dolor__label" htmlFor={`completar-${campo}`}>
+                        {etiqueta}: <strong className="ses-dolor__valor">{completarForm[campo]}</strong>
+                      </label>
+                      <input
+                        id={`completar-${campo}`}
+                        className="ses-rango"
+                        type="range"
+                        min="0"
+                        max="10"
+                        value={completarForm[campo]}
+                        onChange={(e) => setCompletarForm(prev => ({ ...prev, [campo]: parseInt(e.target.value) }))}
+                      />
+                      <div className="ses-rango__extremos">
+                        <span>Sin dolor</span><span>Máximo</span>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Dolor Final */}
-                  <div>
-                    <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>
-                      Dolor Final: <strong style={{ color: getDolorColor(completarForm.dolorFinal), fontSize: '1.25rem' }}>{completarForm.dolorFinal}</strong>
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      value={completarForm.dolorFinal}
-                      onChange={(e) => setCompletarForm(prev => ({ ...prev, dolorFinal: parseInt(e.target.value) }))}
-                      style={{
-                        width: '100%',
-                        height: '8px',
-                        borderRadius: '4px',
-                        outline: 'none',
-                        cursor: 'pointer',
-                        accentColor: getDolorColor(completarForm.dolorFinal)
-                      }}
-                    />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#666', marginTop: '0.25rem' }}>
-                      <span>Sin dolor</span><span>Máximo</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
               {/* Escala de Borg (Percepción de Esfuerzo) */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: '#e0e0e0', fontSize: '1rem' }}>Escala de Borg (Percepción de Esfuerzo 0-10)</h4>
-                <div>
-                  <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>
-                    Esfuerzo: <strong style={{ color: getBorgColor(completarForm.borgPercepcion), fontSize: '1.25rem' }}>{completarForm.borgPercepcion}</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '0.5rem' }}>
-                      {completarForm.borgPercepcion === 0 && '(Reposo)'}
-                      {completarForm.borgPercepcion >= 1 && completarForm.borgPercepcion <= 2 && '(Muy ligero)'}
-                      {completarForm.borgPercepcion === 3 && '(Ligero)'}
-                      {completarForm.borgPercepcion >= 4 && completarForm.borgPercepcion <= 5 && '(Algo pesado)'}
-                      {completarForm.borgPercepcion >= 6 && completarForm.borgPercepcion <= 7 && '(Pesado)'}
-                      {completarForm.borgPercepcion >= 8 && completarForm.borgPercepcion <= 9 && '(Muy pesado)'}
-                      {completarForm.borgPercepcion === 10 && '(Extremo)'}
-                    </span>
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="10"
-                    value={completarForm.borgPercepcion}
-                    onChange={(e) => setCompletarForm(prev => ({ ...prev, borgPercepcion: parseInt(e.target.value) }))}
-                    style={{
-                      width: '100%',
-                      height: '8px',
-                      borderRadius: '4px',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      accentColor: getBorgColor(completarForm.borgPercepcion)
-                    }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#666', marginTop: '0.25rem' }}>
-                    <span>Reposo</span><span>Extremo</span>
-                  </div>
+              <div className="ses-bloque" style={{ '--dolor-color': getBorgColor(completarForm.borgPercepcion) } as React.CSSProperties}>
+                <h4 className="ses-subtitulo">Escala de Borg (Percepción de Esfuerzo 0-10)</h4>
+                <label className="ses-dolor__label" htmlFor="completar-borg">
+                  Esfuerzo: <strong className="ses-dolor__valor">{completarForm.borgPercepcion}</strong>
+                  <span className="ses-dolor__nota">
+                    {completarForm.borgPercepcion === 0 && '(Reposo)'}
+                    {completarForm.borgPercepcion >= 1 && completarForm.borgPercepcion <= 2 && '(Muy ligero)'}
+                    {completarForm.borgPercepcion === 3 && '(Ligero)'}
+                    {completarForm.borgPercepcion >= 4 && completarForm.borgPercepcion <= 5 && '(Algo pesado)'}
+                    {completarForm.borgPercepcion >= 6 && completarForm.borgPercepcion <= 7 && '(Pesado)'}
+                    {completarForm.borgPercepcion >= 8 && completarForm.borgPercepcion <= 9 && '(Muy pesado)'}
+                    {completarForm.borgPercepcion === 10 && '(Extremo)'}
+                  </span>
+                </label>
+                <input
+                  id="completar-borg"
+                  className="ses-rango"
+                  type="range"
+                  min="0"
+                  max="10"
+                  value={completarForm.borgPercepcion}
+                  onChange={(e) => setCompletarForm(prev => ({ ...prev, borgPercepcion: parseInt(e.target.value) }))}
+                />
+                <div className="ses-rango__extremos">
+                  <span>Reposo</span><span>Extremo</span>
                 </div>
               </div>
 
               {/* Progreso General - Chips/botones */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{ margin: '0 0 0.75rem 0', color: '#e0e0e0', fontSize: '1rem' }}>Progreso General</h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div className="ses-bloque">
+                <h4 className="ses-subtitulo">Progreso General</h4>
+                <div className="ses-chips">
                   {[
                     { value: 'sin_cambios', label: 'Sin cambios', icon: '↔' },
                     { value: 'leve_mejoria', label: 'Leve mejoría', icon: '↗' },
@@ -2898,17 +2531,8 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                       key={opcion.value}
                       type="button"
                       onClick={() => setCompletarForm(prev => ({ ...prev, progresoGeneral: opcion.value }))}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        borderRadius: '20px',
-                        border: completarForm.progresoGeneral === opcion.value ? '2px solid #2AD636' : '1px solid #333',
-                        background: completarForm.progresoGeneral === opcion.value ? 'rgba(42, 214, 54, 0.15)' : '#1a1a1a',
-                        color: completarForm.progresoGeneral === opcion.value ? '#2AD636' : '#ccc',
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        fontWeight: completarForm.progresoGeneral === opcion.value ? 600 : 400,
-                        transition: 'all 0.2s'
-                      }}
+                      className={`ses-chip ${completarForm.progresoGeneral === opcion.value ? 'is-activo' : ''}`}
+                      aria-pressed={completarForm.progresoGeneral === opcion.value}
                     >
                       {opcion.icon} {opcion.label}
                     </button>
@@ -2917,13 +2541,13 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
               </div>
 
               {/* Movilidad + Fuerza - en línea */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>Movilidad</label>
+              <div className="ses-par-grid ses-bloque">
+                <div className="form-field">
+                  <label htmlFor="completar-movilidad">Movilidad</label>
                   <select
+                    id="completar-movilidad"
                     value={completarForm.movilidad}
                     onChange={(e) => setCompletarForm(prev => ({ ...prev, movilidad: e.target.value }))}
-                    style={{ width: '100%', padding: '0.6rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff' }}
                   >
                     <option value="">Seleccionar</option>
                     <option value="limitada">Limitada</option>
@@ -2933,12 +2557,12 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                     <option value="excelente">Excelente</option>
                   </select>
                 </div>
-                <div>
-                  <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>Fuerza (Escala Daniels)</label>
+                <div className="form-field">
+                  <label htmlFor="completar-fuerza">Fuerza (Escala Daniels)</label>
                   <select
+                    id="completar-fuerza"
                     value={completarForm.fuerza}
                     onChange={(e) => setCompletarForm(prev => ({ ...prev, fuerza: e.target.value }))}
-                    style={{ width: '100%', padding: '0.6rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff' }}
                   >
                     <option value="">Seleccionar</option>
                     <option value="0">0 - Sin contracción</option>
@@ -2952,29 +2576,18 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
               </div>
 
               {/* Ejercicios */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <h4 style={{ margin: 0, color: '#e0e0e0', fontSize: '1rem' }}>
+              <div className="ses-bloque">
+                <div className="ses-seccion-cabecera">
+                  <h4 className="ses-subtitulo">
                     Ejercicios ({completarForm.ejerciciosRealizados.length})
                   </h4>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="ses-mini-acciones">
                     <button
                       type="button"
                       onClick={handleCopiarEjerciciosUltimaSesion}
-                      style={{
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '6px',
-                        border: '1px solid #3b82f6',
-                        background: 'transparent',
-                        color: '#3b82f6',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem'
-                      }}
+                      className="ses-btn-mini ses-btn-mini--azul"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                         <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
                       </svg>
@@ -2983,15 +2596,8 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                     <button
                       type="button"
                       onClick={() => setMostrarSelectorEjercicioCompletar(!mostrarSelectorEjercicioCompletar)}
-                      style={{
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '6px',
-                        border: '1px solid #2AD636',
-                        background: 'transparent',
-                        color: '#2AD636',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem'
-                      }}
+                      className="ses-btn-mini"
+                      aria-expanded={mostrarSelectorEjercicioCompletar}
                     >
                       + Agregar
                     </button>
@@ -3000,60 +2606,43 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
 
                 {/* Selector de ejercicio inline */}
                 {mostrarSelectorEjercicioCompletar && (
-                  <div style={{ border: '1px solid #2AD636', borderRadius: '8px', padding: '0.75rem', marginBottom: '0.75rem', background: '#1a1a1a' }}>
+                  <div className="ses-selector">
                     {!modoCrearEjercicioCompletar ? (
                       <>
                         <input
                           type="text"
+                          className="campo-input"
                           placeholder="Buscar ejercicio..."
+                          aria-label="Buscar ejercicio"
                           value={busquedaEjercicioCompletar}
                           onChange={(e) => { setBusquedaEjercicioCompletar(e.target.value); setEjercicioSeleccionadoCompletar(null); }}
-                          style={{ width: '100%', padding: '0.5rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '6px', color: '#fff', marginBottom: '0.5rem' }}
                           autoFocus
                         />
                         {busquedaEjercicioCompletar && (
-                          <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #333', borderRadius: '6px', marginBottom: '0.5rem' }}>
+                          <div className="ses-resultados">
                             {(() => {
                               const resultados = bibliotecaEjercicios.filter(ej => ej.nombre.toLowerCase().includes(busquedaEjercicioCompletar.toLowerCase()));
                               return resultados.length > 0 ? (
                                 resultados.map(ej => (
-                                  <div
+                                  <button
                                     key={ej.id}
+                                    type="button"
+                                    className={`ses-resultado ${ejercicioSeleccionadoCompletar?.id === ej.id ? 'is-activo' : ''}`}
                                     onClick={() => { setEjercicioSeleccionadoCompletar(ej); setBusquedaEjercicioCompletar(ej.nombre); }}
-                                    style={{
-                                      padding: '0.5rem',
-                                      cursor: 'pointer',
-                                      borderBottom: '1px solid #222',
-                                      background: ejercicioSeleccionadoCompletar?.id === ej.id ? '#2a2a2a' : 'transparent',
-                                      fontSize: '0.85rem'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#2a2a2a'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = ejercicioSeleccionadoCompletar?.id === ej.id ? '#2a2a2a' : 'transparent'}
                                   >
-                                    {ej.nombre}
-                                    {ej.categoria && <span style={{ color: '#888', marginLeft: '0.5rem', fontSize: '0.75rem' }}>{ej.categoria}</span>}
-                                  </div>
+                                    <span className="ses-resultado__nombre">{ej.nombre}</span>
+                                    {ej.categoria && <span className="ses-resultado__cat">{ej.categoria}</span>}
+                                  </button>
                                 ))
                               ) : (
-                                <div style={{ padding: '0.75rem', textAlign: 'center', color: '#888', fontSize: '0.85rem' }}>
-                                  No se encontró "{busquedaEjercicioCompletar}"
+                                <div className="ses-resultados__vacio">
+                                  No se encontró &quot;{busquedaEjercicioCompletar}&quot;
                                   <button
                                     type="button"
+                                    className="ses-btn-mini ses-btn-mini--ambar ses-resultados__crear"
                                     onClick={() => { setModoCrearEjercicioCompletar(true); setNuevoEjercicioNombre(busquedaEjercicioCompletar); }}
-                                    style={{
-                                      display: 'block',
-                                      margin: '0.5rem auto 0',
-                                      padding: '0.4rem 0.8rem',
-                                      borderRadius: '6px',
-                                      border: '1px solid #f59e0b',
-                                      background: 'rgba(245, 158, 11, 0.1)',
-                                      color: '#f59e0b',
-                                      cursor: 'pointer',
-                                      fontSize: '0.8rem',
-                                      fontWeight: 600
-                                    }}
                                   >
-                                    + Crear "{busquedaEjercicioCompletar}"
+                                    + Crear &quot;{busquedaEjercicioCompletar}&quot;
                                   </button>
                                 </div>
                               );
@@ -3061,59 +2650,55 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                           </div>
                         )}
                         {ejercicioSeleccionadoCompletar && (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <input type="text" placeholder="Peso" value={parametrosEjercicioCompletar.peso} onChange={(e) => setParametrosEjercicioCompletar(p => ({...p, peso: e.target.value}))} style={{ padding: '0.4rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '0.8rem' }} />
-                            <input type="text" placeholder="Repeticiones" value={parametrosEjercicioCompletar.repeticiones} onChange={(e) => setParametrosEjercicioCompletar(p => ({...p, repeticiones: e.target.value}))} style={{ padding: '0.4rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '0.8rem' }} />
-                            <input type="text" placeholder="Tiempo" value={parametrosEjercicioCompletar.tiempo} onChange={(e) => setParametrosEjercicioCompletar(p => ({...p, tiempo: e.target.value}))} style={{ padding: '0.4rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '0.8rem' }} />
+                          <div className="ses-params-grid">
+                            <input type="text" className="campo-input" placeholder="Peso" aria-label="Peso" value={parametrosEjercicioCompletar.peso} onChange={(e) => setParametrosEjercicioCompletar(p => ({...p, peso: e.target.value}))} />
+                            <input type="text" className="campo-input" placeholder="Repeticiones" aria-label="Repeticiones" value={parametrosEjercicioCompletar.repeticiones} onChange={(e) => setParametrosEjercicioCompletar(p => ({...p, repeticiones: e.target.value}))} />
+                            <input type="text" className="campo-input" placeholder="Tiempo" aria-label="Tiempo" value={parametrosEjercicioCompletar.tiempo} onChange={(e) => setParametrosEjercicioCompletar(p => ({...p, tiempo: e.target.value}))} />
                           </div>
                         )}
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <button type="button" onClick={agregarEjercicioCompletar} disabled={!ejercicioSeleccionadoCompletar} className="btn-primary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>Agregar</button>
+                        <div className="ses-selector__acciones ses-selector__acciones--wrap">
+                          <button type="button" onClick={agregarEjercicioCompletar} disabled={!ejercicioSeleccionadoCompletar} className="btn-primary">Agregar</button>
                           <button
                             type="button"
+                            className="ses-btn-mini ses-btn-mini--ambar"
                             onClick={() => { setModoCrearEjercicioCompletar(true); setNuevoEjercicioNombre(''); setNuevoEjercicioCategoria(''); }}
-                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #f59e0b', background: 'transparent', color: '#f59e0b', cursor: 'pointer' }}
                           >
                             + Crear nuevo
                           </button>
-                          <button type="button" onClick={() => { setMostrarSelectorEjercicioCompletar(false); setEjercicioSeleccionadoCompletar(null); setBusquedaEjercicioCompletar(''); }} className="btn-secondary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>Cancelar</button>
+                          <button type="button" onClick={() => { setMostrarSelectorEjercicioCompletar(false); setEjercicioSeleccionadoCompletar(null); setBusquedaEjercicioCompletar(''); }} className="btn-secondary">Cancelar</button>
                         </div>
                       </>
                     ) : (
                       <>
-                        <h5 style={{ margin: '0 0 0.75rem 0', color: '#f59e0b', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '16px', height: '16px' }}>
+                        <h5 className="ses-crear-titulo">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                           </svg>
                           Crear Nuevo Ejercicio
                         </h5>
                         <input
                           type="text"
+                          className="campo-input campo-input--ambar"
                           placeholder="Nombre del ejercicio *"
+                          aria-label="Nombre del ejercicio"
                           value={nuevoEjercicioNombre}
                           onChange={(e) => setNuevoEjercicioNombre(e.target.value)}
-                          style={{ width: '100%', padding: '0.5rem', background: '#0a0a0a', border: '1px solid #f59e0b', borderRadius: '6px', color: '#fff', marginBottom: '0.5rem', fontSize: '0.85rem' }}
                           autoFocus
                         />
                         <input
                           type="text"
+                          className="campo-input ses-crear-categoria"
                           placeholder="Categoría (opcional, ej: Tren superior, Core...)"
+                          aria-label="Categoría"
                           value={nuevoEjercicioCategoria}
                           onChange={(e) => setNuevoEjercicioCategoria(e.target.value)}
-                          style={{ width: '100%', padding: '0.5rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '6px', color: '#fff', marginBottom: '0.75rem', fontSize: '0.85rem' }}
                         />
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div className="ses-selector__acciones">
                           <button
                             type="button"
+                            className="btn-confirmar btn-confirmar--ambar"
                             onClick={handleCrearEjercicioRapido}
                             disabled={!nuevoEjercicioNombre.trim() || creandoEjercicio}
-                            style={{
-                              fontSize: '0.8rem', padding: '0.4rem 0.8rem', borderRadius: '6px', border: 'none',
-                              background: nuevoEjercicioNombre.trim() ? '#f59e0b' : '#333',
-                              color: nuevoEjercicioNombre.trim() ? '#000' : '#666',
-                              cursor: nuevoEjercicioNombre.trim() ? 'pointer' : 'not-allowed',
-                              fontWeight: 600
-                            }}
                           >
                             {creandoEjercicio ? 'Creando...' : 'Crear y Seleccionar'}
                           </button>
@@ -3121,7 +2706,6 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                             type="button"
                             onClick={() => { setModoCrearEjercicioCompletar(false); setNuevoEjercicioNombre(''); setNuevoEjercicioCategoria(''); }}
                             className="btn-secondary"
-                            style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
                           >
                             Volver
                           </button>
@@ -3133,170 +2717,110 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
 
                 {/* Lista de ejercicios (editables) */}
                 {completarForm.ejerciciosRealizados.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {completarForm.ejerciciosRealizados.map((ej, idx) => (
-                      <div key={idx} style={{
-                        padding: '0.5rem 0.75rem',
-                        background: editandoEjercicioIdx === idx ? '#1a1a1a' : '#0a0a0a',
-                        border: editandoEjercicioIdx === idx ? '1px solid #2AD636' : '1px solid #2a2a2a',
-                        borderRadius: '6px',
-                        fontSize: '0.85rem',
-                        transition: 'all 0.2s ease'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div
-                            style={{ flex: 1, cursor: 'pointer' }}
-                            onClick={() => setEditandoEjercicioIdx(editandoEjercicioIdx === idx ? null : idx)}
-                          >
-                            <span style={{ color: '#2AD636', fontWeight: 600 }}>{ej.nombre}</span>
-                            {editandoEjercicioIdx !== idx && (
-                              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: '#888' }}>
-                                {ej.peso && <span>Peso: {ej.peso}</span>}
-                                {ej.repeticiones && <span>Rep: {ej.repeticiones}</span>}
-                                {ej.tiempo && <span>Tiempo: {ej.tiempo}</span>}
-                                {ej.carga && <span>Carga: {ej.carga}</span>}
-                                {!ej.peso && !ej.repeticiones && !ej.tiempo && !ej.carga && <span style={{ color: '#555' }}>Toca para editar cargas</span>}
-                              </div>
-                            )}
-                          </div>
-                          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                  <div className="ses-ej-lista">
+                    {completarForm.ejerciciosRealizados.map((ej, idx) => {
+                      const editando = editandoEjercicioIdx === idx;
+                      const actualizar = (campo: string, valor: string) => {
+                        const updated = [...completarForm.ejerciciosRealizados];
+                        updated[idx] = { ...updated[idx], [campo]: valor };
+                        setCompletarForm(prev => ({ ...prev, ejerciciosRealizados: updated }));
+                      };
+                      return (
+                        <div key={idx} className={`ses-ej-edit ${editando ? 'is-editando' : ''}`}>
+                          <div className="ses-ej-edit__fila">
                             <button
                               type="button"
-                              onClick={() => setEditandoEjercicioIdx(editandoEjercicioIdx === idx ? null : idx)}
-                              style={{ background: 'none', border: 'none', color: editandoEjercicioIdx === idx ? '#2AD636' : '#666', cursor: 'pointer', padding: '0 0.25rem', display: 'flex', alignItems: 'center' }}
-                              title="Editar"
+                              className="ses-ej-edit__info"
+                              onClick={() => setEditandoEjercicioIdx(editando ? null : idx)}
+                              aria-expanded={editando}
                             >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '14px', height: '14px' }}>
+                              <span className="ses-ej-edit__nombre">{ej.nombre}</span>
+                              {!editando && (
+                                <span className="ses-ej-edit__resumen">
+                                  {ej.peso && <span>Peso: {ej.peso}</span>}
+                                  {ej.repeticiones && <span>Rep: {ej.repeticiones}</span>}
+                                  {ej.tiempo && <span>Tiempo: {ej.tiempo}</span>}
+                                  {ej.carga && <span>Carga: {ej.carga}</span>}
+                                  {!ej.peso && !ej.repeticiones && !ej.tiempo && !ej.carga && <span className="ses-ej-edit__vacio">Toca para editar cargas</span>}
+                                </span>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className={`ses-icon-btn ${editando ? 'is-activo' : ''}`}
+                              onClick={() => setEditandoEjercicioIdx(editando ? null : idx)}
+                              title="Editar"
+                              aria-label={`Editar ${ej.nombre}`}
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                               </svg>
                             </button>
                             <button
                               type="button"
-                              onClick={() => { eliminarEjercicioCompletar(idx); if (editandoEjercicioIdx === idx) setEditandoEjercicioIdx(null); }}
-                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem', padding: '0 0.25rem' }}
+                              className="ses-icon-btn ses-icon-btn--peligro"
+                              onClick={() => { eliminarEjercicioCompletar(idx); if (editando) setEditandoEjercicioIdx(null); }}
+                              aria-label={`Quitar ${ej.nombre}`}
                             >×</button>
                           </div>
+                          {editando && (
+                            <div className="ses-ej-edit__campos">
+                              <input type="text" className="campo-input" placeholder="Peso (ej: 10kg)" aria-label="Peso" value={ej.peso || ''} onChange={(e) => actualizar('peso', e.target.value)} />
+                              <input type="text" className="campo-input" placeholder="Repeticiones (ej: 3x12)" aria-label="Repeticiones" value={ej.repeticiones || ''} onChange={(e) => actualizar('repeticiones', e.target.value)} />
+                              <input type="text" className="campo-input" placeholder="Tiempo (ej: 30s)" aria-label="Tiempo" value={ej.tiempo || ''} onChange={(e) => actualizar('tiempo', e.target.value)} />
+                              <input type="text" className="campo-input" placeholder="Carga (ej: banda roja)" aria-label="Carga" value={ej.carga || ''} onChange={(e) => actualizar('carga', e.target.value)} />
+                              <input type="text" className="campo-input ses-ej-edit__notas" placeholder="Notas del ejercicio" aria-label="Notas del ejercicio" value={ej.notas || ''} onChange={(e) => actualizar('notas', e.target.value)} />
+                            </div>
+                          )}
                         </div>
-                        {editandoEjercicioIdx === idx && (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.4rem', marginTop: '0.5rem' }}>
-                            <input
-                              type="text"
-                              placeholder="Peso (ej: 10kg)"
-                              value={ej.peso || ''}
-                              onChange={(e) => {
-                                const updated = [...completarForm.ejerciciosRealizados];
-                                updated[idx] = { ...updated[idx], peso: e.target.value };
-                                setCompletarForm(prev => ({ ...prev, ejerciciosRealizados: updated }));
-                              }}
-                              style={{ padding: '0.35rem 0.5rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '0.8rem' }}
-                            />
-                            <input
-                              type="text"
-                              placeholder="Repeticiones (ej: 3x12)"
-                              value={ej.repeticiones || ''}
-                              onChange={(e) => {
-                                const updated = [...completarForm.ejerciciosRealizados];
-                                updated[idx] = { ...updated[idx], repeticiones: e.target.value };
-                                setCompletarForm(prev => ({ ...prev, ejerciciosRealizados: updated }));
-                              }}
-                              style={{ padding: '0.35rem 0.5rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '0.8rem' }}
-                            />
-                            <input
-                              type="text"
-                              placeholder="Tiempo (ej: 30s)"
-                              value={ej.tiempo || ''}
-                              onChange={(e) => {
-                                const updated = [...completarForm.ejerciciosRealizados];
-                                updated[idx] = { ...updated[idx], tiempo: e.target.value };
-                                setCompletarForm(prev => ({ ...prev, ejerciciosRealizados: updated }));
-                              }}
-                              style={{ padding: '0.35rem 0.5rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '0.8rem' }}
-                            />
-                            <input
-                              type="text"
-                              placeholder="Carga (ej: banda roja)"
-                              value={ej.carga || ''}
-                              onChange={(e) => {
-                                const updated = [...completarForm.ejerciciosRealizados];
-                                updated[idx] = { ...updated[idx], carga: e.target.value };
-                                setCompletarForm(prev => ({ ...prev, ejerciciosRealizados: updated }));
-                              }}
-                              style={{ padding: '0.35rem 0.5rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '0.8rem' }}
-                            />
-                            <input
-                              type="text"
-                              placeholder="Notas del ejercicio"
-                              value={ej.notas || ''}
-                              onChange={(e) => {
-                                const updated = [...completarForm.ejerciciosRealizados];
-                                updated[idx] = { ...updated[idx], notas: e.target.value };
-                                setCompletarForm(prev => ({ ...prev, ejerciciosRealizados: updated }));
-                              }}
-                              style={{ padding: '0.35rem 0.5rem', background: '#0a0a0a', border: '1px solid #333', borderRadius: '4px', color: '#fff', fontSize: '0.8rem', gridColumn: 'span 2' }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
-                  <div style={{ padding: '1rem', textAlign: 'center', color: '#666', fontSize: '0.85rem', border: '1px dashed #333', borderRadius: '8px' }}>
-                    Sin ejercicios — usa "Copiar anterior" o "Agregar"
+                  <div className="ses-ej-vacio">
+                    Sin ejercicios — usa &quot;Copiar anterior&quot; o &quot;Agregar&quot;
                   </div>
                 )}
               </div>
 
               {/* Observaciones */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>Observaciones</label>
+              <div className="form-field ses-bloque">
+                <label htmlFor="completar-observaciones">Observaciones</label>
                 <textarea
+                  id="completar-observaciones"
                   value={completarForm.observaciones}
                   onChange={(e) => setCompletarForm(prev => ({ ...prev, observaciones: e.target.value }))}
                   rows={3}
                   placeholder="Hallazgos clínicos, estado del paciente..."
-                  style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', resize: 'vertical', fontFamily: 'inherit' }}
                 />
               </div>
 
               {/* Recomendaciones */}
-              <div>
-                <label style={{ fontSize: '0.85rem', color: '#888', display: 'block', marginBottom: '0.5rem' }}>Recomendaciones para el paciente</label>
+              <div className="form-field">
+                <label htmlFor="completar-recomendaciones">Recomendaciones para el paciente</label>
                 <textarea
+                  id="completar-recomendaciones"
                   value={completarForm.recomendaciones}
                   onChange={(e) => setCompletarForm(prev => ({ ...prev, recomendaciones: e.target.value }))}
                   rows={2}
                   placeholder="Ejercicios en casa, cuidados, indicaciones..."
-                  style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', resize: 'vertical', fontFamily: 'inherit' }}
                 />
               </div>
             </div>
 
             {/* Acciones */}
-            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #2a2a2a', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+            <div className="modal-actions">
               <button type="button" onClick={handleCerrarCompletar} className="btn-secondary">
                 Cancelar
               </button>
               <button
                 type="button"
+                className="btn-confirmar btn-confirmar--alta btn-con-icono"
                 onClick={handleSubmitCompletar}
                 disabled={completarLoading}
-                style={{
-                  padding: '0.75rem 2rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: '#10b981',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '1rem',
-                  cursor: completarLoading ? 'not-allowed' : 'pointer',
-                  opacity: completarLoading ? 0.6 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: '18px', height: '18px' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                   <path d="M20 6L9 17l-5-5"/>
                 </svg>
                 {completarLoading ? 'Guardando...' : 'Completar Sesión'}
@@ -3309,114 +2833,62 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
       {/* Mini-Modal: Programar siguiente sesión */}
       {showMiniSiguiente && siguienteSesionInfo && (
         <div className="modal-overlay" onClick={() => { setShowMiniSiguiente(false); setSiguienteSesionInfo(null); mostrarMensaje('Sesión completada exitosamente'); }}>
-          <div onClick={(e) => e.stopPropagation()} style={{
-            background: '#1a1a1a',
-            border: '2px solid #10b981',
-            borderRadius: '16px',
-            padding: '2rem',
-            width: '100%',
-            maxWidth: '420px',
-            margin: '0 auto',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
-            <h3 style={{ color: '#fff', margin: '0 0 0.25rem 0', fontSize: '1.15rem' }}>
-              Sesión completada
-            </h3>
-            <p style={{ color: '#10b981', fontWeight: 600, margin: '0 0 0.25rem 0', fontSize: '1rem' }}>
-              {siguienteSesionInfo.pacienteNombre}
-            </p>
-            {siguienteSesionInfo.totalProgramadas && (
-              <p style={{ color: '#888', margin: '0 0 1.25rem 0', fontSize: '0.85rem' }}>
-                Progreso: {siguienteSesionInfo.siguienteNum ? siguienteSesionInfo.siguienteNum - 1 : '?'}/{siguienteSesionInfo.totalProgramadas} sesiones
-              </p>
-            )}
+          <div className="modal-content modal-sm ses-siguiente" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-body">
+              <div className="ses-siguiente__icono" aria-hidden="true">✅</div>
+              <h3 className="ses-siguiente__titulo">Sesión completada</h3>
+              <p className="ses-siguiente__paciente">{siguienteSesionInfo.pacienteNombre}</p>
+              {siguienteSesionInfo.totalProgramadas && (
+                <p className="ses-siguiente__progreso">
+                  Progreso: {siguienteSesionInfo.siguienteNum ? siguienteSesionInfo.siguienteNum - 1 : '?'}/{siguienteSesionInfo.totalProgramadas} sesiones
+                </p>
+              )}
 
-            <div style={{
-              background: '#0a0a0a',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              marginBottom: '1rem',
-              textAlign: 'left'
-            }}>
-              <h4 style={{ color: '#fff', margin: '0 0 1rem 0', fontSize: '0.95rem' }}>
-                Programar Sesión {siguienteSesionInfo.siguienteNum ? `#${siguienteSesionInfo.siguienteNum}` : 'siguiente'}
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.8rem', color: '#888', display: 'block', marginBottom: '0.25rem' }}>Fecha</label>
-                  <input
-                    type="date"
-                    value={siguienteSesionData.fecha}
-                    onChange={(e) => setSiguienteSesionData({ ...siguienteSesionData, fecha: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      background: '#1a1a1a',
-                      border: '1px solid #2a2a2a',
-                      borderRadius: '6px',
-                      color: '#fff',
-                      fontSize: '0.9rem'
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.8rem', color: '#888', display: 'block', marginBottom: '0.25rem' }}>Hora</label>
-                  <select
-                    value={siguienteSesionData.hora}
-                    onChange={(e) => setSiguienteSesionData({ ...siguienteSesionData, hora: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      background: '#1a1a1a',
-                      border: '1px solid #2a2a2a',
-                      borderRadius: '6px',
-                      color: '#fff',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    <option value="">Seleccionar</option>
-                    {Array.from({ length: 4 * (21 - 8) + 1 }, (_, i) => {
-                      const h = Math.floor(i / 4) + 8;
-                      const m = (i % 4) * 15;
-                      const val = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                      return <option key={val} value={val}>{val}</option>;
-                    })}
-                  </select>
+              <div className="ses-siguiente__panel">
+                <h4 className="ses-subtitulo">
+                  Programar Sesión {siguienteSesionInfo.siguienteNum ? `#${siguienteSesionInfo.siguienteNum}` : 'siguiente'}
+                </h4>
+                <div className="ses-siguiente__campos">
+                  <div className="form-field">
+                    <label htmlFor="siguiente-fecha">Fecha</label>
+                    <input
+                      id="siguiente-fecha"
+                      type="date"
+                      value={siguienteSesionData.fecha}
+                      onChange={(e) => setSiguienteSesionData({ ...siguienteSesionData, fecha: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label htmlFor="siguiente-hora">Hora</label>
+                    <select
+                      id="siguiente-hora"
+                      value={siguienteSesionData.hora}
+                      onChange={(e) => setSiguienteSesionData({ ...siguienteSesionData, hora: e.target.value })}
+                    >
+                      <option value="">Seleccionar</option>
+                      {Array.from({ length: 4 * (21 - 8) + 1 }, (_, i) => {
+                        const h = Math.floor(i / 4) + 8;
+                        const m = (i % 4) * 15;
+                        const val = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        return <option key={val} value={val}>{val}</option>;
+                      })}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div className="modal-footer">
               <button
+                className="btn-secondary"
                 onClick={() => { setShowMiniSiguiente(false); setSiguienteSesionInfo(null); mostrarMensaje('Sesión completada exitosamente'); }}
-                style={{
-                  flex: 1,
-                  padding: '0.65rem',
-                  background: 'transparent',
-                  border: '1px solid #333',
-                  borderRadius: '8px',
-                  color: '#888',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem'
-                }}
               >
                 Omitir
               </button>
               <button
+                className="btn-confirmar btn-confirmar--alta"
                 onClick={handleCrearSiguienteSesion}
                 disabled={!siguienteSesionData.hora || creandoSiguiente}
-                style={{
-                  flex: 2,
-                  padding: '0.65rem',
-                  background: !siguienteSesionData.hora ? '#333' : '#10b981',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: !siguienteSesionData.hora ? '#666' : '#fff',
-                  cursor: !siguienteSesionData.hora ? 'not-allowed' : 'pointer',
-                  fontWeight: 700,
-                  fontSize: '0.9rem'
-                }}
               >
                 {creandoSiguiente ? 'Creando...' : `Programar Sesión ${siguienteSesionInfo.siguienteNum ? '#' + siguienteSesionInfo.siguienteNum : ''}`}
               </button>
@@ -3444,12 +2916,12 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
       {/* Modal Cambio de Estado Paciente */}
       {showModalEstadoPaciente && pacienteEstado && (
         <div className="modal-overlay" onClick={() => setShowModalEstadoPaciente(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+          <div className="modal-content modal-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3>
                 {estadoSeleccionado === 'alta' && (
                   <>
-                    <svg viewBox="0 0 24 24" fill="none" style={{ width: '20px', height: '20px', color: '#10b981' }}>
+                    <svg viewBox="0 0 24 24" fill="none" style={{ color: 'var(--estado-confirmada)' }} aria-hidden="true">
                       <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                     Dar de Alta al Paciente
@@ -3457,7 +2929,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 )}
                 {estadoSeleccionado === 'abandono' && (
                   <>
-                    <svg viewBox="0 0 24 24" fill="none" style={{ width: '20px', height: '20px', color: '#ef4444' }}>
+                    <svg viewBox="0 0 24 24" fill="none" style={{ color: 'var(--danger)' }} aria-hidden="true">
                       <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                     Marcar como Receso
@@ -3465,7 +2937,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 )}
                 {estadoSeleccionado === 'activo' && (
                   <>
-                    <svg viewBox="0 0 24 24" fill="none" style={{ width: '20px', height: '20px', color: '#3b82f6' }}>
+                    <svg viewBox="0 0 24 24" fill="none" style={{ color: 'var(--estado-completada)' }} aria-hidden="true">
                       <path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -3473,7 +2945,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                   </>
                 )}
               </h3>
-              <button className="modal-close" onClick={() => setShowModalEstadoPaciente(false)}>
+              <button className="modal-close" onClick={() => setShowModalEstadoPaciente(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
@@ -3481,18 +2953,20 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
             </div>
 
             <div className="modal-body">
-              <p style={{ marginBottom: '1rem', color: '#aaa', fontSize: '0.9rem' }}>
+              <p className="modal-texto modal-texto--destacado">
                 <strong>{pacienteEstado.nombre}</strong>
               </p>
-              <p style={{ marginBottom: '1.5rem', color: '#888', fontSize: '0.85rem' }}>
+              <p className="modal-texto">
                 {estadoSeleccionado === 'alta' && 'El paciente completó su tratamiento exitosamente.'}
                 {estadoSeleccionado === 'abandono' && 'El paciente tomará un receso del tratamiento.'}
                 {estadoSeleccionado === 'activo' && 'El paciente volverá a estar en tratamiento activo.'}
               </p>
 
               <div className="form-group">
-                <label>Motivo</label>
+                <label htmlFor="ses-motivo-estado">Motivo</label>
                 <input
+                  id="ses-motivo-estado"
+                  className="campo-input"
                   type="text"
                   value={motivoEstado}
                   onChange={(e) => setMotivoEstado(e.target.value)}
@@ -3501,72 +2975,34 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                     estadoSeleccionado === 'abandono' ? 'Ej: Receso temporal' :
                     'Ej: Retoma tratamiento'
                   }
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid #333',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '0.9rem'
-                  }}
                 />
               </div>
 
               <div className="form-group">
-                <label>Notas adicionales (opcional)</label>
+                <label htmlFor="ses-notas-estado">Notas adicionales (opcional)</label>
                 <textarea
+                  id="ses-notas-estado"
+                  className="campo-input"
                   value={notasEstado}
                   onChange={(e) => setNotasEstado(e.target.value)}
                   placeholder="Observaciones adicionales..."
                   rows={3}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid #333',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '0.9rem',
-                    resize: 'vertical'
-                  }}
                 />
               </div>
             </div>
 
-            <div className="modal-footer" style={{ display: 'flex', gap: '0.75rem' }}>
+            <div className="modal-footer">
               <button
+                className="btn-secondary"
                 onClick={() => setShowModalEstadoPaciente(false)}
                 disabled={cambiandoEstado}
-                style={{
-                  flex: 1,
-                  padding: '0.75rem',
-                  background: 'transparent',
-                  border: '1px solid #333',
-                  borderRadius: '8px',
-                  color: '#888',
-                  cursor: cambiandoEstado ? 'not-allowed' : 'pointer',
-                  fontSize: '0.9rem'
-                }}
               >
                 Cancelar
               </button>
               <button
+                className={`btn-confirmar btn-confirmar--${estadoSeleccionado}`}
                 onClick={handleCambiarEstadoPaciente}
                 disabled={cambiandoEstado}
-                style={{
-                  flex: 2,
-                  padding: '0.75rem',
-                  background: cambiandoEstado ? '#333' : 
-                    estadoSeleccionado === 'alta' ? '#10b981' :
-                    estadoSeleccionado === 'abandono' ? '#ef4444' : '#3b82f6',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  cursor: cambiandoEstado ? 'not-allowed' : 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
               >
                 {cambiandoEstado ? 'Guardando...' : 'Confirmar Cambio'}
               </button>

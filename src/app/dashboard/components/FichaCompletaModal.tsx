@@ -324,9 +324,8 @@ export default function FichaCompletaModal({
                     <button 
                       className="btn-secondary" 
                       onClick={() => { onClose(); onNavigate('sesiones', { pacienteId: pacienteSeleccionado.id }); }}
-                      style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" style={{ width: '18px', height: '18px', marginRight: '0.5rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
                         <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2"/>
                       </svg>
@@ -336,17 +335,10 @@ export default function FichaCompletaModal({
                   
                   {pacienteSeleccionado.estado_paciente !== 'alta' && (
                     <button 
-                      className="btn-secondary" 
+                      className="btn-secondary ficha-accion ficha-accion--alta" 
                       onClick={() => handleAbrirModalEstado('alta')}
-                      style={{ 
-                        padding: '0.5rem 1rem', 
-                        fontSize: '0.9rem',
-                        background: 'rgba(16, 185, 129, 0.1)',
-                        border: '1px solid #10b981',
-                        color: '#10b981'
-                      }}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" style={{ width: '18px', height: '18px', marginRight: '0.5rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2"/>
                       </svg>
                       Dar de Alta
@@ -355,17 +347,10 @@ export default function FichaCompletaModal({
                   
                   {pacienteSeleccionado.estado_paciente !== 'abandono' && (
                     <button 
-                      className="btn-secondary" 
+                      className="btn-secondary ficha-accion ficha-accion--receso" 
                       onClick={() => handleAbrirModalEstado('abandono')}
-                      style={{ 
-                        padding: '0.5rem 1rem', 
-                        fontSize: '0.9rem',
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid #ef4444',
-                        color: '#ef4444'
-                      }}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" style={{ width: '18px', height: '18px', marginRight: '0.5rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2"/>
                       </svg>
                       Marcar Receso
@@ -374,17 +359,10 @@ export default function FichaCompletaModal({
                   
                   {(pacienteSeleccionado.estado_paciente === 'alta' || pacienteSeleccionado.estado_paciente === 'abandono') && (
                     <button 
-                      className="btn-secondary" 
+                      className="btn-secondary ficha-accion ficha-accion--reactivar" 
                       onClick={handleClickReactivar}
-                      style={{ 
-                        padding: '0.5rem 1rem', 
-                        fontSize: '0.9rem',
-                        background: 'rgba(59, 130, 246, 0.1)',
-                        border: '1px solid #3b82f6',
-                        color: '#3b82f6'
-                      }}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" style={{ width: '18px', height: '18px', marginRight: '0.5rem' }}>
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" strokeWidth="2"/>
                       </svg>
                       Reactivar
@@ -392,17 +370,10 @@ export default function FichaCompletaModal({
                   )}
 
                   <button 
-                    className="btn-secondary" 
+                    className="btn-secondary ficha-accion ficha-accion--episodio" 
                     onClick={() => { setNuevoEpisodio({ motivoLesion: '', objetivo: '', evaluacionFisica: '' }); setShowModalEpisodio(true); }}
-                    style={{ 
-                      padding: '0.5rem 1rem', 
-                      fontSize: '0.9rem',
-                      background: 'rgba(139, 92, 246, 0.1)',
-                      border: '1px solid #8b5cf6',
-                      color: '#8b5cf6'
-                    }}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" style={{ width: '18px', height: '18px', marginRight: '0.5rem' }}>
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     </svg>
                     Nuevo Episodio
@@ -411,9 +382,8 @@ export default function FichaCompletaModal({
                   <button 
                     className="btn-secondary" 
                     onClick={() => setModoEdicion(true)}
-                    style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" style={{ width: '18px', height: '18px', marginRight: '0.5rem' }}>
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2"/>
                     </svg>
@@ -422,9 +392,8 @@ export default function FichaCompletaModal({
                   <button 
                     className="btn-primary" 
                     onClick={handleDescargarPDF}
-                    style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" style={{ width: '18px', height: '18px', marginRight: '0.5rem' }}>
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="2"/>
                     </svg>
                     Descargar PDF
@@ -435,7 +404,6 @@ export default function FichaCompletaModal({
                   <button 
                     className="btn-secondary" 
                     onClick={() => setModoEdicion(false)}
-                    style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                   >
                     Cancelar
                   </button>
@@ -443,9 +411,8 @@ export default function FichaCompletaModal({
                     className="btn-primary" 
                     onClick={handleGuardarCambiosFicha}
                     disabled={saving}
-                    style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" style={{ width: '18px', height: '18px', marginRight: '0.5rem' }}>
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="currentColor" strokeWidth="2"/>
                       <polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" strokeWidth="2"/>
                       <polyline points="7 3 7 8 15 8" stroke="currentColor" strokeWidth="2"/>
@@ -459,15 +426,7 @@ export default function FichaCompletaModal({
           
           {/* Mensaje */}
           {mensaje.texto && (
-            <div style={{
-              padding: '0.75rem 1rem',
-              margin: '0 1rem',
-              borderRadius: '8px',
-              background: mensaje.tipo === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-              color: mensaje.tipo === 'error' ? '#ef4444' : '#10b981',
-              fontSize: '0.9rem',
-              fontWeight: 600
-            }}>
+            <div className={`ficha-mensaje ${mensaje.tipo === 'error' ? 'ficha-mensaje--error' : ''}`} role="status">
               {mensaje.texto}
             </div>
           )}
@@ -475,25 +434,19 @@ export default function FichaCompletaModal({
           <div className="ficha-completa-content">
             {/* Selector de Episodios */}
             {episodios.length > 0 && (
-              <div style={{
-                background: '#1a1a1a',
-                border: '1px solid #8b5cf640',
-                borderRadius: '12px',
-                padding: '1rem',
-                marginBottom: '1.5rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hayMultiplesEpisodios ? '0.75rem' : 0, flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#8b5cf6', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div className="ficha-episodios">
+                <div className="ficha-episodios__cabecera">
+                  <span className="ficha-episodios__titulo">
                     {hayMultiplesEpisodios ? `Episodios de tratamiento (${episodios.length})` : 'Episodio de tratamiento'}
                   </span>
                   {!esEpisodioActual && (
-                    <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 600 }}>
+                    <span className="ficha-episodios__aviso">
                       Viendo un episodio histórico (solo lectura)
                     </span>
                   )}
                 </div>
                 {hayMultiplesEpisodios && (
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <div className="ficha-episodios__lista" data-no-swipe>
                     {episodios.map((ep: any) => {
                       const activo = ep.id === episodioSeleccionadoId;
                       const esActual = ep.id === episodioActualId;
@@ -501,29 +454,11 @@ export default function FichaCompletaModal({
                         <button
                           key={ep.id}
                           onClick={() => setEpisodioSeleccionadoId(ep.id)}
-                          style={{
-                            padding: '0.45rem 0.85rem',
-                            borderRadius: '8px',
-                            border: `1px solid ${activo ? '#8b5cf6' : '#333'}`,
-                            background: activo ? 'rgba(139, 92, 246, 0.18)' : 'transparent',
-                            color: activo ? '#c4b5fd' : '#aaa',
-                            cursor: 'pointer',
-                            fontSize: '0.8rem',
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.4rem'
-                          }}
+                          className={`ficha-episodio ${activo ? 'is-activo' : ''}`}
+                          aria-pressed={activo}
                         >
                           {etiquetaEpisodio(ep)}
-                          <span style={{
-                            fontSize: '0.62rem',
-                            padding: '1px 6px',
-                            borderRadius: '10px',
-                            background: esActual ? 'rgba(42, 214, 54, 0.15)' : 'rgba(148, 163, 184, 0.15)',
-                            color: esActual ? '#2AD636' : '#94a3b8',
-                            textTransform: 'uppercase'
-                          }}>
+                          <span className={`ficha-episodio__tag ${esActual ? 'ficha-episodio__tag--actual' : ''}`}>
                             {esActual ? 'Actual' : 'Cerrado'}
                           </span>
                         </button>
@@ -536,27 +471,16 @@ export default function FichaCompletaModal({
 
             {/* Resumen Estadísticas */}
             {estadisticasPaciente && !loadingSesiones && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                gap: '0.75rem',
-                marginBottom: '1.5rem'
-              }}>
+              <div className="ficha-stats">
                 {[
-                  { label: 'Citas', value: estadisticasPaciente.totalCitas, color: '#3b82f6' },
-                  { label: 'Sesiones', value: `${estadisticasPaciente.sesionesCompletadas}/${estadisticasPaciente.totalSesiones}`, color: '#2AD636' },
-                  { label: 'Pagos', value: `$${(estadisticasPaciente.totalPagado || 0).toLocaleString()}`, color: '#f59e0b' },
-                  { label: 'Pendientes', value: estadisticasPaciente.citasPendientes, color: '#ef4444' },
+                  { label: 'Citas', value: estadisticasPaciente.totalCitas, color: 'var(--estado-completada)' },
+                  { label: 'Sesiones', value: `${estadisticasPaciente.sesionesCompletadas}/${estadisticasPaciente.totalSesiones}`, color: 'var(--accent)' },
+                  { label: 'Pagos', value: `$${(estadisticasPaciente.totalPagado || 0).toLocaleString()}`, color: 'var(--estado-pendiente)' },
+                  { label: 'Pendientes', value: estadisticasPaciente.citasPendientes, color: 'var(--danger)' },
                 ].map((stat, i) => (
-                  <div key={i} style={{
-                    background: '#1a1a1a',
-                    border: `1px solid ${stat.color}30`,
-                    borderRadius: '10px',
-                    padding: '1rem',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: stat.color }}>{stat.value}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
+                  <div key={i} className="ficha-stat" style={{ '--stat-color': stat.color } as React.CSSProperties}>
+                    <div className="ficha-stat__valor">{stat.value}</div>
+                    <div className="ficha-stat__label">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -564,58 +488,29 @@ export default function FichaCompletaModal({
 
             {/* Gráfico de Evolución del Dolor */}
             {evolucionDolorFiltrada.length > 1 && !loadingSesiones && (
-              <div style={{
-                background: '#1a1a1a',
-                borderRadius: '12px',
-                padding: '1.25rem',
-                marginBottom: '1.5rem',
-                border: '1px solid #333'
-              }}>
-                <h4 style={{ margin: '0 0 1rem 0', color: '#2AD636', fontSize: '0.9rem' }}>
-                  Evolución del Dolor
-                </h4>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', height: '120px', padding: '0 0.5rem' }}>
+              <div className="ficha-dolor">
+                <h4 className="ficha-dolor__titulo">Evolución del Dolor</h4>
+                <div className="ficha-dolor__barras" data-no-swipe>
                   {evolucionDolorFiltrada.map((punto: any, i: number) => {
                     const maxDolor = 10;
                     const alturaInicial = (punto.dolorInicial / maxDolor) * 100;
                     const alturaFinal = (punto.dolorFinal / maxDolor) * 100;
                     const mejoro = punto.dolorFinal < punto.dolorInicial;
                     return (
-                      <div key={i} style={{ 
-                        flex: 1, 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center', 
-                        gap: '0.25rem',
-                        minWidth: '30px'
-                      }}>
-                        <div style={{ display: 'flex', gap: '2px', alignItems: 'flex-end', height: '90px', width: '100%' }}>
-                          <div style={{
-                            flex: 1,
-                            height: `${alturaInicial}%`,
-                            background: 'rgba(239, 68, 68, 0.4)',
-                            borderRadius: '3px 3px 0 0',
-                            minHeight: '4px',
-                            position: 'relative'
-                          }} title={`Inicial: ${punto.dolorInicial}/10`}>
-                            <span style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.6rem', color: '#ef4444' }}>
-                              {punto.dolorInicial}
-                            </span>
+                      <div key={i} className="ficha-dolor__col">
+                        <div className="ficha-dolor__par">
+                          <div className="ficha-dolor__barra" style={{ height: `${alturaInicial}%` }} title={`Inicial: ${punto.dolorInicial}/10`}>
+                            <span className="ficha-dolor__valor">{punto.dolorInicial}</span>
                           </div>
-                          <div style={{
-                            flex: 1,
-                            height: `${alturaFinal}%`,
-                            background: mejoro ? 'rgba(42, 214, 54, 0.4)' : 'rgba(239, 68, 68, 0.6)',
-                            borderRadius: '3px 3px 0 0',
-                            minHeight: '4px',
-                            position: 'relative'
-                          }} title={`Final: ${punto.dolorFinal}/10`}>
-                            <span style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.6rem', color: mejoro ? '#2AD636' : '#ef4444' }}>
-                              {punto.dolorFinal}
-                            </span>
+                          <div
+                            className={`ficha-dolor__barra ${mejoro ? 'ficha-dolor__barra--mejora' : 'ficha-dolor__barra--empeora'}`}
+                            style={{ height: `${alturaFinal}%` }}
+                            title={`Final: ${punto.dolorFinal}/10`}
+                          >
+                            <span className="ficha-dolor__valor">{punto.dolorFinal}</span>
                           </div>
                         </div>
-                        <span style={{ fontSize: '0.55rem', color: '#666' }}>S{i + 1}</span>
+                        <span className="ficha-dolor__sesion">S{i + 1}</span>
                       </div>
                     );
                   })}
@@ -628,14 +523,7 @@ export default function FichaCompletaModal({
                     ? Math.round(((primero.dolorInicial - ultimo.dolorFinal) / primero.dolorInicial) * 100)
                     : 0;
                   return mejoriaPct > 0 ? (
-                    <div style={{
-                      marginTop: '0.75rem',
-                      padding: '0.5rem 0.75rem',
-                      background: 'rgba(42, 214, 54, 0.1)',
-                      borderRadius: '8px',
-                      fontSize: '0.8rem',
-                      color: '#2AD636'
-                    }}>
+                    <div className="ficha-dolor__mejoria">
                       Mejoría del <strong>{mejoriaPct}%</strong> en dolor (de {primero.dolorInicial}/10 a {ultimo.dolorFinal}/10)
                     </div>
                   ) : null;
@@ -758,7 +646,7 @@ export default function FichaCompletaModal({
               <h3 className="section-title">
                 Motivo de Consulta
                 {episodioSeleccionado && (
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: '#8b5cf6' }}>
+                  <span className="section-title__extra section-title__extra--episodio">
                     (Episodio {episodioSeleccionado.numero_episodio})
                   </span>
                 )}
@@ -791,28 +679,20 @@ export default function FichaCompletaModal({
             {citasPaciente.length > 0 && (
               <div className="ficha-section">
                 <h3 className="section-title">
-                  Citas <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#3b82f6' }}>({citasPaciente.length})</span>
+                  Citas <span className="section-title__extra section-title__extra--citas">({citasPaciente.length})</span>
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '250px', overflowY: 'auto' }}>
+                <div className="ficha-lista">
                   {citasPaciente.slice(0, 10).map((cita: any) => (
-                    <div key={cita.id} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '0.75rem', background: '#1a1a1a', borderRadius: '8px',
-                      borderLeft: `3px solid ${cita.estado === 'completada' ? '#10b981' : cita.estado === 'confirmada' ? '#2AD636' : cita.estado === 'cancelada' ? '#ef4444' : '#3b82f6'}`
-                    }}>
+                    <div key={cita.id} className={`ficha-item ficha-item--${['completada', 'confirmada', 'cancelada'].includes(cita.estado) ? cita.estado : 'otra'}`}>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{formatearFechaLocal(cita.fecha)} - {cita.hora}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#888' }}>{cita.tipo} • {cita.duracion} min</div>
+                        <div className="ficha-item__titulo">{formatearFechaLocal(cita.fecha)} - {cita.hora}</div>
+                        <div className="ficha-item__meta">{cita.tipo} • {cita.duracion} min</div>
                       </div>
-                      <span style={{
-                        padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase',
-                        background: cita.estado === 'completada' ? 'rgba(16, 185, 129, 0.15)' : cita.estado === 'confirmada' ? 'rgba(42, 214, 54, 0.15)' : cita.estado === 'cancelada' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                        color: cita.estado === 'completada' ? '#10b981' : cita.estado === 'confirmada' ? '#2AD636' : cita.estado === 'cancelada' ? '#ef4444' : '#3b82f6'
-                      }}>{cita.estado}</span>
+                      <span className="ficha-pill">{cita.estado}</span>
                     </div>
                   ))}
                   {citasPaciente.length > 10 && (
-                    <p style={{ textAlign: 'center', color: '#666', fontSize: '0.8rem' }}>+{citasPaciente.length - 10} citas más</p>
+                    <p className="ficha-mas">+{citasPaciente.length - 10} citas más</p>
                   )}
                 </div>
               </div>
@@ -822,24 +702,16 @@ export default function FichaCompletaModal({
             {pagosPaciente.length > 0 && (
               <div className="ficha-section">
                 <h3 className="section-title">
-                  Pagos <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#f59e0b' }}>({pagosPaciente.length})</span>
+                  Pagos <span className="section-title__extra section-title__extra--pagos">({pagosPaciente.length})</span>
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '200px', overflowY: 'auto' }}>
+                <div className="ficha-lista">
                   {pagosPaciente.slice(0, 8).map((pago: any) => (
-                    <div key={pago.id} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '0.75rem', background: '#1a1a1a', borderRadius: '8px',
-                      borderLeft: `3px solid ${pago.estado === 'completado' ? '#f59e0b' : '#ef4444'}`
-                    }}>
+                    <div key={pago.id} className={`ficha-item ${pago.estado === 'completado' ? 'ficha-item--pagado' : 'ficha-item--impago'}`}>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>${(pago.monto || 0).toLocaleString()}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#888' }}>{pago.fecha_pago ? formatearFechaLocal(pago.fecha_pago) : 'Sin fecha'} • {pago.metodo_pago}</div>
+                        <div className="ficha-item__titulo">${(pago.monto || 0).toLocaleString()}</div>
+                        <div className="ficha-item__meta">{pago.fecha_pago ? formatearFechaLocal(pago.fecha_pago) : 'Sin fecha'} • {pago.metodo_pago}</div>
                       </div>
-                      <span style={{
-                        padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase',
-                        background: pago.estado === 'completado' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                        color: pago.estado === 'completado' ? '#f59e0b' : '#ef4444'
-                      }}>{pago.estado}</span>
+                      <span className="ficha-pill">{pago.estado}</span>
                     </div>
                   ))}
                 </div>
@@ -851,17 +723,17 @@ export default function FichaCompletaModal({
               <h3 className="section-title">
                 Historial de Sesiones 
                 {sesionesFiltradas.length > 0 && (
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#2AD636' }}>({sesionesFiltradas.length})</span>
+                  <span className="section-title__extra section-title__extra--sesiones">({sesionesFiltradas.length})</span>
                 )}
               </h3>
               <div className="sesiones-list">
                 {loadingSesiones && (
-                  <div style={{ textAlign: 'center', padding: '2rem' }}><div className="spinner"></div></div>
+                  <div className="ficha-cargando"><div className="spinner"></div></div>
                 )}
                 
                 {!loadingSesiones && sesionesFiltradas.length === 0 && (
-                  <div className="empty-state" style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-                    <svg viewBox="0 0 24 24" fill="none" style={{ width: '48px', height: '48px', margin: '0 auto 1rem', opacity: 0.5 }}>
+                  <div className="ficha-vacio">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" strokeWidth="2"/>
                     </svg>
                     <p>No hay sesiones registradas para este paciente</p>
@@ -874,7 +746,7 @@ export default function FichaCompletaModal({
                       <div key={sesion.id} className="sesion-card">
                         <div className="sesion-header">
                           <div className="sesion-fecha">
-                            <svg viewBox="0 0 24 24" fill="none" style={{ width: '16px', height: '16px', marginRight: '0.5rem' }}>
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                               <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
                               <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="2"/>
                             </svg>
@@ -888,7 +760,7 @@ export default function FichaCompletaModal({
                         <div className="sesion-body">
                           <div className="sesion-info-row">
                             <strong>Tipo:</strong> {sesion.tipo}
-                            <strong style={{ marginLeft: '1rem' }}>Duración:</strong> {sesion.duracion} min
+                            <strong className="sesion-info-row__sep">Duración:</strong> {sesion.duracion} min
                           </div>
                           
                           {sesion.notasSesion && (
@@ -904,7 +776,7 @@ export default function FichaCompletaModal({
                           {sesion.borgPercepcion !== null && sesion.borgPercepcion !== undefined && (
                             <div className="sesion-info-row">
                               <strong>Borg - Esfuerzo:</strong> {sesion.borgPercepcion}/10
-                              <span style={{ marginLeft: '0.5rem', color: '#888', fontSize: '0.85rem' }}>
+                              <span className="sesion-info-row__nota">
                                 {sesion.borgPercepcion === 0 && '(Reposo)'}
                                 {sesion.borgPercepcion >= 1 && sesion.borgPercepcion <= 2 && '(Muy ligero)'}
                                 {sesion.borgPercepcion === 3 && '(Ligero)'}
@@ -919,14 +791,14 @@ export default function FichaCompletaModal({
                           {sesion.movilidad && (
                             <div className="sesion-info-row">
                               <strong>Movilidad:</strong> 
-                              <span style={{ marginLeft: '0.5rem', textTransform: 'capitalize' }}>{sesion.movilidad}</span>
+                              <span className="sesion-info-row__valor">{sesion.movilidad}</span>
                             </div>
                           )}
                           
                           {sesion.fuerza && (
                             <div className="sesion-info-row">
                               <strong>Daniels - Fuerza:</strong> {sesion.fuerza}/5
-                              <span style={{ marginLeft: '0.5rem', color: '#888', fontSize: '0.85rem' }}>
+                              <span className="sesion-info-row__nota">
                                 {sesion.fuerza == 0 && '(Sin contracción)'}
                                 {sesion.fuerza == 1 && '(Contracción visible)'}
                                 {sesion.fuerza == 2 && '(Movimiento sin gravedad)'}
@@ -940,7 +812,7 @@ export default function FichaCompletaModal({
                           {sesion.progresoGeneral && (
                             <div className="sesion-info-row">
                               <strong>Progreso:</strong> 
-                              <span style={{ marginLeft: '0.5rem', color: '#2AD636', textTransform: 'capitalize' }}>
+                              <span className="sesion-info-row__valor sesion-info-row__valor--acento">
                                 {sesion.progresoGeneral.replace(/_/g, ' ')}
                               </span>
                             </div>
@@ -949,26 +821,26 @@ export default function FichaCompletaModal({
                           {sesion.ejerciciosRealizados && sesion.ejerciciosRealizados.length > 0 && (
                             <div className="sesion-info-row">
                               <strong>Ejercicios:</strong>
-                              <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              <div className="ficha-ejercicios">
                                 {sesion.ejerciciosRealizados.map((ejercicio: any, idx: number) => {
                                   if (typeof ejercicio === 'string') {
                                     return (
-                                      <div key={idx} style={{ padding: '0.5rem', background: 'rgba(42, 214, 54, 0.1)', borderLeft: '3px solid #2AD636', borderRadius: '4px' }}>
+                                      <div key={idx} className="ficha-ejercicio">
                                         <strong>{ejercicio}</strong>
                                       </div>
                                     );
                                   }
                                   return (
-                                    <div key={idx} style={{ padding: '0.75rem', background: 'rgba(42, 214, 54, 0.1)', borderLeft: '3px solid #2AD636', borderRadius: '4px' }}>
-                                      <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: '#2AD636' }}>{ejercicio.nombre}</div>
-                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.25rem', fontSize: '0.85rem', color: '#ccc' }}>
+                                    <div key={idx} className="ficha-ejercicio">
+                                      <div className="ficha-ejercicio__nombre">{ejercicio.nombre}</div>
+                                      <div className="ficha-ejercicio__datos">
                                         {ejercicio.peso && <div><strong>Peso:</strong> {ejercicio.peso}</div>}
                                         {ejercicio.repeticiones && <div><strong>Repeticiones:</strong> {ejercicio.repeticiones}</div>}
                                         {ejercicio.tiempo && <div><strong>Tiempo:</strong> {ejercicio.tiempo}</div>}
                                         {ejercicio.carga && <div><strong>Carga:</strong> {ejercicio.carga}</div>}
                                       </div>
                                       {ejercicio.notas && (
-                                        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#aaa', fontStyle: 'italic' }}>{ejercicio.notas}</div>
+                                        <div className="ficha-ejercicio__notas">{ejercicio.notas}</div>
                                       )}
                                     </div>
                                   );
@@ -993,87 +865,65 @@ export default function FichaCompletaModal({
               <h3 className="section-title">
                 Documentos e Imágenes
                 {documentosPaciente.length > 0 && (
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#8b5cf6' }}>({documentosPaciente.length})</span>
+                  <span className="section-title__extra section-title__extra--episodio">({documentosPaciente.length})</span>
                 )}
               </h3>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                  padding: '0.6rem 1.2rem',
-                  background: subiendoDocumento ? '#333' : 'rgba(139, 92, 246, 0.15)',
-                  border: '1px solid #8b5cf640', borderRadius: '8px',
-                  color: subiendoDocumento ? '#666' : '#8b5cf6',
-                  cursor: subiendoDocumento ? 'wait' : 'pointer',
-                  fontSize: '0.9rem', fontWeight: 600
-                }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '16px', height: '16px' }}>
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  {subiendoDocumento ? 'Subiendo...' : 'Subir Archivo'}
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*,.pdf,.doc,.docx"
-                    onChange={handleSubirDocumento}
-                    style={{ display: 'none' }}
-                    disabled={subiendoDocumento}
-                  />
-                </label>
-              </div>
+              <label className={`ficha-subir ${subiendoDocumento ? 'is-subiendo' : ''}`}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                {subiendoDocumento ? 'Subiendo...' : 'Subir Archivo'}
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={handleSubirDocumento}
+                  hidden
+                  disabled={subiendoDocumento}
+                />
+              </label>
 
               {documentosPaciente.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.75rem' }}>
+                <div className="ficha-docs">
                   {documentosPaciente.map((doc: any) => (
-                    <div key={doc.id} style={{
-                      background: '#1a1a1a', borderRadius: '8px', overflow: 'hidden',
-                      border: '1px solid #333'
-                    }}>
+                    <div key={doc.id} className="ficha-doc">
                       {doc.tipo === 'imagen' ? (
                         <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                          <img src={doc.url} alt={doc.nombre} style={{
-                            width: '100%', height: '120px', objectFit: 'cover', display: 'block', cursor: 'pointer'
-                          }} />
+                          <img className="ficha-doc__img" src={doc.url} alt={doc.nombre} loading="lazy" />
                         </a>
                       ) : (
-                        <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          height: '120px', background: '#0a0a0a', cursor: 'pointer', textDecoration: 'none'
-                        }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke={doc.tipo === 'pdf' ? '#ef4444' : '#3b82f6'} strokeWidth="1.5" style={{ width: '40px', height: '40px' }}>
+                        <a className="ficha-doc__archivo" href={doc.url} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${doc.nombre}`}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke={doc.tipo === 'pdf' ? 'var(--danger)' : 'var(--estado-completada)'} strokeWidth="1.5" aria-hidden="true">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                             <polyline points="14 2 14 8 20 8"/>
                           </svg>
                         </a>
                       )}
-                      <div style={{ padding: '0.5rem 0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100px' }} title={doc.nombre}>
+                      <div className="ficha-doc__pie">
+                        <span className="ficha-doc__nombre" title={doc.nombre}>
                           {doc.nombre}
                         </span>
-                        <button onClick={() => handleEliminarDocumento(doc.id)} style={{
-                          background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '1rem', padding: '0 0.2rem', lineHeight: 1
-                        }} title="Eliminar">×</button>
+                        <button className="ficha-doc__eliminar" onClick={() => handleEliminarDocumento(doc.id)} title="Eliminar" aria-label={`Eliminar ${doc.nombre}`}>×</button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p style={{ color: '#666', fontSize: '0.85rem', textAlign: 'center', padding: '1rem' }}>No hay documentos adjuntos</p>
+                <p className="ficha-docs__vacio">No hay documentos adjuntos</p>
               )}
             </div>
 
             {/* Estado de Tratamiento */}
-            <div className="ficha-section" style={{ marginTop: '2rem' }}>
-              <h3 className="section-title" style={{ color: '#2AD636', borderBottom: '2px solid #2AD636', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
-                Estado del Tratamiento
-              </h3>
+            <div className="ficha-section ficha-section--destacada">
+              <h3 className="section-title">Estado del Tratamiento</h3>
               {modoEdicion ? (
                 <select
+                  className="campo-input"
                   value={pacienteSeleccionado?.estado_tratamiento || 'en_tratamiento'}
                   onChange={(e) => setPacienteSeleccionado({...pacienteSeleccionado, estado_tratamiento: e.target.value})}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #333', background: '#1a1a1a', color: '#fff', fontSize: '0.95rem' }}
                 >
                   <option value="en_tratamiento">En Tratamiento</option>
                   <option value="alta">Alta</option>
@@ -1083,33 +933,10 @@ export default function FichaCompletaModal({
               ) : (
                 (() => {
                   const est = pacienteSeleccionado?.estado_paciente || pacienteSeleccionado?.estado_tratamiento || 'activo';
-                  const esAlta = est === 'alta';
-                  const esAbandono = est === 'abandono';
-                  const esSeguimiento = est === 'seguimiento';
+                  const clave = ['alta', 'abandono', 'seguimiento'].includes(est) ? est : 'activo';
+                  const etiquetas: Record<string, string> = { alta: 'Alta', seguimiento: 'Seguimiento', abandono: 'Receso', activo: 'En Tratamiento' };
                   return (
-                    <span style={{
-                      display: 'inline-block', padding: '6px 16px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600,
-                      textTransform: 'uppercase', letterSpacing: '0.5px',
-                      background: esAlta ? 'rgba(16, 185, 129, 0.15)' :
-                                  esSeguimiento ? 'rgba(59, 130, 246, 0.15)' :
-                                  esAbandono ? 'rgba(239, 68, 68, 0.15)' :
-                                  'rgba(42, 214, 54, 0.15)',
-                      color: esAlta ? '#10b981' :
-                             esSeguimiento ? '#3b82f6' :
-                             esAbandono ? '#ef4444' :
-                             '#2AD636',
-                      border: `1px solid ${
-                        esAlta ? '#10b981' :
-                        esSeguimiento ? '#3b82f6' :
-                        esAbandono ? '#ef4444' :
-                        '#2AD636'
-                      }40`
-                    }}>
-                      {esAlta ? 'Alta' :
-                       esSeguimiento ? 'Seguimiento' :
-                       esAbandono ? 'Receso' :
-                       'En Tratamiento'}
-                    </span>
+                    <span className={`ficha-estado ficha-estado--${clave}`}>{etiquetas[clave]}</span>
                   );
                 })()
               )}
@@ -1122,21 +949,16 @@ export default function FichaCompletaModal({
                 : pacienteSeleccionado?.evaluacion_final;
               if (!evalFinal) return null;
               return (
-                <div className="ficha-section" style={{ marginTop: '2rem' }}>
-                  <h3 className="section-title" style={{ color: '#2AD636', borderBottom: '2px solid #2AD636', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                <div className="ficha-section ficha-section--destacada">
+                  <h3 className="section-title">
                     Evaluación Final del Tratamiento
                     {episodioSeleccionado && (
-                      <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: '#8b5cf6' }}>
+                      <span className="section-title__extra section-title__extra--episodio">
                         (Episodio {episodioSeleccionado.numero_episodio})
                       </span>
                     )}
                   </h3>
-                  <div style={{
-                    background: '#0a0a0a', border: '1px solid #2AD636', borderRadius: '8px',
-                    padding: '1.5rem', whiteSpace: 'pre-wrap', lineHeight: '1.6', color: '#e0e0e0'
-                  }}>
-                    {evalFinal}
-                  </div>
+                  <div className="ficha-eval-final">{evalFinal}</div>
                 </div>
               );
             })()}
@@ -1147,54 +969,47 @@ export default function FichaCompletaModal({
       {/* Modal Cambio de Estado */}
       {showModalEstado && (
         <div className="modal-overlay" style={{ zIndex: 1001 }} onClick={() => setShowModalEstado(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+          <div className="modal-content modal-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3>
                 {estadoSeleccionado === 'alta' && (
-                  <><svg viewBox="0 0 24 24" fill="none" style={{ width: '20px', height: '20px', color: '#10b981' }}><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> Dar de Alta al Paciente</>
+                  <><svg viewBox="0 0 24 24" fill="none" style={{ color: 'var(--estado-confirmada)' }} aria-hidden="true"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> Dar de Alta al Paciente</>
                 )}
                 {estadoSeleccionado === 'abandono' && (
-                  <><svg viewBox="0 0 24 24" fill="none" style={{ width: '20px', height: '20px', color: '#ef4444' }}><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> Marcar como Receso</>
+                  <><svg viewBox="0 0 24 24" fill="none" style={{ color: 'var(--danger)' }} aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> Marcar como Receso</>
                 )}
                 {estadoSeleccionado === 'activo' && (
-                  <><svg viewBox="0 0 24 24" fill="none" style={{ width: '20px', height: '20px', color: '#3b82f6' }}><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> Reactivar Paciente</>
+                  <><svg viewBox="0 0 24 24" fill="none" style={{ color: 'var(--estado-completada)' }} aria-hidden="true"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> Reactivar Paciente</>
                 )}
               </h3>
-              <button className="modal-close" onClick={() => setShowModalEstado(false)}>
+              <button className="modal-close" onClick={() => setShowModalEstado(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/></svg>
               </button>
             </div>
             <div className="modal-body">
-              <p style={{ marginBottom: '1.5rem', color: '#aaa', fontSize: '0.9rem' }}>
+              <p className="modal-texto">
                 {estadoSeleccionado === 'alta' && 'El paciente completó su tratamiento exitosamente.'}
                 {estadoSeleccionado === 'abandono' && 'El paciente tomará un receso del tratamiento.'}
                 {estadoSeleccionado === 'activo' && 'El paciente volverá a estar en tratamiento activo.'}
               </p>
               <div className="form-group">
-                <label>Motivo</label>
-                <input type="text" value={motivoEstado} onChange={(e) => setMotivoEstado(e.target.value)}
+                <label htmlFor="ficha-motivo-estado">Motivo</label>
+                <input id="ficha-motivo-estado" className="campo-input" type="text" value={motivoEstado} onChange={(e) => setMotivoEstado(e.target.value)}
                   placeholder={estadoSeleccionado === 'alta' ? 'Ej: Tratamiento completado' : estadoSeleccionado === 'abandono' ? 'Ej: Receso temporal' : 'Ej: Retoma tratamiento'}
-                  style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.9rem' }}
                 />
               </div>
-              <div className="form-group" style={{ marginTop: '1rem' }}>
-                <label>Notas adicionales</label>
-                <textarea value={notasEstado} onChange={(e) => setNotasEstado(e.target.value)} rows={3}
+              <div className="form-group">
+                <label htmlFor="ficha-notas-estado">Notas adicionales</label>
+                <textarea id="ficha-notas-estado" className="campo-input" value={notasEstado} onChange={(e) => setNotasEstado(e.target.value)} rows={3}
                   placeholder="Notas opcionales..."
-                  style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.9rem', resize: 'vertical' }}
                 />
               </div>
             </div>
-            <div className="modal-footer" style={{ display: 'flex', gap: '0.75rem' }}>
-              <button onClick={() => setShowModalEstado(false)} disabled={cambiandoEstado}
-                style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #333', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '0.9rem' }}>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowModalEstado(false)} disabled={cambiandoEstado}>
                 Cancelar
               </button>
-              <button onClick={handleCambiarEstado} disabled={cambiandoEstado}
-                style={{
-                  flex: 2, padding: '0.75rem', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: '#fff',
-                  background: estadoSeleccionado === 'alta' ? '#10b981' : estadoSeleccionado === 'abandono' ? '#ef4444' : '#3b82f6'
-                }}>
+              <button className={`btn-confirmar btn-confirmar--${estadoSeleccionado}`} onClick={handleCambiarEstado} disabled={cambiandoEstado}>
                 {cambiandoEstado ? 'Procesando...' : estadoSeleccionado === 'alta' ? 'Confirmar Alta' : estadoSeleccionado === 'abandono' ? 'Confirmar Receso' : 'Confirmar Reactivación'}
               </button>
             </div>
@@ -1205,41 +1020,33 @@ export default function FichaCompletaModal({
       {/* Modal Pregunta al Reactivar */}
       {showModalReactivar && (
         <div className="modal-overlay" style={{ zIndex: 1001 }} onClick={() => setShowModalReactivar(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+          <div className="modal-content modal-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Reactivar Paciente</h3>
-              <button className="modal-close" onClick={() => setShowModalReactivar(false)}>
+              <button className="modal-close" onClick={() => setShowModalReactivar(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/></svg>
               </button>
             </div>
             <div className="modal-body">
-              <p style={{ marginBottom: '1.5rem', color: '#aaa', fontSize: '0.9rem' }}>
+              <p className="modal-texto">
                 ¿El paciente vuelve por la <strong>misma lesión</strong> o por una <strong>lesión nueva</strong>?
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div className="ficha-opciones">
                 <button
+                  className="ficha-opcion ficha-opcion--misma"
                   onClick={() => { setShowModalReactivar(false); handleAbrirModalEstado('activo'); }}
-                  style={{
-                    padding: '1rem', borderRadius: '8px', border: '1px solid #3b82f6',
-                    background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', cursor: 'pointer',
-                    fontSize: '0.9rem', fontWeight: 600, textAlign: 'left'
-                  }}
                 >
                   Misma lesión
-                  <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 400, marginTop: '0.25rem' }}>
+                  <div className="ficha-opcion__desc">
                     Continúa el episodio actual (las sesiones siguen su numeración).
                   </div>
                 </button>
                 <button
+                  className="ficha-opcion ficha-opcion--nueva"
                   onClick={() => { setShowModalReactivar(false); setNuevoEpisodio({ motivoLesion: '', objetivo: '', evaluacionFisica: '' }); setShowModalEpisodio(true); }}
-                  style={{
-                    padding: '1rem', borderRadius: '8px', border: '1px solid #8b5cf6',
-                    background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', cursor: 'pointer',
-                    fontSize: '0.9rem', fontWeight: 600, textAlign: 'left'
-                  }}
                 >
                   Lesión nueva
-                  <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 400, marginTop: '0.25rem' }}>
+                  <div className="ficha-opcion__desc">
                     Cierra el episodio anterior y abre uno nuevo (sesiones desde 1).
                   </div>
                 </button>
@@ -1252,60 +1059,61 @@ export default function FichaCompletaModal({
       {/* Modal Nuevo Episodio */}
       {showModalEpisodio && (
         <div className="modal-overlay" style={{ zIndex: 1002 }} onClick={() => setShowModalEpisodio(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '560px' }}>
+          <div className="modal-content modal-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <svg viewBox="0 0 24 24" fill="none" style={{ width: '20px', height: '20px', color: '#8b5cf6' }}>
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" style={{ color: 'var(--episodio)' }} aria-hidden="true">
                   <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
                 Nuevo Episodio de Tratamiento
               </h3>
-              <button className="modal-close" onClick={() => setShowModalEpisodio(false)}>
+              <button className="modal-close" onClick={() => setShowModalEpisodio(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/></svg>
               </button>
             </div>
             <div className="modal-body">
-              <p style={{ marginBottom: '1.25rem', color: '#aaa', fontSize: '0.85rem' }}>
+              <p className="modal-texto">
                 Se cerrará el episodio actual (quedará como histórico) y se abrirá uno nuevo. Las sesiones nuevas se numerarán desde 1.
               </p>
               <div className="form-group">
-                <label>Lesión / Motivo de consulta *</label>
+                <label htmlFor="episodio-motivo">Lesión / Motivo de consulta *</label>
                 <textarea
+                  id="episodio-motivo"
+                  className="campo-input"
                   value={nuevoEpisodio.motivoLesion}
                   onChange={(e) => setNuevoEpisodio({ ...nuevoEpisodio, motivoLesion: e.target.value })}
                   rows={3}
                   placeholder="Ej: Esguince de tobillo derecho"
-                  style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.9rem', resize: 'vertical' }}
                 />
               </div>
-              <div className="form-group" style={{ marginTop: '1rem' }}>
-                <label>Objetivo del paciente</label>
+              <div className="form-group">
+                <label htmlFor="episodio-objetivo">Objetivo del paciente</label>
                 <textarea
+                  id="episodio-objetivo"
+                  className="campo-input"
                   value={nuevoEpisodio.objetivo}
                   onChange={(e) => setNuevoEpisodio({ ...nuevoEpisodio, objetivo: e.target.value })}
                   rows={2}
                   placeholder="Ej: Volver a correr sin dolor"
-                  style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.9rem', resize: 'vertical' }}
                 />
               </div>
-              <div className="form-group" style={{ marginTop: '1rem' }}>
-                <label>Evaluación física inicial</label>
+              <div className="form-group">
+                <label htmlFor="episodio-evaluacion">Evaluación física inicial</label>
                 <textarea
+                  id="episodio-evaluacion"
+                  className="campo-input"
                   value={nuevoEpisodio.evaluacionFisica}
                   onChange={(e) => setNuevoEpisodio({ ...nuevoEpisodio, evaluacionFisica: e.target.value })}
                   rows={3}
                   placeholder="Hallazgos de la evaluación inicial"
-                  style={{ width: '100%', padding: '0.75rem', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '0.9rem', resize: 'vertical' }}
                 />
               </div>
             </div>
-            <div className="modal-footer" style={{ display: 'flex', gap: '0.75rem' }}>
-              <button onClick={() => setShowModalEpisodio(false)} disabled={creandoEpisodio}
-                style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #333', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '0.9rem' }}>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowModalEpisodio(false)} disabled={creandoEpisodio}>
                 Cancelar
               </button>
-              <button onClick={handleCrearEpisodio} disabled={creandoEpisodio}
-                style={{ flex: 2, padding: '0.75rem', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: '#fff', background: '#8b5cf6' }}>
+              <button className="btn-confirmar btn-confirmar--episodio" onClick={handleCrearEpisodio} disabled={creandoEpisodio}>
                 {creandoEpisodio ? 'Creando...' : 'Crear Episodio'}
               </button>
             </div>

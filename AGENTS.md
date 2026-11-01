@@ -123,7 +123,14 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
 
 ## Advertencias conocidas
 
-- **Auth en la API inconsistente**: el middleware excluye `/api`, y solo ~21 de ~57 rutas llaman a `verifyAuth`/`getCurrentUser`. Pagos, gastos, finanzas, configuraciones, migraciones, diagnósticos y otras rutas quedan expuestas sin sesión. `/api/usuarios` y `/api/usuarios/[id]` ya validan la sesión e impiden eliminar o desactivar el propio usuario y el último activo. Hay que tenerlo en cuenta antes de agregar o modificar endpoints. Las rutas nuevas deben validar la sesión, salvo los webhooks.
+- **Auth en la API**: el middleware excluye `/api`, así que cada route handler valida la sesión por su cuenta. Todas las rutas lo hacen, con `verifyAuth`/`getCurrentUser` o con el helper `requireAuth(request)` de `src/lib/auth.ts` (devuelve un 401 o `null`):
+
+  ```ts
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+  ```
+
+  Solo quedan públicas `auth/login`, `auth/logout`, `icon`, `manifest` y el webhook `webhook/whatsapp` (lo llama el proveedor). Los diagnósticos, migraciones y `webhook/whatsapp/enviar-respuesta` exigen sesión: se abren desde el navegador con la sesión iniciada. `/api/usuarios` además impide eliminar o desactivar el propio usuario y el último activo. Toda ruta nueva debe validar la sesión, salvo los webhooks.
 - El fallback de `JWT_SECRET` en `src/lib/auth.ts` es inseguro.
 - Bugs de rendimiento pendientes en `CitasModule.tsx` (`esHorarioBloqueado` sin memoizar, IIFE de la vista "hoy", doble `filter` en el botón de recordatorios) y `console.log` excesivos en las APIs. Ver `docs/bugs-rendimiento.md`.
 - Los módulos son componentes gigantes: hay que editarlos de forma quirúrgica y respetar su estilo (estado local con `useState`, `fetch` directo a `/api/*`).
@@ -159,7 +166,13 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
   - `.pac-filtros` / `.pac-filtro`: chips de filtro, coloreados con `--filtro-color`.
   - `.toast`: mensajes.
 - Las listas de tarjetas se paginan en el cliente, 10 por página, con `usePaginacion(items, claveReinicio)` y `<Paginacion />` de `components/Paginacion.tsx`. La página vuelve a 1 cuando cambia la clave (búsqueda, filtro, mes). Se usa en Pacientes, Sesiones y Finanzas (movimientos y gastos fijos).
-- Pendiente: el interior de los modales grandes de Sesiones (formulario de sesión, progreso, evaluación) y de `FichaCompletaModal` todavía tiene muchos estilos inline, aunque ya hereda el bottom-sheet.
+- El interior de los modales ya tiene clases propias, en el bloque "INTERIOR DE MODALES" al final de `dashboard.css`:
+  - Comunes: `.modal-body`, `.modal-actions`, `.modal-header h3`, `.modal-sm`, `.campo-input`, `.campo-ayuda`, `.modal-texto` y `.btn-confirmar--*`.
+  - Formulario de sesión, evaluación y progreso: `.ses-*`.
+  - Contenido de la ficha completa y sus sub-modales: `.ficha-*`.
+  - Los colores dinámicos pasan por custom properties inline (`--dolor-color`, `--stat-color`, `--dato-color`, `--metrica-color`).
+  - El violeta de episodios es el token `--episodio`.
+- Los modales de `SesionesModule` (completar sesión, programar siguiente, biblioteca de ejercicios y cambio de estado) también usan esas clases. En Sesiones y en la ficha solo quedan estilos inline con valores dinámicos (custom properties, alturas del gráfico, color de badges y `zIndex`).
 
 ## Reglas de trabajo (preferencias del usuario)
 
