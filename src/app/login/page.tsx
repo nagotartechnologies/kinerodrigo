@@ -53,13 +53,8 @@ export default function LoginPage() {
 
   return (
     <main className="login">
-      {/* Fondo animado */}
-      <div className="login-fondo" aria-hidden="true">
-        <span className="login-brillo login-brillo--1" />
-        <span className="login-brillo login-brillo--2" />
-        <span className="login-brillo login-brillo--3" />
-        <span className="login-grilla" />
-      </div>
+      {/* Fondo: líneas de relieve de la marca */}
+      <div className="login-fondo" aria-hidden="true" />
 
       <section className="login-card" aria-labelledby="login-titulo">
         <header className="login-marca">

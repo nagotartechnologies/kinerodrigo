@@ -144,6 +144,7 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
 - Assets oficiales en `/brand-kit` (ver su README):
   - Ya copiados: favicons, `apple-touch-icon`, `android-chrome-*`, `maskable-512` y `og-image` a `/public`, y los logos SVG a `/public/brand`.
   - Uso de logos: login con `logo-vertical-oscuro`, header con `logo-horizontal-oscuro`, pantalla de carga con `isotipo`.
+  - El login no tiene tarjeta. El fondo es `public/brand/fondo-lineas.webp`, una textura de líneas de relieve generada para imitar el fondo del logo original, con un degradado radial que oscurece el centro.
   - `public/icon-*.png` se regeneran con sharp desde `brand-kit/svg/app-icon.svg`.
 - No usar `#3FFF00` (era el verde neón anterior).
 - `logo_url` de configuración ya no define favicon ni íconos; solo se usa en el PDF de la ficha.
