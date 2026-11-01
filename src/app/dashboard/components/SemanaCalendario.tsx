@@ -107,8 +107,14 @@ interface Props {
   onDesbloquear: (id: number) => void;
 }
 
-const etiquetaRecordatorio = (respuesta?: string) =>
-  respuesta === 'CONFIRMAR' ? '✅' : respuesta === 'CANCELAR' ? '❌' : respuesta === 'REAGENDAR' ? '📅' : '📤';
+const etiquetaRecordatorio = (recordatorio: { estado?: string; respuesta?: string }) =>
+  recordatorio.estado === 'error' ? '⚠️' :
+  recordatorio.respuesta === 'CONFIRMAR' ? '✅' : recordatorio.respuesta === 'CANCELAR' ? '❌' : recordatorio.respuesta === 'REAGENDAR' ? '📅' : '📤';
+
+const tituloRecordatorio = (recordatorio: { estado?: string; respuesta?: string; cancelacionTardia?: boolean }) =>
+  recordatorio.estado === 'error' ? 'Error al enviar el recordatorio de WhatsApp' :
+  recordatorio.respuesta === 'CANCELAR' && recordatorio.cancelacionTardia ? 'Canceló por WhatsApp (cancelación tardía)' :
+  'Recordatorio WhatsApp';
 
 export default function SemanaCalendario({
   dias,
@@ -513,8 +519,8 @@ export default function SemanaCalendario({
                         {cita.tieneSesion && <span className="gcal-ev__icono gcal-ev__icono--sesion" title="Sesión registrada">✓</span>}
                         {cita.tienePago && <span className="gcal-ev__icono gcal-ev__icono--pago" title="Pago registrado">$</span>}
                         {cita.recordatorio && (
-                          <span className="gcal-ev__icono" title="Recordatorio WhatsApp">
-                            {etiquetaRecordatorio(cita.recordatorio.respuesta)}
+                          <span className="gcal-ev__icono" title={tituloRecordatorio(cita.recordatorio)}>
+                            {etiquetaRecordatorio(cita.recordatorio)}
                           </span>
                         )}
                       </div>

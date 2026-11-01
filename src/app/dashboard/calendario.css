@@ -1132,6 +1132,67 @@ body.dragging {
   box-shadow: none;
 }
 
+/* --- Respuestas de pacientes por WhatsApp --- */
+.btn-respuestas {
+  position: relative;
+}
+
+.respuestas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.respuesta-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--respuesta-color, var(--estado-cancelada));
+  border-radius: var(--radius-md);
+}
+
+.respuesta-item--cancelar { --respuesta-color: var(--estado-cancelada); }
+.respuesta-item--reagendar { --respuesta-color: var(--estado-reagendar); }
+
+.respuesta-item__paciente {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.respuesta-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.respuesta-item__tardia {
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.respuesta-item__acciones {
+  display: flex;
+  gap: var(--space-2);
+}
+
+@media (min-width: 769px) {
+  .respuesta-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
 @media (hover: hover) {
   .citas-menu-item:hover {
     background: var(--surface-3);

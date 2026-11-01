@@ -21,7 +21,7 @@ Sistema de gestión clínica para el kinesiólogo **Rodrigo Ulloa**. Lo desarrol
 | Auth | JWT (`jsonwebtoken`, 7 días) en la cookie httpOnly `auth-token`, con `bcryptjs` |
 | Archivos | Cloudinary (documentos de pacientes en `kine-citas/pacientes/`, logo) |
 | WhatsApp | Multi-proveedor: Green API, Ultramsg, Twilio, Meta Cloud API, Wassenger |
-| PWA | `next-pwa` (deshabilitado en dev). `public/sw.js` y `workbox-*.js` son archivos generados |
+| PWA | Service worker propio y escrito a mano en `public/sw.js` (network-first solo para páginas y limpieza de cachés viejas). `next-pwa` ya no se usa: su plugin de webpack no corre con Turbopack. `public/workbox-*.js` es un resto del sistema anterior. La lógica cliente está en `src/lib/pwa.ts` y `components/AppPwa.tsx` (ver "PWA: instalación y versiones") |
 | Deploy | Netlify, con Scheduled Functions en `netlify/functions/` |
 | Alternativa | `server.js` (servidor HTTP propio) y scripts PM2 (`nago-kine`). Ojo: `ecosystem.config.js` **no existe** en el repo |
 
@@ -49,6 +49,8 @@ CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
 GREEN_API_INSTANCE_ID, GREEN_API_TOKEN, GREEN_API_URL, GREEN_API_TEST_MODE
 WHATSAPP_TEST_MODE                            # true = TestProvider simulado, no envía nada
 NEXT_PUBLIC_APP_URL
+CRON_SECRET                                   # la Netlify Scheduled Function lo manda en x-cron-secret a /api/cron/recordatorios
+GREEN_API_WEBHOOK_TOKEN                       # si está definido, el webhook exige Authorization: Bearer <token> (configurar el mismo valor en "Webhook URL Token" de Green API)
 ```
 
 También están las credenciales de los otros proveedores de WhatsApp (Ultramsg, Twilio, Meta, Wassenger), que se leen en `src/lib/whatsapp/providers/*`. El detalle completo está en `docs/plans/variables-entorno-y-despliegue.md`.
@@ -85,7 +87,7 @@ src/
     db-sqlite-backup.ts       # LEGACY better-sqlite3, no se usa
   components/DynamicFavicon.tsx
 netlify/functions/
-  recordatorios-cron.ts       # schedule '0 */2 * * *': recordatorios automáticos
+  recordatorios-cron.ts       # schedule '0 */2 * * *': solo llama a POST /api/cron/recordatorios con CRON_SECRET (la lógica vive en src/lib/cron.ts)
   backup-diario.ts            # schedule '0 3 * * *': dump SQL de las tablas
   check-button-responses.ts   # DESACTIVADA (el webhook procesa las respuestas en tiempo real)
 docs/
@@ -116,10 +118,20 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
 
 ## Flujo de WhatsApp
 
-1. El recordatorio sale de forma automática (Netlify cron cada 2 h, según `recordatorios_horas_antes`), manual (`/api/citas/[id]/recordatorio`) o masiva (`/api/citas/recordatorios-masivos`).
+1. El recordatorio sale de forma automática, manual (`/api/citas/[id]/recordatorio`) o masiva (`/api/citas/recordatorios-masivos`).
+   - Automático: Netlify cron cada 2 h → `enviarRecordatoriosAutomaticos()`. Toma las citas cuyo `fecha || ' ' || hora` cae entre ahora y ahora + `recordatorios_horas_antes`, **en hora de Chile** (`src/lib/horaChile.ts`).
 2. Se guarda en `recordatorios`. La plantilla está en `configuraciones.whatsapp_mensaje_recordatorio`, con placeholders `{paciente} {fecha} {hora} ...`.
-3. El paciente responde y llega a `POST /api/webhook/whatsapp`. Ahí se busca el recordatorio por los **últimos 8 dígitos** del teléfono, `detectarIntencion` decide la intención, se actualiza el estado de la cita y se envía el mensaje de confirmación.
-4. Diagnóstico: `/api/webhook/diagnostico`, `/api/whatsapp/diagnostico` y `/api/cron/diagnostico`. También están `DIAGNOSTICO_WHATSAPP.md` y `docs/plans/WEBHOOK_DEBUG.md`.
+   - `recordatorios.estado` puede ser `enviado`, `error` (fallo de envío, con `error_envio`; se reintenta) u `obsoleto` (la cita se movió de día u hora). Solo `enviado` evita que se reenvíe.
+   - Al mover una cita (PUT `/api/citas/[id]`), sus recordatorios pasan a `obsoleto` y, si estaba `confirmada` o en `reagendar`, la cita vuelve a `pendiente`.
+3. El paciente responde y llega a `POST /api/webhook/whatsapp`:
+   - Valida `GREEN_API_WEBHOOK_TOKEN` si está definido. Deduplica por `idMessage` en la tabla `webhook_mensajes`.
+   - Busca el recordatorio por los **últimos 8 dígitos** del teléfono y `detectarIntencion` decide la intención (compara palabras completas y la negación solo mira las 3 palabras previas).
+   - No modifica citas cerradas o pasadas. CONFIRMAR → `confirmada`. CANCELAR → `cancelada` (también la sesión vinculada), con `cancelacion_tardia=1` si faltan menos de `cancelacion_horas_minimas` h. REAGENDAR → `reagendar` (solo si `permitir_reagendar`).
+   - El re-prompt por respuesta no reconocida se envía **una sola vez** por recordatorio (`reprompts`).
+4. Aviso al profesional en CANCELAR o REAGENDAR:
+   - WhatsApp con `notificarProfesional()` a `notif_whatsapp_telefono` (o a `telefono_contacto`), activable con `notif_whatsapp`.
+   - Badge "Respuestas" en Citas, alimentado por `GET/POST /api/recordatorios/pendientes` (columna `revisado`).
+5. Diagnóstico: `/api/webhook/diagnostico`, `/api/whatsapp/diagnostico` y `/api/cron/diagnostico`. También están `DIAGNOSTICO_WHATSAPP.md` y `docs/plans/WEBHOOK_DEBUG.md`.
 
 ## Advertencias conocidas
 
@@ -135,7 +147,7 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
 - Bugs de rendimiento pendientes en `CitasModule.tsx` (`esHorarioBloqueado` sin memoizar, IIFE de la vista "hoy", doble `filter` en el botón de recordatorios) y `console.log` excesivos en las APIs. Ver `docs/bugs-rendimiento.md`.
 - Los módulos son componentes gigantes: hay que editarlos de forma quirúrgica y respetar su estilo (estado local con `useState`, `fetch` directo a `/api/*`).
 - `README.md` y `docs/plans/modulos-documentacion.md` mencionan Next 14/15 y better-sqlite3. **La fuente de verdad es el código**.
-- `check-button-responses` está desactivada a propósito: el proveedor actual (Ultramsg) entrega las respuestas por webhook.
+- `check-button-responses` está desactivada a propósito: el proveedor actual (Green API) entrega las respuestas por webhook.
 
 ## Marca
 
@@ -174,6 +186,16 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
   - Los colores dinámicos pasan por custom properties inline (`--dolor-color`, `--stat-color`, `--dato-color`, `--metrica-color`).
   - El violeta de episodios es el token `--episodio`.
 - Los modales de `SesionesModule` (completar sesión, programar siguiente, biblioteca de ejercicios y cambio de estado) también usan esas clases. En Sesiones y en la ficha solo quedan estilos inline con valores dinámicos (custom properties, alturas del gráfico, color de badges y `zIndex`).
+
+## PWA: instalación y versiones
+
+- **Versión del build:** `next.config.js` define `APP_VERSION` por build (`DEPLOY_ID` o un timestamp) y la incrusta en el bundle. `GET /api/version` (pública, `no-store`) devuelve la versión desplegada.
+- **Detección de versión nueva:** `src/lib/pwa.ts` compara ambas al abrir la app, al volver a ella (`visibilitychange`) y cada 5 minutos. Si difieren, `AppPwa` muestra el aviso "Hay una nueva versión disponible". El botón **Actualizar** borra las cachés y recarga.
+- **Instalación:** el login muestra **"Descargar la app"**.
+  - Chrome, Edge y Android: usa `beforeinstallprompt`.
+  - iOS/iPadOS: muestra los pasos de Safari (Compartir → Agregar a inicio).
+  - El botón se oculta si la app ya está instalada (`display-mode: standalone`) o si el navegador no permite instalar.
+- El service worker solo se registra en producción.
 
 ## Reglas de trabajo (preferencias del usuario)
 

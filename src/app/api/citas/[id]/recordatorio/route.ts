@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { sendWhatsAppMessage, formatearMensajeRecordatorio } from '@/lib/whatsapp';
 import { requireAuth } from '@/lib/auth';
+import { registrarErrorEnvio } from '@/lib/cron';
 
 // POST - Enviar recordatorio de cita por WhatsApp
 export async function POST(
@@ -121,11 +122,12 @@ export async function POST(
       });
     } catch (sendError: any) {
       console.error('❌ Error al enviar mensaje:', sendError);
+      await registrarErrorEnvio(citaId, cita.paciente_telefono, sendError.message);
       throw sendError;
     }
 
     // Registrar el envío en la base de datos
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO recordatorios (
         cita_id,
         mensaje_id,

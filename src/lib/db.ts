@@ -420,6 +420,27 @@ export async function initDatabase() {
       }
     }
 
+    // Columnas del flujo de recordatorios y respuestas de WhatsApp
+    const recordatoriosColumnsToAdd = [
+      'reprompts INTEGER DEFAULT 0',
+      'cancelacion_tardia INTEGER DEFAULT 0',
+      'revisado INTEGER DEFAULT 0',
+      'error_envio TEXT'
+    ];
+    for (const column of recordatoriosColumnsToAdd) {
+      try {
+        await tursoClient.execute(`ALTER TABLE recordatorios ADD COLUMN ${column}`);
+      } catch (error) {
+        // Si la columna ya existe se ignora el error sin hacer nada
+      }
+    }
+
+    // Mensajes de webhook ya procesados (el proveedor reintenta los envíos)
+    await tursoClient.execute(`CREATE TABLE IF NOT EXISTS webhook_mensajes (
+      id_message TEXT PRIMARY KEY,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`);
+
     // Se insertan los datos iniciales: categorias de gastos, configuraciones por defecto
     // y una correccion de datos legacy. Todos usan INSERT OR IGNORE para ser idem potentes.
     const seedStatements: any[] = [
@@ -456,6 +477,7 @@ export async function initDatabase() {
       { clave: 'notif_email', valor: 'true', tipo: 'boolean', categoria: 'notificaciones', descripcion: 'Notificaciones por email' },
       { clave: 'notif_sms', valor: 'false', tipo: 'boolean', categoria: 'notificaciones', descripcion: 'Notificaciones por SMS' },
       { clave: 'notif_whatsapp', valor: 'true', tipo: 'boolean', categoria: 'notificaciones', descripcion: 'Notificaciones por WhatsApp' },
+      { clave: 'notif_whatsapp_telefono', valor: '', tipo: 'text', categoria: 'notificaciones', descripcion: 'Teléfono que recibe los avisos de cancelaciones y reagendamientos' },
       { clave: 'whatsapp_activo', valor: 'true', tipo: 'boolean', categoria: 'whatsapp', descripcion: 'WhatsApp activado' },
       { clave: 'whatsapp_mensaje_recordatorio', valor: '🏥 *RECORDATORIO DE CITA - {nombre_centro}*\n\nHola {paciente},\n\nTe recordamos tu cita programada:\n\n📅 *Fecha:* {fecha}\n🕐 *Hora:* {hora}\n⏱️ *Duración:* {duracion} minutos\n📋 *Tipo:* {tipo}\n\nPor favor, responde con una de las siguientes opciones:\n\n1️⃣ *CONFIRMAR* - Para confirmar tu asistencia\n2️⃣ *CANCELAR* - Para cancelar la cita\n3️⃣ *REAGENDAR* - Para cambiar la fecha/hora\n\n¡Te esperamos! 💪', tipo: 'textarea', categoria: 'whatsapp', descripcion: 'Plantilla de mensaje de recordatorio' },
       { clave: 'whatsapp_mensaje_confirmacion', valor: '✅ *CITA CONFIRMADA*\n\nGracias {paciente}!\nTu cita ha sido confirmada para el {fecha} a las {hora}.\n\nNos vemos pronto! 🏥', tipo: 'textarea', categoria: 'whatsapp', descripcion: 'Mensaje de confirmación' },

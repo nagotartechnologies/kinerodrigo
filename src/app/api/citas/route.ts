@@ -39,15 +39,16 @@ export async function GET(request: NextRequest) {
         r.id as recordatorio_id,
         r.estado as recordatorio_estado,
         r.respuesta as recordatorio_respuesta,
-        r.enviado_at as recordatorio_enviado_at
+        r.enviado_at as recordatorio_enviado_at,
+        r.cancelacion_tardia as recordatorio_cancelacion_tardia
       FROM citas c
       LEFT JOIN pacientes p ON c.paciente_id = p.id
       LEFT JOIN sesiones s ON s.cita_id = c.id
       LEFT JOIN (
-        SELECT cita_id, id, estado, respuesta, enviado_at
+        SELECT cita_id, id, estado, respuesta, enviado_at, cancelacion_tardia
         FROM recordatorios
         WHERE id IN (
-          SELECT MAX(id) FROM recordatorios GROUP BY cita_id
+          SELECT MAX(id) FROM recordatorios WHERE estado != 'obsoleto' GROUP BY cita_id
         )
       ) r ON r.cita_id = c.id
       WHERE 1=1
@@ -120,7 +121,8 @@ export async function GET(request: NextRequest) {
         id: cita.recordatorio_id,
         estado: cita.recordatorio_estado,
         respuesta: cita.recordatorio_respuesta,
-        enviadoAt: cita.recordatorio_enviado_at
+        enviadoAt: cita.recordatorio_enviado_at,
+        cancelacionTardia: !!cita.recordatorio_cancelacion_tardia
       } : null
     }));
 

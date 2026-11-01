@@ -1,5 +1,27 @@
 import db from './db';
 import { sendWhatsAppMessage, formatearMensajeRecordatorio } from './whatsapp';
+import { fechaHoraChile } from './horaChile';
+
+/**
+ * Registrar un envío fallido para que quede visible en la agenda.
+ * Si la cita ya tiene un error registrado se actualiza en vez de duplicarlo.
+ */
+export async function registrarErrorEnvio(citaId: number, telefono: string, error: string) {
+  try {
+    const { changes } = await db.prepare(`
+      UPDATE recordatorios SET error_envio = ?, enviado_at = CURRENT_TIMESTAMP
+      WHERE cita_id = ? AND estado = 'error'
+    `).run(error, citaId);
+    if (!changes) {
+      await db.prepare(`
+        INSERT INTO recordatorios (cita_id, telefono, mensaje, estado, error_envio, enviado_at)
+        VALUES (?, ?, '', 'error', ?, CURRENT_TIMESTAMP)
+      `).run(citaId, telefono || '', error);
+    }
+  } catch (err) {
+    console.error(`⚠️ No se pudo registrar el error de la cita #${citaId}:`, err);
+  }
+}
 
 /**
  * Obtener valor de configuración
@@ -44,19 +66,17 @@ export async function enviarRecordatoriosAutomaticos(): Promise<{ enviados: numb
       return resultado;
     }
 
-    const horasAntes = await getConfigValue('recordatorios_horas_antes', 24);
+    const horasAntes = Number(await getConfigValue('recordatorios_horas_antes', 24)) || 24;
     
-    // Zona horaria Chile
+    // Ventana en hora de Chile: citas entre ahora y ahora + horasAntes
     const ahora = new Date();
-    const ahoraChile = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Santiago' }));
-    const fechaLimite = new Date(ahoraChile.getTime() + (horasAntes * 60 * 60 * 1000));
+    const ahoraStr = fechaHoraChile(ahora);
+    const limiteStr = fechaHoraChile(new Date(ahora.getTime() + horasAntes * 60 * 60 * 1000));
     
-    const fechaLimiteStr = `${fechaLimite.getFullYear()}-${String(fechaLimite.getMonth() + 1).padStart(2, '0')}-${String(fechaLimite.getDate()).padStart(2, '0')}`;
-    const fechaActual = `${ahoraChile.getFullYear()}-${String(ahoraChile.getMonth() + 1).padStart(2, '0')}-${String(ahoraChile.getDate()).padStart(2, '0')}`;
-    const horaActual = `${String(ahoraChile.getHours()).padStart(2, '0')}:${String(ahoraChile.getMinutes()).padStart(2, '0')}`;
-    
-    console.log(`📅 Buscando citas para ${fechaLimiteStr} (${horasAntes}h antes)`);
+    console.log(`📅 Buscando citas entre ${ahoraStr} y ${limiteStr} (${horasAntes}h antes)`);
 
+    // Solo un recordatorio con estado 'enviado' bloquea el reenvío:
+    // los 'error' se reintentan y los 'obsoleto' (cita movida) no cuentan
     const citas: any[] = await db.prepare(`
       SELECT 
         c.id,
@@ -69,17 +89,17 @@ export async function enviarRecordatoriosAutomaticos(): Promise<{ enviados: numb
         p.telefono as paciente_telefono
       FROM citas c
       INNER JOIN pacientes p ON c.paciente_id = p.id
-      WHERE c.fecha = ?
+      WHERE (c.fecha || ' ' || c.hora) > ?
+        AND (c.fecha || ' ' || c.hora) <= ?
         AND c.estado IN ('pendiente', 'confirmada')
         AND p.activo = 1
         AND p.telefono IS NOT NULL
         AND p.telefono != ''
-        AND (c.fecha > ? OR (c.fecha = ? AND c.hora > ?))
-        AND c.id NOT IN (
-          SELECT cita_id FROM recordatorios WHERE DATE(enviado_at) = DATE('now')
+        AND NOT EXISTS (
+          SELECT 1 FROM recordatorios r WHERE r.cita_id = c.id AND r.estado = 'enviado'
         )
-      ORDER BY c.hora ASC
-    `).all(fechaLimiteStr, fechaActual, fechaActual, horaActual);
+      ORDER BY c.fecha ASC, c.hora ASC
+    `).all(ahoraStr, limiteStr);
 
     resultado.total = citas.length;
 
@@ -122,6 +142,7 @@ export async function enviarRecordatoriosAutomaticos(): Promise<{ enviados: numb
         resultado.errores++;
         resultado.detalles.push({ citaId: cita.id, paciente: cita.paciente_nombre, estado: 'error', error: error.message });
         console.error(`❌ Error recordatorio cita #${cita.id}:`, error.message);
+        await registrarErrorEnvio(cita.id, cita.paciente_telefono, error.message);
       }
     }
 

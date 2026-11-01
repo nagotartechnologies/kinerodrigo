@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { verifyAuth } from '@/lib/auth';
 import { 
   iniciarCronRecordatorios, 
@@ -6,6 +7,12 @@ import {
   estadoCronRecordatorios,
   ejecutarRecordatoriosManual 
 } from '@/lib/cron';
+
+function secretoValido(recibido: string, esperado: string): boolean {
+  const a = Buffer.from(recibido);
+  const b = Buffer.from(esperado);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 // GET - Obtener estado del cron de recordatorios
 export async function GET(request: NextRequest) {
@@ -33,13 +40,24 @@ export async function GET(request: NextRequest) {
 // POST - Controlar el cron de recordatorios
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json();
+    const { accion } = body; // 'iniciar', 'detener', 'ejecutar'
+
+    // La Netlify Scheduled Function se autentica con CRON_SECRET (solo puede ejecutar)
+    const cronSecret = process.env.CRON_SECRET;
+    const headerSecret = request.headers.get('x-cron-secret');
+    if (cronSecret && headerSecret && accion === 'ejecutar') {
+      if (!secretoValido(headerSecret, cronSecret)) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      }
+      const resultado = await ejecutarRecordatoriosManual();
+      return NextResponse.json({ success: true, ...resultado });
+    }
+
     const authResult = await verifyAuth(request);
     if (!authResult.authenticated) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
-
-    const body = await request.json();
-    const { accion } = body; // 'iniciar', 'detener', 'ejecutar'
 
     if (!accion) {
       return NextResponse.json(
@@ -61,10 +79,11 @@ export async function POST(request: NextRequest) {
         mensaje = 'Cron de recordatorios detenido';
         break;
 
-      case 'ejecutar':
-        await ejecutarRecordatoriosManual();
-        mensaje = 'Recordatorios ejecutados manualmente';
+      case 'ejecutar': {
+        const resultado = await ejecutarRecordatoriosManual();
+        mensaje = `Recordatorios ejecutados manualmente: ${resultado.enviados} enviado(s), ${resultado.errores} error(es)`;
         break;
+      }
 
       default:
         return NextResponse.json(

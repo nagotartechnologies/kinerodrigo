@@ -68,78 +68,89 @@ const PALABRAS_REAGENDAR = {
 const EMOJIS_CONFIRMAR = ['👍', '👍🏻', '👍🏼', '👍🏽', '👍🏾', '👍🏿', '✅', '✔', '✔️', '🙌', '💪', '👌', '🤙'];
 const EMOJIS_CANCELAR = ['👎', '👎🏻', '👎🏼', '👎🏽', '👎🏾', '👎🏿', '❌', '✖', '🚫', '😔', '😢'];
 
-// Negaciones que invierten la intención
-const NEGACIONES = ['no', 'ni', 'nunca', 'tampoco', 'nada'];
+// Negaciones que invierten la intención (se comparan como palabras completas)
+const NEGACIONES = ['no', 'ni', 'nunca', 'tampoco'];
+// Cantidad de palabras previas donde se busca una negación
+const VENTANA_NEGACION = 3;
+
+/**
+ * Minúsculas, sin tildes y sin puntuación. Los emojis se descartan aquí
+ * porque se evalúan aparte sobre el mensaje original.
+ */
+function normalizar(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokenizar(texto: string): string[] {
+  const normalizado = normalizar(texto);
+  return normalizado ? normalizado.split(' ') : [];
+}
+
+/** Posición donde empieza el término (una o varias palabras) dentro de los tokens, o -1 */
+function buscarTermino(tokens: string[], termino: string[]): number {
+  for (let i = 0; i + termino.length <= tokens.length; i++) {
+    if (termino.every((palabra, j) => tokens[i + j] === palabra)) return i;
+  }
+  return -1;
+}
+
+interface Detectada {
+  termino: string;
+  posicion: number;
+}
 
 function calcularScore(
-  mensaje: string,
+  tokens: string[],
   palabras: { fuertes: string[]; medias: string[]; debiles: string[] }
-): { score: number; detectadas: string[] } {
+): { score: number; detectadas: Detectada[] } {
   let score = 0;
-  const detectadas: string[] = [];
-  const msgLower = mensaje.toLowerCase();
+  const detectadas: Detectada[] = [];
+  // Evita contar dos veces variantes que quedan iguales al normalizar ("si"/"sí")
+  const vistos = new Set<string>();
+  const niveles: Array<[string[], number]> = [[palabras.fuertes, 3], [palabras.medias, 2], [palabras.debiles, 1]];
 
-  for (const palabra of palabras.fuertes) {
-    if (palabra.length <= 2) {
-      // Para "1", "2", "3", "si" etc: match exacto o con espacios
-      const regex = new RegExp(`(^|\\s)${escapeRegex(palabra)}($|\\s|[.,!?])`, 'i');
-      if (regex.test(msgLower)) {
-        score += 3;
-        detectadas.push(palabra);
+  for (const [lista, peso] of niveles) {
+    for (const palabra of lista) {
+      const termino = normalizar(palabra);
+      if (!termino || vistos.has(termino)) continue;
+      vistos.add(termino);
+      const posicion = buscarTermino(tokens, termino.split(' '));
+      if (posicion !== -1) {
+        score += peso;
+        detectadas.push({ termino, posicion });
       }
-    } else if (msgLower.includes(palabra)) {
-      score += 3;
-      detectadas.push(palabra);
-    }
-  }
-
-  for (const palabra of palabras.medias) {
-    if (msgLower.includes(palabra)) {
-      score += 2;
-      detectadas.push(palabra);
-    }
-  }
-
-  for (const palabra of palabras.debiles) {
-    if (palabra.length <= 3) {
-      const regex = new RegExp(`(^|\\s)${escapeRegex(palabra)}($|\\s|[.,!?])`, 'i');
-      if (regex.test(msgLower)) {
-        score += 1;
-        detectadas.push(palabra);
-      }
-    } else if (msgLower.includes(palabra)) {
-      score += 1;
-      detectadas.push(palabra);
     }
   }
 
   return { score, detectadas };
 }
 
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function detectarNegacion(mensaje: string, palabraDetectada: string): boolean {
-  const msgLower = mensaje.toLowerCase();
-  const idx = msgLower.indexOf(palabraDetectada);
-  if (idx === -1) return false;
-
-  // Buscar negación en las 20 caracteres antes de la palabra
-  const contextoAntes = msgLower.substring(Math.max(0, idx - 20), idx);
-  return NEGACIONES.some(neg => contextoAntes.includes(neg));
+function detectarNegacion(tokens: string[], { termino, posicion }: Detectada): boolean {
+  if (NEGACIONES.includes(termino.split(' ')[0])) return false; // el término ya es negativo
+  const previas = tokens.slice(Math.max(0, posicion - VENTANA_NEGACION), posicion);
+  return previas.some(t => NEGACIONES.includes(t));
 }
 
 export function detectarIntencion(mensaje: string): ResultadoIntencion {
-  const mensajeLimpio = mensaje
-    .replace(/[^\w\sáéíóúñü👍👎✅❌✔🚫😔😢🙌💪👌🤙]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const tokens = tokenizar(mensaje);
+  const mensajeLimpio = tokens.join(' ');
 
   // Calcular scores base
-  let { score: scoreConfirmar, detectadas: detConfirmar } = calcularScore(mensajeLimpio, PALABRAS_CONFIRMAR);
-  let { score: scoreCancelar, detectadas: detCancelar } = calcularScore(mensajeLimpio, PALABRAS_CANCELAR);
-  let { score: scoreReagendar, detectadas: detReagendar } = calcularScore(mensajeLimpio, PALABRAS_REAGENDAR);
+  const confirmar = calcularScore(tokens, PALABRAS_CONFIRMAR);
+  const cancelar = calcularScore(tokens, PALABRAS_CANCELAR);
+  const reagendar = calcularScore(tokens, PALABRAS_REAGENDAR);
+  let scoreConfirmar = confirmar.score;
+  let scoreCancelar = cancelar.score;
+  const scoreReagendar = reagendar.score;
+  const detConfirmar = confirmar.detectadas.map(d => d.termino);
+  const detCancelar = cancelar.detectadas.map(d => d.termino);
+  const detReagendar = reagendar.detectadas.map(d => d.termino);
 
   // Bonus por emojis
   for (const emoji of EMOJIS_CONFIRMAR) {
@@ -157,17 +168,16 @@ export function detectarIntencion(mensaje: string): ResultadoIntencion {
 
   // Penalizar por negación contextual
   // Ej: "no puedo confirmar" → reducir score de confirmar
-  for (const palabra of detConfirmar) {
-    if (detectarNegacion(mensajeLimpio, palabra)) {
+  for (const detectada of confirmar.detectadas) {
+    if (detectarNegacion(tokens, detectada)) {
       scoreConfirmar -= 3;
       scoreCancelar += 1; // "no + positivo" sugiere cancelar
     }
   }
 
   // "no quiero cancelar" → reducir score de cancelar
-  for (const palabra of detCancelar) {
-    if (palabra.startsWith('no ')) continue; // ya es negativa
-    if (detectarNegacion(mensajeLimpio, palabra)) {
+  for (const detectada of cancelar.detectadas) {
+    if (detectarNegacion(tokens, detectada)) {
       scoreCancelar -= 3;
     }
   }

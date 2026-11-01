@@ -158,6 +158,41 @@ export async function formatearMensajeCancelacion(cita: {
   });
 }
 
+const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+/**
+ * Avisar al profesional por WhatsApp cuando un paciente cancela o pide reagendar.
+ * Se controla con 'notif_whatsapp' y se envía a 'notif_whatsapp_telefono'
+ * (o a 'telefono_contacto' si está vacío). Nunca lanza errores.
+ */
+export async function notificarProfesional(aviso: {
+  paciente: string;
+  fecha: string;
+  hora: string;
+  accion: 'CANCELAR' | 'REAGENDAR';
+  tardia?: boolean;
+}): Promise<void> {
+  try {
+    if ((await getConfig('notif_whatsapp', 'true')) === 'false') return;
+    if ((await getConfig('whatsapp_activo', 'true')) === 'false') return;
+
+    const telefono = (await getConfig('notif_whatsapp_telefono', '')) || (await getConfig('telefono_contacto', ''));
+    if (!telefono) return;
+
+    const [year, month, day] = aviso.fecha.split('-').map(Number);
+    const diaSemana = DIAS_CORTOS[new Date(year, month - 1, day).getDay()];
+    const fechaCorta = `${diaSemana} ${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')} ${aviso.hora}`;
+
+    const mensaje = aviso.accion === 'CANCELAR'
+      ? `❌ *${aviso.paciente}* canceló su cita del ${fechaCorta}${aviso.tardia ? ' (cancelación tardía)' : ''}.`
+      : `📅 *${aviso.paciente}* quiere reagendar su cita del ${fechaCorta}. Contáctalo para coordinar una nueva hora.`;
+
+    await sendWhatsAppMessage({ phone: telefono, message: mensaje });
+  } catch (error: any) {
+    console.error('⚠️ No se pudo avisar al profesional:', error.message);
+  }
+}
+
 /**
  * Formatear mensaje de reagendamiento
  */

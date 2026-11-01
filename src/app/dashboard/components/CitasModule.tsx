@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { formatearFechaLocal, fechaAString } from '../utils';
 import SemanaCalendario from './SemanaCalendario';
 
@@ -50,6 +50,10 @@ export default function CitasModule() {
   // Estados para envío masivo de recordatorios
   const [enviandoMasivo, setEnviandoMasivo] = useState(false);
   const [resultadoMasivo, setResultadoMasivo] = useState<any>(null);
+
+  // Respuestas de pacientes por WhatsApp (cancelaciones y pedidos de reagendar) sin revisar
+  const [respuestasPendientes, setRespuestasPendientes] = useState<any[]>([]);
+  const [showModalRespuestas, setShowModalRespuestas] = useState(false);
   
   // Estados para el buscador de pacientes
   const [busquedaPaciente, setBusquedaPaciente] = useState('');
@@ -110,6 +114,53 @@ export default function CitasModule() {
 
     return () => clearInterval(interval);
   }, [vistaCalendario]);
+
+  // Respuestas pendientes de revisar: al montar y cada 2 minutos en cualquier vista.
+  // Si llegan respuestas nuevas se recargan las citas para reflejar el cambio de estado.
+  const idsRespuestasConocidas = useRef<Set<number> | null>(null);
+  const cargarRespuestasPendientes = useCallback(async () => {
+    try {
+      const data = await fetch('/api/recordatorios/pendientes').then(r => r.json());
+      if (!data.success) return;
+      const conocidas = idsRespuestasConocidas.current;
+      const hayNuevas = conocidas !== null && data.pendientes.some((p: any) => !conocidas.has(p.id));
+      idsRespuestasConocidas.current = new Set(data.pendientes.map((p: any) => p.id));
+      setRespuestasPendientes(data.pendientes);
+      if (hayNuevas) cargarCitas(false);
+    } catch {
+      // Sin conexión: se reintenta en el próximo intervalo
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarRespuestasPendientes();
+    const interval = setInterval(cargarRespuestasPendientes, 120000);
+    return () => clearInterval(interval);
+  }, [cargarRespuestasPendientes]);
+
+  const marcarRespuestasRevisadas = async (ids: number[]) => {
+    setRespuestasPendientes(prev => prev.filter(r => !ids.includes(r.id)));
+    try {
+      await fetch('/api/recordatorios/pendientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      });
+    } catch {
+      mostrarMensaje('No se pudo marcar como revisado', true);
+      cargarRespuestasPendientes();
+    }
+  };
+
+  const verCitaDeRespuesta = (citaId: number) => {
+    const cita = citas.find(c => c.id === citaId);
+    if (!cita) {
+      mostrarMensaje('La cita ya no existe', true);
+      return;
+    }
+    setShowModalRespuestas(false);
+    handleEditarCita(cita);
+  };
 
   // Cerrar dropdown de pacientes al hacer clic fuera
   useEffect(() => {
@@ -735,7 +786,7 @@ export default function CitasModule() {
     
     return citas.filter(c => 
       (c.estado === 'pendiente' || c.estado === 'confirmada') && 
-      !c.recordatorio && 
+      (!c.recordatorio || c.recordatorio.estado === 'error') && 
       c.telefono &&
       (c.fecha === hoyStr || c.fecha === mananaStr)
     );
@@ -844,9 +895,13 @@ export default function CitasModule() {
   };
 
   const etiquetaRecordatorio = (recordatorio: any) =>
+    recordatorio.estado === 'error' ? '⚠️ Error de envío' :
     recordatorio.respuesta === 'CONFIRMAR' ? '✅ Confirmó' :
-    recordatorio.respuesta === 'CANCELAR' ? '❌ Canceló' :
+    recordatorio.respuesta === 'CANCELAR' ? (recordatorio.cancelacionTardia ? '❌ Canceló (tarde)' : '❌ Canceló') :
     recordatorio.respuesta === 'REAGENDAR' ? '📅 Reagendar' : '📤 Enviado';
+
+  const fechaCortaCita = (fecha: string, hora: string) =>
+    `${parsearFechaCita(fecha).toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: '2-digit' })} · ${hora}`;
 
   const iconoWhatsApp = (
     <svg viewBox="0 0 24 24" fill="currentColor" className="icono-16" aria-hidden="true">
@@ -907,7 +962,7 @@ export default function CitasModule() {
                 ✓ Confirmar
               </button>
             )}
-            {!cita.recordatorio && cita.telefono && (
+            {(!cita.recordatorio || cita.recordatorio.estado === 'error') && cita.telefono && (
               <button type="button" className="accion-btn accion-btn--whatsapp" onClick={() => handleEnviarRecordatorio(cita)}>
                 📱 WhatsApp
               </button>
@@ -971,6 +1026,14 @@ export default function CitasModule() {
               Refrescar
             </button>
             <button
+              className="btn-secondary btn-respuestas"
+              onClick={() => setShowModalRespuestas(true)}
+              title="Cancelaciones y pedidos de reagendar recibidos por WhatsApp"
+            >
+              Respuestas
+              {respuestasPendientes.length > 0 && <span className="citas-menu-badge">{respuestasPendientes.length}</span>}
+            </button>
+            <button
               className="btn-primary btn-whatsapp"
               onClick={handleEnvioMasivo}
               disabled={enviandoMasivo}
@@ -1002,7 +1065,9 @@ export default function CitasModule() {
                 <circle cx="12" cy="12" r="2"/>
                 <circle cx="19" cy="12" r="2"/>
               </svg>
-              {citasSinRecordatorio.length > 0 && <span className="citas-menu-badge">{citasSinRecordatorio.length}</span>}
+              {(citasSinRecordatorio.length + respuestasPendientes.length) > 0 && (
+                <span className="citas-menu-badge">{citasSinRecordatorio.length + respuestasPendientes.length}</span>
+              )}
             </button>
             {menuAcciones && (
               <>
@@ -1011,6 +1076,12 @@ export default function CitasModule() {
                   <button type="button" role="menuitem" className="citas-menu-item" onClick={() => { setMenuAcciones(false); cargarCitas(); }}>
                     {iconoRefrescar}
                     Refrescar
+                  </button>
+                  <button type="button" role="menuitem" className="citas-menu-item" onClick={() => { setMenuAcciones(false); setShowModalRespuestas(true); }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="icono-18" aria-hidden="true">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Respuestas{respuestasPendientes.length > 0 ? ` (${respuestasPendientes.length})` : ''}
                   </button>
                   <button
                     type="button"
@@ -1485,6 +1556,57 @@ export default function CitasModule() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Respuestas de pacientes por WhatsApp */}
+      {showModalRespuestas && (
+        <div className="modal-overlay" onClick={() => setShowModalRespuestas(false)}>
+          <div className="modal-content modal-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Respuestas de pacientes</h3>
+              <button className="modal-close" onClick={() => setShowModalRespuestas(false)}>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              {respuestasPendientes.length === 0 ? (
+                <p className="modal-texto">No hay cancelaciones ni pedidos de reagendar pendientes.</p>
+              ) : (
+                <div className="respuestas-lista">
+                  {respuestasPendientes.map(r => (
+                    <div key={r.id} className={`respuesta-item respuesta-item--${r.respuesta === 'CANCELAR' ? 'cancelar' : 'reagendar'}`}>
+                      <div className="respuesta-item__info">
+                        <div className="respuesta-item__paciente">{r.paciente}</div>
+                        <div className="respuesta-item__meta">
+                          {r.respuesta === 'CANCELAR' ? '❌ Canceló' : '📅 Quiere reagendar'}
+                          {r.tardia && <span className="respuesta-item__tardia">Cancelación tardía</span>}
+                        </div>
+                        <div className="respuesta-item__meta">{fechaCortaCita(r.fecha, r.hora)}</div>
+                      </div>
+                      <div className="respuesta-item__acciones" data-no-swipe>
+                        <button type="button" className="accion-btn accion-btn--editar" onClick={() => verCitaDeRespuesta(r.citaId)}>
+                          Ver cita
+                        </button>
+                        <button type="button" className="accion-btn accion-btn--confirmar" onClick={() => marcarRespuestasRevisadas([r.id])}>
+                          ✓ Revisado
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {respuestasPendientes.length > 1 && (
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => marcarRespuestasRevisadas(respuestasPendientes.map(r => r.id))}>
+                  Marcar todas como revisadas
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

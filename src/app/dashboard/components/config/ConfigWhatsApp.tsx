@@ -139,6 +139,32 @@ export default function ConfigWhatsApp({ getConfigValue, handleEditarConfig, han
             </button>
           </div>
 
+          {/* Avisos al profesional cuando un paciente cancela o pide reagendar */}
+          <div className="config-item">
+            <div className="config-item-info">
+              <p className="config-item-label">Avisos al Profesional</p>
+              <p className="config-item-desc">Recibir un WhatsApp cuando un paciente cancela o pide reagendar</p>
+            </div>
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={getConfigValue('notif_whatsapp', true)}
+                onChange={() => handleToggleConfig('notif_whatsapp', !getConfigValue('notif_whatsapp', true))}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+          <div className="config-item">
+            <div className="config-item-info">
+              <p className="config-item-label">Teléfono para Avisos</p>
+              <p className="config-item-desc">
+                {getConfigValue('notif_whatsapp_telefono', '') ||
+                  `Sin configurar: se usa el teléfono de contacto (${getConfigValue('telefono_contacto', 'no configurado')})`}
+              </p>
+            </div>
+            <button className="btn-secondary" onClick={() => handleEditarConfig('notif_whatsapp_telefono')}>Editar</button>
+          </div>
+
           {/* Plantillas de mensajes */}
           <div className="config-item">
             <div className="config-item-info">

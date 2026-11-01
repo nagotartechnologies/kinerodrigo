@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { verifyAuth } from '@/lib/auth';
 import { sendWhatsAppMessage, formatearMensajeRecordatorio } from '@/lib/whatsapp';
+import { registrarErrorEnvio } from '@/lib/cron';
 
 // POST - Enviar recordatorios masivos para citas de una fecha específica
 export async function POST(request: NextRequest) {
@@ -55,8 +56,8 @@ export async function POST(request: NextRequest) {
           AND p.activo = 1
           AND p.telefono IS NOT NULL
           AND p.telefono != ''
-          AND c.id NOT IN (
-            SELECT cita_id FROM recordatorios WHERE DATE(enviado_at) = DATE('now')
+          AND NOT EXISTS (
+            SELECT 1 FROM recordatorios r WHERE r.cita_id = c.id AND r.estado = 'enviado'
           )
         ORDER BY c.hora ASC
       `).all(fecha);
@@ -114,6 +115,7 @@ export async function POST(request: NextRequest) {
 
       } catch (error: any) {
         errores++;
+        await registrarErrorEnvio(cita.id, cita.paciente_telefono, error.message);
         detalles.push({
           citaId: cita.id,
           paciente: cita.paciente_nombre,
@@ -174,7 +176,7 @@ export async function GET(request: NextRequest) {
       FROM citas c
       INNER JOIN recordatorios r ON r.cita_id = c.id
       WHERE c.fecha = ? AND c.estado IN ('pendiente', 'confirmada')
-        AND DATE(r.enviado_at) = DATE('now')
+        AND r.estado = 'enviado'
     `).get(fecha);
 
     // Citas sin recordatorio y con teléfono
@@ -184,7 +186,7 @@ export async function GET(request: NextRequest) {
       INNER JOIN pacientes p ON c.paciente_id = p.id
       WHERE c.fecha = ? AND c.estado IN ('pendiente', 'confirmada')
         AND p.activo = 1 AND p.telefono IS NOT NULL AND p.telefono != ''
-        AND c.id NOT IN (SELECT cita_id FROM recordatorios WHERE DATE(enviado_at) = DATE('now'))
+        AND NOT EXISTS (SELECT 1 FROM recordatorios r WHERE r.cita_id = c.id AND r.estado = 'enviado')
     `).get(fecha);
 
     return NextResponse.json({

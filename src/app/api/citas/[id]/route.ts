@@ -88,7 +88,7 @@ export async function PUT(
     const { pacienteId, fecha, hora, duracion, tipo, estado, notas } = body;
 
     // Verificar que la cita existe
-    const citaExistente = await db.prepare('SELECT id FROM citas WHERE id = ?').get(id);
+    const citaExistente: any = await db.prepare('SELECT id, fecha, hora, estado FROM citas WHERE id = ?').get(id);
     if (!citaExistente) {
       return NextResponse.json(
         { success: false, error: 'Cita no encontrada' },
@@ -121,6 +121,21 @@ export async function PUT(
       }
     }
 
+    // Si la cita cambia de día u hora, el recordatorio anterior ya no corresponde:
+    // se marca obsoleto para que el cron envíe uno nuevo con la hora actualizada,
+    // y una cita confirmada o pendiente de reagendar vuelve a quedar pendiente.
+    const cambioHorario =
+      (fecha !== undefined && fecha !== citaExistente.fecha) ||
+      (hora !== undefined && hora !== citaExistente.hora);
+    let estadoFinal = estado;
+    if (cambioHorario) {
+      await db.prepare(`UPDATE recordatorios SET estado = 'obsoleto' WHERE cita_id = ? AND estado != 'obsoleto'`).run(id);
+      const estadoActual = estado ?? citaExistente.estado;
+      if (estadoActual === 'confirmada' || estadoActual === 'reagendar') {
+        estadoFinal = 'pendiente';
+      }
+    }
+
     // Construir la query de actualización dinámicamente
     const updates: string[] = [];
     const values: any[] = [];
@@ -145,9 +160,9 @@ export async function PUT(
       updates.push('tipo = ?');
       values.push(tipo);
     }
-    if (estado !== undefined) {
+    if (estadoFinal !== undefined) {
       updates.push('estado = ?');
-      values.push(estado);
+      values.push(estadoFinal);
     }
     if (notas !== undefined) {
       updates.push('notas = ?');
@@ -182,9 +197,9 @@ export async function PUT(
         sesionUpdates.push('tipo = ?');
         sesionValues.push(tipo);
       }
-      if (estado !== undefined) {
+      if (estadoFinal !== undefined) {
         sesionUpdates.push('estado = ?');
-        sesionValues.push(estado);
+        sesionValues.push(estadoFinal);
       }
 
       if (sesionUpdates.length > 0) {
