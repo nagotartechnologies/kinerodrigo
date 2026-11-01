@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import DynamicFavicon from '@/components/DynamicFavicon';
+import AppPwa from '@/components/AppPwa';
 import { MARCA } from '@/lib/marca';
 
 export const metadata: Metadata = {
@@ -83,6 +84,7 @@ export default function RootLayout({
       </head>
       <body>
         <DynamicFavicon />
+        <AppPwa />
         {children}
       </body>
     </html>

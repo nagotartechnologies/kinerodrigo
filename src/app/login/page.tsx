@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { MARCA } from '@/lib/marca';
+import { usePwa, instalarApp } from '@/lib/pwa';
 import './login.css';
 
 export default function LoginPage() {
@@ -13,6 +14,8 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
+  const [mostrarPasosIOS, setMostrarPasosIOS] = useState(false);
+  const { puedeInstalar, esIOS, instalada } = usePwa();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +162,30 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        {!instalada && (puedeInstalar || esIOS) && (
+          <div className="login-instalar">
+            <button
+              type="button"
+              className="login-instalar__boton"
+              onClick={() => (puedeInstalar ? instalarApp() : setMostrarPasosIOS(v => !v))}
+              aria-expanded={esIOS ? mostrarPasosIOS : undefined}
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              Descargar la app
+            </button>
+            {esIOS && mostrarPasosIOS && (
+              <ol className="login-instalar__pasos">
+                <li>Toca el botón <strong>Compartir</strong> de Safari (el cuadrado con la flecha hacia arriba).</li>
+                <li>Elige <strong>Agregar a inicio</strong>.</li>
+                <li>Confirma con <strong>Agregar</strong>.</li>
+              </ol>
+            )}
+          </div>
+        )}
 
         <footer className="login-pie">
           <span className="login-pie__punto" aria-hidden="true" />
