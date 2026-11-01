@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Migrar pacientes existentes a "Episodio 1" (idempotente)
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   return ejecutarMigracion();
 }
 
 // POST - Migrar pacientes existentes a "Episodio 1" (idempotente)
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   return ejecutarMigracion();
 }
 

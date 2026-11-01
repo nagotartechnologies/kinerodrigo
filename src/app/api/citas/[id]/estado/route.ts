@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // PATCH - Cambiar el estado de una cita
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { id: idStr } = await params;
     const id = parseInt(idStr);

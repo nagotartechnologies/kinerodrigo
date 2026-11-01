@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // POST - Migrar valores null de dolor a 0 en sesiones
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     console.log('🔄 Iniciando migración de valores de dolor en sesiones...');
 
@@ -46,6 +50,9 @@ export async function POST(request: NextRequest) {
 // PUT - Quitar UNIQUE constraint del campo rut en pacientes
 // Técnica dinámica: leer SQL original, quitar UNIQUE, recrear tabla
 export async function PUT(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     console.log('🔄 Recreando tabla pacientes sin UNIQUE en rut...');
 
@@ -111,6 +118,9 @@ export async function PUT(request: NextRequest) {
 
 // GET - Ejecutar migración de columnas en recordatorios
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     console.log('🔄 Iniciando migración de tabla recordatorios...');
 

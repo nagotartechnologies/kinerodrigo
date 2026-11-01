@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Obtener gastos con filtros
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { searchParams } = new URL(request.url);
     const categoria = searchParams.get('categoria');
@@ -46,6 +50,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Crear un gasto
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const body = await request.json();
     const { categoria, descripcion, monto, estado, fechaGasto, metodoPago, notas, gastoFijoId } = body;

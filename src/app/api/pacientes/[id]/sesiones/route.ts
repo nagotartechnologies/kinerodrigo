@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Obtener sesiones de un paciente
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { id: idStr } = await params;
     const pacienteId = parseInt(idStr);

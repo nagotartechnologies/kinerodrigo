@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { estadoCronRecordatorios } from '@/lib/cron';
+import { requireAuth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     // 1. Verificar estado del cron
     const estadoCron = estadoCronRecordatorios();

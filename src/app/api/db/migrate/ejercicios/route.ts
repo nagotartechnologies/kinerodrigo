@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Crear tabla de ejercicios (mismo que POST para facilitar ejecución desde navegador)
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   return ejecutarMigracion();
 }
 
 // POST - Crear tabla de ejercicios
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   return ejecutarMigracion();
 }
 

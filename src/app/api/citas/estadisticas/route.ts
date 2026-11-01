@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Obtener estadísticas de citas
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { searchParams } = new URL(request.url);
     const mes = searchParams.get('mes'); // formato: YYYY-MM

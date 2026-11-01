@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // PUT - Actualizar gasto fijo
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -43,6 +47,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 // DELETE - Eliminar gasto fijo
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { id } = await params;
 

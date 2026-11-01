@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllProvidersStatus } from '@/lib/whatsapp/factory';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Obtener estado de todos los proveedores
-export async function GET() {
+export async function GET(request: Request) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const providers = await getAllProvidersStatus();
     
@@ -31,6 +35,9 @@ export async function GET() {
 
 // POST - Cambiar proveedor activo
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { provider } = await request.json();
     
@@ -77,6 +84,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Actualizar credenciales de un proveedor
 export async function PUT(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { provider, credentials } = await request.json();
     

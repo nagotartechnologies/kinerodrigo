@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambiar-en-produccion';
 
@@ -89,4 +90,10 @@ export async function verifyAuth(request: Request): Promise<{ authenticated: boo
   } catch (error) {
     return { authenticated: false };
   }
+}
+
+// Devuelve una respuesta 401 si no hay sesión válida, o null si la hay
+export async function requireAuth(request: Request): Promise<NextResponse | null> {
+  const { authenticated } = await verifyAuth(request);
+  return authenticated ? null : NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 }

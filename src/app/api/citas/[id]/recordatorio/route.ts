@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { sendWhatsAppMessage, formatearMensajeRecordatorio } from '@/lib/whatsapp';
+import { requireAuth } from '@/lib/auth';
 
 // POST - Enviar recordatorio de cita por WhatsApp
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { id: idStr } = await params;
     const citaId = parseInt(idStr);

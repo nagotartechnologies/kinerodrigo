@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { 
+import { requireAuth } from '@/lib/auth';
   sendWhatsAppMessage, 
   formatearMensajeConfirmacion, 
   formatearMensajeCancelacion,
@@ -18,6 +19,9 @@ async function getConfig(clave: string, defaultValue: string = ''): Promise<stri
 
 // GET - Consulta la cola de notificaciones de Green API y procesa las respuestas de los pacientes
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     // Se leen primero desde la BD y si no existen se usan las variables de entorno como fallback
     const instanceId = await getConfig('greenapi_instance_id', process.env.GREEN_API_INSTANCE_ID || '');

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Obtener gastos fijos
-export async function GET() {
+export async function GET(request: Request) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const gastosFijos = await db.prepare('SELECT * FROM gastos_fijos ORDER BY categoria, descripcion').all();
     return NextResponse.json({ success: true, gastosFijos });
@@ -17,6 +21,9 @@ export async function GET() {
 
 // POST - Crear gasto fijo
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const body = await request.json();
     const { categoria, descripcion, monto, diaGeneracion } = body;
@@ -46,6 +53,9 @@ export async function POST(request: NextRequest) {
 
 // PATCH - Generar gastos del mes (auto-generacion)
 export async function PATCH(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { searchParams } = new URL(request.url);
     const mes = searchParams.get('mes'); // formato YYYY-MM

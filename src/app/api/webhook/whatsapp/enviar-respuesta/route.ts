@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { sendWhatsAppMessage } from '@/lib/whatsapp';
+import { requireAuth } from '@/lib/auth';
 
 // POST - Endpoint interno para enviar mensaje de respuesta al paciente
 // Se llama desde el webhook principal para no bloquear la respuesta al webhook
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   let recordatorioId: number | null = null;
   
   try {
@@ -52,6 +56,9 @@ export async function POST(request: NextRequest) {
 
 // GET - Reintentar envío de mensajes de respuesta fallidos
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     // Buscar recordatorios con respuesta pero sin mensaje enviado (fallidos)
     const pendientes: any[] = await db.prepare(`

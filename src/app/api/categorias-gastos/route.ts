@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Obtener todas las categorias
-export async function GET() {
+export async function GET(request: Request) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const categorias = await db.prepare('SELECT * FROM categorias_gastos ORDER BY nombre').all();
     return NextResponse.json({ success: true, categorias });
@@ -17,6 +21,9 @@ export async function GET() {
 
 // POST - Crear nueva categoria
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const body = await request.json();
     const { nombre, color } = body;

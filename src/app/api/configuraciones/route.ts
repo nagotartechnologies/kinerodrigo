@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Obtener todas las configuraciones o por categoría
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { searchParams } = new URL(request.url);
     const categoria = searchParams.get('categoria');
@@ -43,6 +47,9 @@ export async function GET(request: NextRequest) {
 
 // PUT - Actualizar o crear una configuración
 export async function PUT(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const body = await request.json();
     const { clave, valor } = body;
@@ -107,6 +114,9 @@ export async function PUT(request: NextRequest) {
 
 // POST - Actualizar múltiples configuraciones
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const body = await request.json();
     const { configuraciones } = body;

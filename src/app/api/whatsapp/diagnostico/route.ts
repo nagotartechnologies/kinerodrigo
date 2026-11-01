@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 // GET - Diagnóstico del sistema de WhatsApp
 export async function GET(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { searchParams } = new URL(request.url);
     const telefono = searchParams.get('telefono');
@@ -238,6 +242,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Reenviar confirmación manualmente
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const { recordatorioId } = await request.json();
 

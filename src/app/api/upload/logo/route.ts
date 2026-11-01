@@ -3,8 +3,12 @@ import { writeFile, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     const formData = await request.formData();
     const file = formData.get('logo') as File;
@@ -85,7 +89,10 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE - Eliminar logo
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+
   try {
     // Obtener logo actual
     const config: any = await db.prepare('SELECT valor FROM configuraciones WHERE clave = ?').get('logo_url');
