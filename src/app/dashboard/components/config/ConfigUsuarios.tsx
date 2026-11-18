@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { ConfigSectionProps, Usuario } from '../../types';
+import { useConfirm } from '@/components/ConfirmDialog';
 
 export default function ConfigUsuarios({ mostrarMensaje }: ConfigSectionProps) {
+  const confirmar = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [nuevoUsuario, setNuevoUsuario] = useState({
@@ -52,7 +54,7 @@ export default function ConfigUsuarios({ mostrarMensaje }: ConfigSectionProps) {
   };
 
   const handleEliminarUsuario = async (id: number) => {
-    if (!confirm('Estas seguro de eliminar este usuario?')) return;
+    if (!(await confirmar('Estas seguro de eliminar este usuario?', { peligro: true }))) return;
 
     try {
       const response = await fetch(`/api/usuarios/${id}`, {
@@ -157,7 +159,7 @@ export default function ConfigUsuarios({ mostrarMensaje }: ConfigSectionProps) {
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px' }}>
             <div className="modal-header">
               <h3>Gestion de Usuarios</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>x</button>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModal(false)}>x</button>
             </div>
             <div className="modal-body">
               <form onSubmit={handleCrearUsuario} style={{ marginBottom: '2rem', padding: '1.5rem', background: '#1a1a1a', borderRadius: '8px' }}>

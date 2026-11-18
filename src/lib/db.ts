@@ -1,5 +1,9 @@
-import { createClient } from '@libsql/client/web';
-import path from 'path';
+import { createClient, type InValue } from '@libsql/client/web';
+
+export interface SentenciaBatch {
+  sql: string;
+  args?: InValue[];
+}
 
 // Credenciales de conexion a la base de datos en la nube
 const TURSO_URL = process.env.TURSO_DATABASE_URL;
@@ -78,6 +82,12 @@ class TursoDatabase {
         return result.rows;
       }
     };
+  }
+
+  // Ejecuta varias sentencias en una sola llamada HTTP y de forma atómica:
+  // si una falla, Turso revierte todas. Usar en vez de transaction()
+  batch(statements: SentenciaBatch[]) {
+    return this.client.batch(statements.map(({ sql, args = [] }) => ({ sql, args })), 'write');
   }
 
   // Turso no soporta pragmas de SQLite, pero se mantiene el metodo para no romper
@@ -440,6 +450,17 @@ export async function initDatabase() {
       id_message TEXT PRIMARY KEY,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )`);
+
+    // Intentos fallidos de login (en BD y no en memoria: en Netlify cada
+    // petición puede caer en una instancia distinta)
+    await tursoClient.batch([
+      `CREATE TABLE IF NOT EXISTS intentos_login (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        clave TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_intentos_login_clave ON intentos_login (clave, created_at)'
+    ], 'write');
 
     // Se insertan los datos iniciales: categorias de gastos, configuraciones por defecto
     // y una correccion de datos legacy. Todos usan INSERT OR IGNORE para ser idem potentes.

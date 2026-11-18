@@ -3,7 +3,18 @@ import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambiar-en-produccion';
+// Se lee al usarse (no al importar) para que el build no falle si la variable
+// solo existe en runtime; sin secreto no se firma ni se acepta ningún token
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET no está configurada. Agrégala en .env.local y en las variables de Netlify.');
+  }
+  return secret;
+}
+
+// 12 es el costo recomendado hoy; los hashes antiguos (costo 8) siguen validando
+const BCRYPT_COSTO = 12;
 
 export interface UserPayload {
   id: number;
@@ -13,7 +24,7 @@ export interface UserPayload {
 }
 
 export function hashPassword(password: string): string {
-  return bcrypt.hashSync(password, 8);
+  return bcrypt.hashSync(password, BCRYPT_COSTO);
 }
 
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
@@ -25,13 +36,14 @@ export const DIAS_SESION_RECORDADA = 30;
 export const DIAS_SESION_NORMAL = 1;
 
 export function generateToken(user: UserPayload, dias: number = 7): string {
-  return jwt.sign(user, JWT_SECRET, { expiresIn: `${dias}d` });
+  return jwt.sign(user, getJwtSecret(), { expiresIn: `${dias}d` });
 }
 
 export function verifyToken(token: string): UserPayload | null {
+  const secret = getJwtSecret();
   try {
-    return jwt.verify(token, JWT_SECRET) as UserPayload;
-  } catch (error) {
+    return jwt.verify(token, secret) as UserPayload;
+  } catch {
     return null;
   }
 }
@@ -63,33 +75,27 @@ export async function getCurrentUser(): Promise<UserPayload | null> {
   return verifyToken(token);
 }
 
+// Sin try/catch a propósito: si falta JWT_SECRET el error debe verse como 500
+// en vez de disfrazarse de "No autorizado"
 export async function verifyAuth(request: Request): Promise<{ authenticated: boolean; user?: UserPayload }> {
-  try {
-    const cookieHeader = request.headers.get('cookie');
-    if (!cookieHeader) {
-      return { authenticated: false };
-    }
-
-    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
-      const [key, value] = cookie.trim().split('=');
-      acc[key] = value;
-      return acc;
-    }, {} as Record<string, string>);
-
-    const token = cookies['auth-token'];
-    if (!token) {
-      return { authenticated: false };
-    }
-
-    const user = verifyToken(token);
-    if (!user) {
-      return { authenticated: false };
-    }
-
-    return { authenticated: true, user };
-  } catch (error) {
+  const cookieHeader = request.headers.get('cookie');
+  if (!cookieHeader) {
     return { authenticated: false };
   }
+
+  const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const token = cookies['auth-token'];
+  if (!token) {
+    return { authenticated: false };
+  }
+
+  const user = verifyToken(token);
+  return user ? { authenticated: true, user } : { authenticated: false };
 }
 
 // Devuelve una respuesta 401 si no hay sesión válida, o null si la hay

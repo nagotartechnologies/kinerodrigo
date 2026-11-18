@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { verifyAuth } from '@/lib/auth';
+import { validarBody } from '@/lib/validacion';
+import { recordatoriosMasivosSchema } from '@/lib/schemas/whatsapp';
 import { sendWhatsAppMessage, formatearMensajeRecordatorio } from '@/lib/whatsapp';
 import { registrarErrorEnvio } from '@/lib/cron';
 
@@ -12,15 +14,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { fecha, citaIds } = body;
-
-    if (!fecha && (!citaIds || citaIds.length === 0)) {
-      return NextResponse.json(
-        { success: false, error: 'Se requiere fecha o lista de citaIds' },
-        { status: 400 }
-      );
-    }
+    const validacion = await validarBody(request, recordatoriosMasivosSchema);
+    if (!validacion.ok) return validacion.response;
+    const { fecha, citaIds } = validacion.data;
 
     // Buscar citas pendientes de recordatorio
     let citas: any[];

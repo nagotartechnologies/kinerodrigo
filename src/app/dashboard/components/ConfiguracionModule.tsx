@@ -8,10 +8,12 @@ import ConfigPagos from './config/ConfigPagos';
 import ConfigWhatsApp from './config/ConfigWhatsApp';
 import ConfigUsuarios from './config/ConfigUsuarios';
 import ConfigRespaldos from './config/ConfigRespaldos';
+import { useConfirm } from '@/components/ConfirmDialog';
 
 
 // Módulo Configuración (Orquestador)
 export default function ConfiguracionModule() {
+  const confirmar = useConfirm();
   const [configuraciones, setConfiguraciones] = useState<ConfigMap>({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -191,7 +193,7 @@ export default function ConfiguracionModule() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Editar Configuracion</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>x</button>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModal(false)}>x</button>
             </div>
             <form onSubmit={handleGuardarConfig}>
               <div className="modal-body">
@@ -258,7 +260,7 @@ export default function ConfiguracionModule() {
                           const file = e.target.files?.[0];
                           if (file) {
                             if (file.size > 2 * 1024 * 1024) {
-                              alert('El archivo es demasiado grande. Maximo 2MB');
+                              void confirmar('El archivo es demasiado grande. Máximo 2 MB', { soloAviso: true });
                               e.target.value = '';
                               return;
                             }
@@ -276,7 +278,7 @@ export default function ConfiguracionModule() {
                           className="btn-secondary"
                           style={{ marginTop: '0.75rem', width: '100%' }}
                           onClick={async () => {
-                            if (confirm('Estas seguro de eliminar el logo?')) {
+                            if (await confirmar('Estas seguro de eliminar el logo?', { peligro: true })) {
                               try {
                                 const response = await fetch('/api/upload/logo', { method: 'DELETE' });
                                 const data = await response.json();

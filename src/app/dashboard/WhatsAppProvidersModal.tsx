@@ -86,7 +86,7 @@ export default function WhatsAppProvidersModal({ isOpen, onClose, onMessage }: W
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '1000px' }}>
         <div className="modal-header">
           <h3>Gestión de Proveedores de WhatsApp</h3>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close" aria-label="Cerrar" onClick={onClose}>×</button>
         </div>
         <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {loading ? (

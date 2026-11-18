@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { verifyAuth } from '@/lib/auth';
+import { validarBody } from '@/lib/validacion';
+import { accionCronSchema } from '@/lib/schemas/whatsapp';
 import { 
   iniciarCronRecordatorios, 
   detenerCronRecordatorios, 
@@ -40,8 +42,9 @@ export async function GET(request: NextRequest) {
 // POST - Controlar el cron de recordatorios
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { accion } = body; // 'iniciar', 'detener', 'ejecutar'
+    const validacion = await validarBody(request, accionCronSchema);
+    if (!validacion.ok) return validacion.response;
+    const { accion } = validacion.data;
 
     // La Netlify Scheduled Function se autentica con CRON_SECRET (solo puede ejecutar)
     const cronSecret = process.env.CRON_SECRET;
@@ -57,13 +60,6 @@ export async function POST(request: NextRequest) {
     const authResult = await verifyAuth(request);
     if (!authResult.authenticated) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    if (!accion) {
-      return NextResponse.json(
-        { success: false, error: 'Acción requerida' },
-        { status: 400 }
-      );
     }
 
     let mensaje = '';
@@ -84,12 +80,6 @@ export async function POST(request: NextRequest) {
         mensaje = `Recordatorios ejecutados manualmente: ${resultado.enviados} enviado(s), ${resultado.errores} error(es)`;
         break;
       }
-
-      default:
-        return NextResponse.json(
-          { success: false, error: 'Acción no válida' },
-          { status: 400 }
-        );
     }
 
     const estado = estadoCronRecordatorios();

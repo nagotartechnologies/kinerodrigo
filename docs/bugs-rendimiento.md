@@ -114,8 +114,11 @@ Fase 4: Implementation — pendiente
 | 3 | api/citas/route.ts | ~73-90 | Alta | ✅ Corregido |
 | 4 | CitasModule.tsx | 8 llamadas | Media | ✅ Corregido |
 | 5 | Múltiples APIs | ~5 archivos | Alta | Pendiente |
-| 6 | CitasModule.tsx | 280-291 | Alta | Pendiente |
-| 7 | CitasModule.tsx | 1233-1241 | Alta | Pendiente |
-| 8 | CitasModule.tsx | 926 | Alta | Pendiente |
+| 6 | CitasModule.tsx | `horariosBloqueadosPorFecha` (useMemo) | Alta | ✅ Corregido |
+| 7 | CitasModule.tsx | `citasHoyMemo` (useMemo) | Alta | ✅ Corregido |
+| 8 | CitasModule.tsx | `textoRecordatorios` usa `citasSinRecordatorio` | Alta | ✅ Corregido |
+| 11 | api/citas/recurrentes | consultas en bucle | Alta | ✅ Corregido: 1 lectura + 1 batch |
+| 12 | api/gastos-fijos PATCH | consultas en bucle | Media | ✅ Corregido: 2 lecturas + 1 batch |
+| 13 | api/configuraciones POST | `get`/`run` async sin await en `db.transaction` | Alta | ✅ Corregido: 1 lectura + 1 batch |
 | 9 | page.tsx | 211,220 | Media | Pendiente |
 | 10 | check-responses | 22-218 | Media | Pendiente |

@@ -17,13 +17,14 @@ Sistema de gestión clínica para el kinesiólogo **Rodrigo Ulloa**. Lo desarrol
 |---|---|
 | Framework | Next.js 16 (App Router), React 19, TypeScript, Turbopack |
 | Estilos | CSS propio, sin Tailwind (`dashboard.css`, `calendario.css`, `login.css`, `globals.css`) |
-| Base de datos | **Turso (libSQL)** mediante `@libsql/client/web`. `better-sqlite3` solo queda en código legacy |
-| Auth | JWT (`jsonwebtoken`, 7 días) en la cookie httpOnly `auth-token`, con `bcryptjs` |
-| Archivos | Cloudinary (documentos de pacientes en `kine-citas/pacientes/`, logo) |
+| Base de datos | **Turso (libSQL)** mediante `@libsql/client/web` |
+| Validación | **Zod 4**: esquemas en `src/lib/schemas/*`, aplicados con `validarBody()` de `src/lib/validacion.ts` |
+| Auth | JWT (`jsonwebtoken`) en la cookie httpOnly `auth-token`, con `bcryptjs` (costo 12; los hashes viejos de costo 8 siguen validando) |
+| Archivos | Cloudinary (documentos de pacientes en `kine-citas/pacientes/`, máx. 4 MB por el límite de body de Netlify; logo en `kine-citas/logo/`) |
 | WhatsApp | Multi-proveedor: Green API, Ultramsg, Twilio, Meta Cloud API, Wassenger |
-| PWA | Service worker propio y escrito a mano en `public/sw.js` (network-first solo para páginas y limpieza de cachés viejas). `next-pwa` ya no se usa: su plugin de webpack no corre con Turbopack. `public/workbox-*.js` es un resto del sistema anterior. La lógica cliente está en `src/lib/pwa.ts` y `components/AppPwa.tsx` (ver "PWA: instalación y versiones") |
+| PWA | Service worker propio y escrito a mano en `public/sw.js` (network-first solo para páginas y limpieza de cachés viejas). `next-pwa` se desinstaló: su plugin de webpack no corre con Turbopack. La lógica cliente está en `src/lib/pwa.ts` y `components/AppPwa.tsx` (ver "PWA: instalación y versiones") |
 | Deploy | Netlify, con Scheduled Functions en `netlify/functions/` |
-| Alternativa | `server.js` (servidor HTTP propio) y scripts PM2 (`nago-kine`). Ojo: `ecosystem.config.js` **no existe** en el repo |
+| Alternativa | `server.js` (servidor HTTP propio, `pnpm start`). Los scripts PM2 se quitaron porque `ecosystem.config.js` no existía |
 
 ## Comandos
 
@@ -34,9 +35,10 @@ pnpm run build          # build de producción
 netlify deploy --prod   # deploy (solo cuando el usuario lo ordene)
 ```
 
-- Los docs internos exigen **pnpm, no npm**. Ya existe `pnpm-lock.yaml` (además del `package-lock.json` legacy y un `deno.lock`).
-- pnpm 11+ exige aprobar los build scripts en `pnpm-workspace.yaml` (`allowBuilds`). `better-sqlite3: false` porque es legacy y no compila con Node 26. `sharp` y `unrs-resolver` van en `true`. **No usar `npm install`**: intenta compilar `better-sqlite3` y falla.
-- `npm run db:init` y `db:seed` (`scripts/init-db.js`, `seed-db.js`) son **legacy**: crean un `database.db` local con better-sqlite3 y **borran el archivo si ya existe**. No sirven con Turso.
+- **Siempre pnpm**, nunca npm ni yarn. El único lockfile es `pnpm-lock.yaml` (`package-lock.json` y `deno.lock` se borraron).
+- pnpm 11+ exige aprobar los build scripts en `pnpm-workspace.yaml` (`allowBuilds`): `sharp` y `unrs-resolver` van en `true`.
+- `better-sqlite3`, `next-pwa` y los scripts `db:init`/`db:seed` se eliminaron: no hay base local, todo va contra Turso.
+- `pnpm lint` (`next lint`) **no funciona**: Next 16 quitó ese comando. Migrar a ESLint 9 + flat config está pendiente.
 - El schema real se crea o migra solo en `initDatabase()` de `src/lib/db.ts` (con `CREATE TABLE IF NOT EXISTS` y `ALTER TABLE ADD COLUMN` en try/catch).
 - Migraciones puntuales por endpoint: `GET /api/db/migrate`, `/api/db/migrate/episodios` y `/api/db/migrate/ejercicios`.
 
@@ -44,7 +46,7 @@ netlify deploy --prod   # deploy (solo cuando el usuario lo ordene)
 
 ```
 TURSO_DATABASE_URL, TURSO_AUTH_TOKEN          # obligatorias: db.ts lanza un error si faltan
-JWT_SECRET                                    # en auth.ts hay un fallback inseguro hardcodeado
+JWT_SECRET                                    # obligatoria: sin ella no se puede iniciar sesión (ya no hay fallback). Generar con openssl rand -base64 48
 CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
 GREEN_API_INSTANCE_ID, GREEN_API_TOKEN, GREEN_API_URL, GREEN_API_TEST_MODE
 WHATSAPP_TEST_MODE                            # true = TestProvider simulado, no envía nada
@@ -53,7 +55,7 @@ CRON_SECRET                                   # la Netlify Scheduled Function lo
 GREEN_API_WEBHOOK_TOKEN                       # si está definido, el webhook exige Authorization: Bearer <token> (configurar el mismo valor en "Webhook URL Token" de Green API)
 ```
 
-También están las credenciales de los otros proveedores de WhatsApp (Ultramsg, Twilio, Meta, Wassenger), que se leen en `src/lib/whatsapp/providers/*`. El detalle completo está en `docs/plans/variables-entorno-y-despliegue.md`.
+La plantilla completa está en `.env.example`. También están las credenciales de los otros proveedores de WhatsApp (Ultramsg, Twilio, Meta, Wassenger), que se leen en `src/lib/whatsapp/providers/*`. El detalle completo está en `docs/plans/variables-entorno-y-despliegue.md`.
 
 ## Estructura
 
@@ -64,19 +66,31 @@ src/
     page.tsx                  # redirect a /login
     login/                    # pantalla de login
     dashboard/
+      layout.tsx              # envuelve el dashboard en <ConfirmProvider>
       page.tsx                # shell: tarjetas de stats, swipe entre módulos, carga dinámica
       components/
-        PacientesModule.tsx   (~2.400 líneas)
-        CitasModule.tsx       (~2.200 líneas, calendario semanal/mensual/hoy)
-        SesionesModule.tsx    (~3.600 líneas)
-        FinanzasModule.tsx, PagosModule.tsx
+        PacientesModule.tsx   (~2.250 líneas, pendiente de dividir)
+        CitasModule.tsx       (~1.700 líneas, calendario semanal/mensual/hoy)
+        citas/                # piezas extraídas de Citas: AgendaCard, ListaCitas, ModalRespuestas, formato.ts, iconos.tsx
+        SesionesModule.tsx    (~3.000 líneas, pendiente de dividir)
+        FinanzasModule.tsx
         ConfiguracionModule.tsx + config/Config{General,Usuarios,Citas,Pagos,Respaldos,WhatsApp}.tsx
         FichaCompletaModal.tsx  # ficha clínica por episodio
-      hooks/useTouchDrag.ts, utils/generarFichaPDF.ts, types/, utils.ts
-    api/                      # ~57 route handlers REST (ver abajo)
+      hooks/useRespuestasPendientes.ts, utils/generarFichaPDF.ts, utils/accesible.ts, types/, utils.ts
+    api/                      # route handlers delgados: auth -> validar (Zod) -> servicio -> respuesta
+  services/                   # lógica de negocio y acceso a datos, por dominio (ver "Capas del backend")
+    citas/{consultas,mutaciones,conflictos,recurrentes}.ts
+    pacientes/{fichas,estados,episodios,documentos}.ts
+    sesiones/{consultas,mutaciones}.ts
+    finanzas/{pagos,gastos,gastosFijos,categorias}.ts
+    usuarios.ts, autenticacion.ts, limiteLogin.ts, configuraciones.ts, logo.ts, agenda.ts, whatsappProveedores.ts
   lib/
-    db.ts                     # cliente Turso + wrapper que imita a better-sqlite3 + initDatabase()
-    auth.ts                   # JWT, cookies, verifyAuth(request)
+    db.ts                     # cliente Turso + wrapper que imita a better-sqlite3 + batch() + initDatabase()
+    auth.ts                   # JWT, cookies, verifyAuth(request), requireAuth(request)
+    schemas/*.ts              # esquemas Zod por dominio (comunes, citas, pacientes, sesiones, finanzas, configuracion, whatsapp, usuarios, auth)
+    validacion.ts             # validar(schema, datos) y validarBody(request, schema) -> 400 con mensaje en español
+    errores.ts                # ErrorNegocio, noEncontrado(), respuestaError(), idDeParams()
+    sql.ts                    # sentenciaUpdate(): UPDATE parcial con columnas de lista blanca
     episodios.ts              # asegurarEpisodio(), mapeo de estados paciente <-> episodio
     cron.ts                   # enviarRecordatoriosAutomaticos()
     whatsapp.ts               # envío y formateo de plantillas
@@ -84,8 +98,8 @@ src/
     whatsapp/detectarIntencion.ts  # scoring de palabras (con chilenismos) -> CONFIRMAR/CANCELAR/REAGENDAR
     whatsapp/providers/*      # greenapi, ultramsg, twilio, meta, wassenger (interfaz base.ts)
     cloudinary.ts
-    db-sqlite-backup.ts       # LEGACY better-sqlite3, no se usa
-  components/DynamicFavicon.tsx
+  components/DynamicFavicon.tsx, AppPwa.tsx
+  components/ConfirmDialog.tsx  # ConfirmProvider + useConfirm(): reemplazo accesible de confirm()/alert()
 netlify/functions/
   recordatorios-cron.ts       # schedule '0 */2 * * *': solo llama a POST /api/cron/recordatorios con CRON_SECRET (la lógica vive en src/lib/cron.ts)
   backup-diario.ts            # schedule '0 3 * * *': dump SQL de las tablas
@@ -93,8 +107,33 @@ netlify/functions/
 docs/
   plans/modulo-*.md, base-de-datos-schema.md, WHATSAPP_SETUP.md, WEBHOOK_DEBUG.md, ...
   bugs-rendimiento.md         # bugs de rendimiento detectados (algunos siguen pendientes)
-page.tsx (raíz)               # ARCHIVO HUÉRFANO: copia vieja y monolítica del dashboard (~4.600 líneas). No es una ruta
 ```
+
+## Capas del backend (obligatorio en rutas nuevas)
+
+```ts
+export async function POST(request: NextRequest) {
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
+  try {
+    const validacion = await validarBody(request, crearCitaSchema);   // Zod -> 400 si no calza
+    if (!validacion.ok) return validacion.response;
+    const cita = await crearCita(validacion.data);                    // src/services/...
+    return NextResponse.json({ success: true, cita }, { status: 201 });
+  } catch (error) {
+    return respuestaError(error, 'Error al crear la cita');           // ErrorNegocio -> su status; otro -> 500 genérico + log
+  }
+}
+```
+
+- La ruta no tiene SQL ni reglas de negocio: solo auth, validación, llamada al servicio y respuesta.
+- Los servicios lanzan `ErrorNegocio(mensaje, status)` (o `noEncontrado(mensaje)`) con textos en español aptos para el usuario. Nunca devolver `error.message` de errores inesperados al cliente.
+- Los ids de la URL pasan por `idDeParams()` (400 si no son enteros positivos).
+- Todas las respuestas incluyen `success: true|false`.
+- Operaciones de varios pasos van en `db.batch([...])` (atómico). Nada de consultas dentro de bucles: leer en una consulta y escribir en un batch.
+- Formularios que mandan `''`: los esquemas lo convierten a `null` (fichas) o a "no cambiar" (ediciones de finanzas) con `z.preprocess`.
+- Login: máximo 5 intentos fallidos por email + IP en 15 minutos (`services/limiteLogin.ts`, tabla `intentos_login`), responde 429.
+- Rutas que todavía no siguen el patrón: `webhook/whatsapp` (payload del proveedor), `whatsapp/diagnostico`, `cron/diagnostico`, `backups`, `db/migrate/*`, las de estadísticas y `citas/[id]/recordatorio`.
 
 ## Uso del wrapper de base de datos
 
@@ -108,7 +147,7 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
 ```
 
 - `lastInsertRowid` es un `bigint`: hay que convertirlo con `Number(...)`.
-- `db.transaction()` **no es atómica**: solo ejecuta la función. Para operaciones atómicas hay que usar `tursoClient.batch`.
+- `db.transaction()` **no es atómica**: solo ejecuta la función. Para operaciones atómicas usar `db.batch([{ sql, args }, ...])`, que devuelve un `ResultSet` por sentencia (con su `lastInsertRowid`).
 - `db.pragma()` no hace nada.
 - Las fechas se guardan como texto `YYYY-MM-DD` y las horas como `HH:MM`. En el front hay que evitar `new Date('YYYY-MM-DD')`, porque produce un desfase de zona horaria. Conviene parsear los componentes por separado.
 
@@ -143,8 +182,7 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
   ```
 
   Solo quedan públicas `auth/login`, `auth/logout`, `icon`, `manifest` y el webhook `webhook/whatsapp` (lo llama el proveedor). Los diagnósticos, migraciones y `webhook/whatsapp/enviar-respuesta` exigen sesión: se abren desde el navegador con la sesión iniciada. `/api/usuarios` además impide eliminar o desactivar el propio usuario y el último activo. Toda ruta nueva debe validar la sesión, salvo los webhooks.
-- El fallback de `JWT_SECRET` en `src/lib/auth.ts` es inseguro.
-- Bugs de rendimiento pendientes en `CitasModule.tsx` (`esHorarioBloqueado` sin memoizar, IIFE de la vista "hoy", doble `filter` en el botón de recordatorios) y `console.log` excesivos en las APIs. Ver `docs/bugs-rendimiento.md`.
+- Quedan `console.log` excesivos en las APIs de WhatsApp (`check-responses`, `citas/[id]/recordatorio`, webhook). Ver `docs/bugs-rendimiento.md`.
 - Los módulos son componentes gigantes: hay que editarlos de forma quirúrgica y respetar su estilo (estado local con `useState`, `fetch` directo a `/api/*`).
 - `README.md` y `docs/plans/modulos-documentacion.md` mencionan Next 14/15 y better-sqlite3. **La fuente de verdad es el código**.
 - `check-button-responses` está desactivada a propósito: el proveedor actual (Green API) entrega las respuestas por webhook.
@@ -159,7 +197,7 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
   - El login no tiene tarjeta. El fondo es `public/brand/fondo-lineas.webp`, una textura de líneas de relieve generada para imitar el fondo del logo original, con un degradado radial que oscurece el centro.
   - `public/icon-*.png` se regeneran con sharp desde `brand-kit/svg/app-icon.svg`.
 - No usar `#3FFF00` (era el verde neón anterior).
-- `logo_url` de configuración ya no define favicon ni íconos; solo se usa en el PDF de la ficha.
+- `logo_url` de configuración ya no define favicon ni íconos; solo se usa en el PDF de la ficha. Se sube a Cloudinary (`services/logo.ts`, guarda también `logo_public_id`): el disco de Netlify es efímero, así que nunca escribir en `public/` desde una ruta.
 - Sesión: "Mantener sesión iniciada" del login, 30 días marcado y 1 día sin marcar (`DIAS_SESION_*` en `auth.ts`).
 
 ## UI mobile-first (en curso)
@@ -172,7 +210,8 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
   - Arrastrar mueve la cita y estirar cambia la duración, con pasos de 15 minutos.
   - En touch, el arrastre se activa con un toque largo de 400 ms.
   - Mueve y redimensiona con `moverCitaAPI(cita, fecha, hora, duracion?)`, que actualiza la pantalla antes de que responda la API.
-  - `hooks/useTouchDrag.ts` ya no se usa.
+- **Confirmaciones y avisos:** nunca `window.confirm`/`alert`. Usar `const confirmar = useConfirm()` y `if (!(await confirmar('¿Eliminar…?', { peligro: true }))) return;`. Opciones: `titulo`, `textoConfirmar`, `textoCancelar`, `peligro` (botón rojo), `soloAviso` (un solo botón, reemplaza a `alert`).
+- **Accesibilidad:** botones de solo ícono con `aria-label`. Si un elemento clickeable no puede ser `<button>` (tarjeta, opción de lista), usar `{...propsActivable(accion, 'button' | 'option')}` de `utils/accesible.ts`, que agrega `role`, `tabIndex` y Enter/Espacio.
 - Pacientes (`.pac-*`), Sesiones (`.ses-*`), Finanzas (`.fin-*`) y Configuración (`.configuracion-module`) ya tienen cabecera, toolbar y listas mobile-first. Clases compartidas:
   - `.fab`: botón flotante, solo en móvil.
   - `.pac-buscador`: buscador.

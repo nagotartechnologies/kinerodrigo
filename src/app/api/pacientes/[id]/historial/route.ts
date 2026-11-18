@@ -46,7 +46,7 @@ export async function GET(
     const sesiones: any[] = await db.prepare(`
       SELECT id, episodio_id, cita_id, fecha, hora, duracion, tipo, estado, numero_sesion,
              notas_sesion, ejercicios_realizados, observaciones,
-             dolor_inicial, dolor_final, movilidad, fuerza,
+             dolor_inicial, dolor_final, borg_percepcion, movilidad, fuerza,
              progreso_general, recomendaciones, proxima_sesion, created_at
       FROM sesiones 
       WHERE paciente_id = ?

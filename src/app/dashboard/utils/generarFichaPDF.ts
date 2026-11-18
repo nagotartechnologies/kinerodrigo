@@ -87,7 +87,7 @@ export function generarFichaPDF({ paciente, sesiones, logoUrl, nombreCentro }: G
       <div class="header">
         <div class="logo">
           ${logoUrl ? 
-            `<img src="${window.location.origin}${logoUrl}" alt="Logo" style="max-height: 60px; max-width: 200px; object-fit: contain;" />` : 
+            `<img src="${/^https?:\/\//.test(logoUrl) ? logoUrl : window.location.origin + logoUrl}" alt="Logo" style="max-height: 60px; max-width: 200px; object-fit: contain;" />` : 
             nombreCentro
           }
         </div>

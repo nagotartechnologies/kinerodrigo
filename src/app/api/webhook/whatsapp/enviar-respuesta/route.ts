@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { sendWhatsAppMessage } from '@/lib/whatsapp';
 import { requireAuth } from '@/lib/auth';
+import { validarBody } from '@/lib/validacion';
+import { enviarRespuestaSchema } from '@/lib/schemas/whatsapp';
 
 // POST - Endpoint interno para enviar mensaje de respuesta al paciente
 // Se llama desde el webhook principal para no bloquear la respuesta al webhook
@@ -12,13 +14,10 @@ export async function POST(request: NextRequest) {
   let recordatorioId: number | null = null;
   
   try {
-    const body = await request.json();
-    const { telefono, mensaje } = body;
-    recordatorioId = body.recordatorioId || null;
-
-    if (!telefono || !mensaje) {
-      return NextResponse.json({ success: false, error: 'Faltan datos' }, { status: 400 });
-    }
+    const validacion = await validarBody(request, enviarRespuestaSchema);
+    if (!validacion.ok) return validacion.response;
+    const { telefono, mensaje } = validacion.data;
+    recordatorioId = validacion.data.recordatorioId ?? null;
 
     const resultado = await sendWhatsAppMessage({
       phone: telefono,

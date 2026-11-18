@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { validarBody } from '@/lib/validacion';
+import { respuestaError } from '@/lib/errores';
+import { marcarRevisadosSchema } from '@/lib/schemas/configuracion';
 
 // GET - Respuestas de pacientes (cancelaciones y pedidos de reagendar) sin revisar
 export async function GET(request: NextRequest) {
@@ -49,18 +52,13 @@ export async function POST(request: NextRequest) {
   if (noAutorizado) return noAutorizado;
 
   try {
-    const { ids } = await request.json();
-    const idsValidos = Array.isArray(ids) ? ids.map(Number).filter(Number.isInteger) : [];
-    if (idsValidos.length === 0) {
-      return NextResponse.json({ success: false, error: 'Se requiere una lista de ids' }, { status: 400 });
-    }
-
-    const placeholders = idsValidos.map(() => '?').join(',');
-    await db.prepare(`UPDATE recordatorios SET revisado = 1 WHERE id IN (${placeholders})`).run(...idsValidos);
-
+    const validacion = await validarBody(request, marcarRevisadosSchema);
+    if (!validacion.ok) return validacion.response;
+    const { ids } = validacion.data;
+    const placeholders = ids.map(() => '?').join(',');
+    await db.prepare(`UPDATE recordatorios SET revisado = 1 WHERE id IN (${placeholders})`).run(...ids);
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('Error al marcar respuestas como revisadas:', error);
-    return NextResponse.json({ success: false, error: 'Error al marcar como revisadas' }, { status: 500 });
+  } catch (error) {
+    return respuestaError(error, 'Error al marcar como revisadas');
   }
 }

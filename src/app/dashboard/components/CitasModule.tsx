@@ -1,12 +1,22 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { formatearFechaLocal, fechaAString } from '../utils';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { fechaAString } from '../utils';
 import SemanaCalendario from './SemanaCalendario';
+import AgendaCard from './citas/AgendaCard';
+import ListaCitas from './citas/ListaCitas';
+import ModalRespuestas from './citas/ModalRespuestas';
+import { IconoWhatsApp, IconoRefrescar } from './citas/iconos';
+import { formatearMesAnio, esHoy } from './citas/formato';
+import { useRespuestasPendientes } from '../hooks/useRespuestasPendientes';
+import { useConfirm } from '@/components/ConfirmDialog';
+import { TIPOS_SESION } from '@/lib/tiposSesion';
+import { propsActivable } from '../utils/accesible';
 
 
 // Módulo Citas
 export default function CitasModule() {
+  const confirmar = useConfirm();
   // Vista de calendario - se ajusta a móvil después de montar
   const [vistaCalendario, setVistaCalendario] = useState<'mes' | 'semana' | 'lista' | 'hoy'>('mes');
   const [showModal, setShowModal] = useState(false);
@@ -51,8 +61,12 @@ export default function CitasModule() {
   const [enviandoMasivo, setEnviandoMasivo] = useState(false);
   const [resultadoMasivo, setResultadoMasivo] = useState<any>(null);
 
-  // Respuestas de pacientes por WhatsApp (cancelaciones y pedidos de reagendar) sin revisar
-  const [respuestasPendientes, setRespuestasPendientes] = useState<any[]>([]);
+  // Respuestas de pacientes por WhatsApp (cancelaciones y pedidos de reagendar) sin revisar.
+  // Los callbacks se envuelven porque cargarCitas y mostrarMensaje se declaran más abajo
+  const { respuestas: respuestasPendientes, marcarRevisadas: marcarRespuestasRevisadas } = useRespuestasPendientes(
+    () => cargarCitas(false),
+    (mensaje) => mostrarMensaje(mensaje, true)
+  );
   const [showModalRespuestas, setShowModalRespuestas] = useState(false);
   
   // Estados para el buscador de pacientes
@@ -114,43 +128,6 @@ export default function CitasModule() {
 
     return () => clearInterval(interval);
   }, [vistaCalendario]);
-
-  // Respuestas pendientes de revisar: al montar y cada 2 minutos en cualquier vista.
-  // Si llegan respuestas nuevas se recargan las citas para reflejar el cambio de estado.
-  const idsRespuestasConocidas = useRef<Set<number> | null>(null);
-  const cargarRespuestasPendientes = useCallback(async () => {
-    try {
-      const data = await fetch('/api/recordatorios/pendientes').then(r => r.json());
-      if (!data.success) return;
-      const conocidas = idsRespuestasConocidas.current;
-      const hayNuevas = conocidas !== null && data.pendientes.some((p: any) => !conocidas.has(p.id));
-      idsRespuestasConocidas.current = new Set(data.pendientes.map((p: any) => p.id));
-      setRespuestasPendientes(data.pendientes);
-      if (hayNuevas) cargarCitas(false);
-    } catch {
-      // Sin conexión: se reintenta en el próximo intervalo
-    }
-  }, []);
-
-  useEffect(() => {
-    cargarRespuestasPendientes();
-    const interval = setInterval(cargarRespuestasPendientes, 120000);
-    return () => clearInterval(interval);
-  }, [cargarRespuestasPendientes]);
-
-  const marcarRespuestasRevisadas = async (ids: number[]) => {
-    setRespuestasPendientes(prev => prev.filter(r => !ids.includes(r.id)));
-    try {
-      await fetch('/api/recordatorios/pendientes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids })
-      });
-    } catch {
-      mostrarMensaje('No se pudo marcar como revisado', true);
-      cargarRespuestasPendientes();
-    }
-  };
 
   const verCitaDeRespuesta = (citaId: number) => {
     const cita = citas.find(c => c.id === citaId);
@@ -305,7 +282,7 @@ export default function CitasModule() {
   };
 
   const handleEliminarBloqueo = async (id: number) => {
-    if (!confirm('¿Deseas desbloquear este horario?')) return;
+    if (!(await confirmar('¿Deseas desbloquear este horario?', { peligro: true }))) return;
     
     try {
       setLoading(true);
@@ -499,7 +476,7 @@ export default function CitasModule() {
   };
 
   const handleEliminarCita = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar esta cita?')) return;
+    if (!(await confirmar('¿Estás seguro de eliminar esta cita?', { peligro: true, textoConfirmar: "Eliminar" }))) return;
     
     try {
       setLoading(true);
@@ -639,7 +616,7 @@ export default function CitasModule() {
       return;
     }
 
-    if (!confirm(`¿Enviar recordatorio por WhatsApp a ${citasSinRecordatorio.length} paciente(s)?`)) return;
+    if (!(await confirmar(`¿Enviar recordatorio por WhatsApp a ${citasSinRecordatorio.length} paciente(s)?`, { titulo: "Enviar recordatorios", textoConfirmar: "Enviar" }))) return;
 
     try {
       setEnviandoMasivo(true);
@@ -670,7 +647,7 @@ export default function CitasModule() {
   };
 
   const handleEnviarRecordatorio = async (cita: any) => {
-    if (!confirm(`¿Enviar recordatorio por WhatsApp a ${cita.paciente}?`)) return;
+    if (!(await confirmar(`¿Enviar recordatorio por WhatsApp a ${cita.paciente}?`, { titulo: "Enviar recordatorio", textoConfirmar: "Enviar" }))) return;
 
     try {
       setLoading(true);
@@ -845,34 +822,13 @@ export default function CitasModule() {
     return citasPorFecha.get(fechaStr) || [];
   };
 
-  const formatearFecha = (fecha: Date) => {
-    return fecha.toLocaleDateString('es-CL', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
-  const formatearMesAño = (fecha: Date) => {
-    return fecha.toLocaleDateString('es-CL', { 
-      year: 'numeric', 
-      month: 'long'
-    });
-  };
-
-  const esHoy = (fecha: Date) => {
-    const hoy = new Date();
-    return fecha.toDateString() === hoy.toDateString();
-  };
-
   const hoyStr = fechaAString(new Date());
   const citasHoy = citasHoyMemo.citasDelDia;
   const conteosHoy = citasHoyMemo.conteos;
 
   // Titulo compacto del periodo: rango de la semana o mes y año
   const tituloPeriodo = (() => {
-    if (vistaCalendario !== 'semana') return formatearMesAño(fechaActual);
+    if (vistaCalendario !== 'semana') return formatearMesAnio(fechaActual);
     const inicio = diasSemana[0];
     const fin = diasSemana[6];
     const mesCorto = (d: Date) => d.toLocaleDateString('es-CL', { month: 'short' }).replace('.', '');
@@ -889,110 +845,25 @@ export default function CitasModule() {
     ? obtenerCitasDia(diaSeleccionadoMes).slice().sort((a, b) => a.hora.localeCompare(b.hora))
     : [];
 
-  const parsearFechaCita = (fecha: string) => {
-    const [year, month, day] = fecha.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  };
-
-  const etiquetaRecordatorio = (recordatorio: any) =>
-    recordatorio.estado === 'error' ? '⚠️ Error de envío' :
-    recordatorio.respuesta === 'CONFIRMAR' ? '✅ Confirmó' :
-    recordatorio.respuesta === 'CANCELAR' ? (recordatorio.cancelacionTardia ? '❌ Canceló (tarde)' : '❌ Canceló') :
-    recordatorio.respuesta === 'REAGENDAR' ? '📅 Reagendar' : '📤 Enviado';
-
-  const fechaCortaCita = (fecha: string, hora: string) =>
-    `${parsearFechaCita(fecha).toLocaleDateString('es-CL', { weekday: 'short', day: '2-digit', month: '2-digit' })} · ${hora}`;
-
-  const iconoWhatsApp = (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="icono-16" aria-hidden="true">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-      <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/>
-    </svg>
-  );
-
-  const iconoRefrescar = (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="icono-18" aria-hidden="true">
-      <path d="M21.5 2v6h-6"/>
-      <path d="M2.5 22v-6h6"/>
-      <path d="M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-    </svg>
-  );
+  const iconoWhatsApp = <IconoWhatsApp />;
+  const iconoRefrescar = <IconoRefrescar />;
 
   const textoRecordatorios = enviandoMasivo
     ? 'Enviando...'
     : `Recordatorios${citasSinRecordatorio.length > 0 ? ` (${citasSinRecordatorio.length})` : ''}`;
 
-  // Tarjeta de cita con acciones rapidas (vista Hoy y lista del dia en la vista Mes)
-  const renderAgendaCard = (cita: any) => {
-    let enCurso = false;
-    let pasada = false;
-    if (cita.fecha === hoyStr) {
-      const ahora = new Date();
-      const [h, m] = cita.hora.split(':').map(Number);
-      const inicio = new Date();
-      inicio.setHours(h, m, 0, 0);
-      const fin = new Date(inicio.getTime() + (Number(cita.duracion) || 0) * 60000);
-      enCurso = ahora >= inicio && ahora <= fin;
-      pasada = ahora > fin;
-    }
-    const activa = cita.estado !== 'cancelada' && cita.estado !== 'completada';
-
-    return (
-      <div
-        key={cita.id}
-        className={`agenda-card agenda-card--${cita.estado} ${enCurso ? 'is-en-curso' : ''} ${pasada ? 'is-pasada' : ''}`}
-      >
-        <div className="agenda-card__top">
-          <div className="agenda-card__hora">{cita.hora}</div>
-          <div className="agenda-card__info">
-            <div className="agenda-card__paciente">{cita.paciente}</div>
-            <div className="agenda-card__meta">
-              <span>{cita.tipo} · {cita.duracion} min</span>
-              {cita.recordatorio && <span>{etiquetaRecordatorio(cita.recordatorio)}</span>}
-              {enCurso && <span className="agenda-card__en-curso">En curso</span>}
-            </div>
-          </div>
-          <span className={`estado-pill estado-pill--${cita.estado}`}>{cita.estado}</span>
-        </div>
-
-        {activa && (
-          <div className="agenda-card__acciones" data-no-swipe>
-            {cita.estado === 'pendiente' && (
-              <button type="button" className="accion-btn accion-btn--confirmar" onClick={() => handleCambiarEstado(cita.id)}>
-                ✓ Confirmar
-              </button>
-            )}
-            {(!cita.recordatorio || cita.recordatorio.estado === 'error') && cita.telefono && (
-              <button type="button" className="accion-btn accion-btn--whatsapp" onClick={() => handleEnviarRecordatorio(cita)}>
-                📱 WhatsApp
-              </button>
-            )}
-            {!cita.tieneSesion && (
-              <button type="button" className="accion-btn accion-btn--sesion" onClick={() => handleCrearSesionDesdeCita(cita)}>
-                + Sesión
-              </button>
-            )}
-            <button type="button" className="accion-btn accion-btn--pago" onClick={() => handleRegistrarPago(cita)}>
-              $ Pago
-            </button>
-            <button type="button" className="accion-btn accion-btn--editar" onClick={() => handleEditarCita(cita)}>
-              ✏️ Editar
-            </button>
-          </div>
-        )}
-
-        {cita.tieneSesion && (
-          <div className="agenda-card__nota agenda-card__nota--sesion">
-            <svg viewBox="0 0 24 24" fill="none" className="icono-14" aria-hidden="true">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-            Sesión registrada ({cita.sesionEstado})
-          </div>
-        )}
-        {cita.notas && <div className="agenda-card__nota agenda-card__nota--texto">{cita.notas}</div>}
-      </div>
-    );
-  };
+  const renderAgendaCard = (cita: any) => (
+    <AgendaCard
+      key={cita.id}
+      cita={cita}
+      hoyStr={hoyStr}
+      onConfirmar={handleCambiarEstado}
+      onRecordatorio={handleEnviarRecordatorio}
+      onCrearSesion={handleCrearSesionDesdeCita}
+      onPago={handleRegistrarPago}
+      onEditar={handleEditarCita}
+    />
+  );
 
   return (
     <div className="module-container citas-module">
@@ -1280,80 +1151,12 @@ export default function CitasModule() {
 
         {/* Vista Lista */}
         {!loading && vistaCalendario === 'lista' && (
-          <div className="citas-lista">
-            {citas.length === 0 ? (
-              <p className="empty-state">No hay citas programadas</p>
-            ) : (
-              <div className="lista-grid">
-                {citas.map(cita => {
-                  const fechaCita = parsearFechaCita(cita.fecha);
-                  return (
-                    <div key={cita.id} className={`cita-lista-item ${cita.estado}`}>
-                      <div className="cita-lista-fecha">
-                        <div className="fecha-dia">
-                          {fechaCita.toLocaleDateString('es-CL', { day: 'numeric' })}
-                        </div>
-                        <div className="fecha-mes">
-                          {fechaCita.toLocaleDateString('es-CL', { month: 'short' })}
-                        </div>
-                      </div>
-                      <div className="cita-lista-info">
-                        <h4>{cita.paciente}</h4>
-                        <div className="cita-lista-detalles">
-                          <span className="detalle-item">
-                            <svg viewBox="0 0 24 24" fill="none" className="icono-16" aria-hidden="true">
-                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                              <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2"/>
-                            </svg>
-                            {cita.hora} ({cita.duracion} min)
-                          </span>
-                          <span className="detalle-item">
-                            <svg viewBox="0 0 24 24" fill="none" className="icono-16" aria-hidden="true">
-                              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" strokeWidth="2"/>
-                            </svg>
-                            {cita.tipo}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="cita-lista-acciones">
-                        <button
-                          type="button"
-                          className={`estado-badge ${cita.estado}`}
-                          onClick={() => handleCambiarEstado(cita.id)}
-                          title="Toca para cambiar estado"
-                        >
-                          {cita.estado === 'confirmada' ? 'Confirmada' : 
-                           cita.estado === 'cancelada' ? 'Cancelada' : 
-                           cita.estado === 'completada' ? 'Completada' : 'Pendiente'}
-                        </button>
-                        <button 
-                          className="btn-icon"
-                          onClick={() => handleEditarCita(cita)}
-                          title="Editar cita"
-                          aria-label="Editar cita"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none">
-                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2"/>
-                          </svg>
-                        </button>
-                        <button 
-                          className="btn-icon delete"
-                          onClick={() => handleEliminarCita(cita.id)}
-                          title="Eliminar cita"
-                          aria-label="Eliminar cita"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none">
-                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" strokeWidth="2"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <ListaCitas
+            citas={citas}
+            onCambiarEstado={handleCambiarEstado}
+            onEditar={handleEditarCita}
+            onEliminar={handleEliminarCita}
+          />
         )}
       </div>
 
@@ -1370,7 +1173,7 @@ export default function CitasModule() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editandoCita ? 'Editar Cita' : 'Nueva Cita'}</h2>
-              <button className="modal-close" onClick={handleCerrarModal}>
+              <button className="modal-close" aria-label="Cerrar" onClick={handleCerrarModal}>
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
@@ -1402,10 +1205,9 @@ export default function CitasModule() {
                         {pacientesFiltrados.map(paciente => (
                           <div
                             key={paciente.id}
-                            role="option"
                             aria-selected={String(formData.pacienteId) === String(paciente.id)}
                             className="paciente-dropdown__item"
-                            onClick={() => handleSeleccionarPaciente(paciente)}
+                            {...propsActivable(() => handleSeleccionarPaciente(paciente), 'option')}
                           >
                             <div className="paciente-dropdown__nombre">{paciente.nombre}</div>
                             <div className="paciente-dropdown__detalle">
@@ -1476,9 +1278,7 @@ export default function CitasModule() {
                       onChange={handleChange}
                       required
                     >
-                      <option value="Kinesioterapia">Kinesioterapia</option>
-                      <option value="Control">Control</option>
-                      <option value="Rehabilitación">Rehabilitación</option>
+                      {TIPOS_SESION.map(tipo => <option key={tipo} value={tipo}>{tipo}</option>)}
                     </select>
                   </div>
                   <div className="form-field full-width">
@@ -1562,53 +1362,12 @@ export default function CitasModule() {
 
       {/* Modal Respuestas de pacientes por WhatsApp */}
       {showModalRespuestas && (
-        <div className="modal-overlay" onClick={() => setShowModalRespuestas(false)}>
-          <div className="modal-content modal-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Respuestas de pacientes</h3>
-              <button className="modal-close" onClick={() => setShowModalRespuestas(false)}>
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              {respuestasPendientes.length === 0 ? (
-                <p className="modal-texto">No hay cancelaciones ni pedidos de reagendar pendientes.</p>
-              ) : (
-                <div className="respuestas-lista">
-                  {respuestasPendientes.map(r => (
-                    <div key={r.id} className={`respuesta-item respuesta-item--${r.respuesta === 'CANCELAR' ? 'cancelar' : 'reagendar'}`}>
-                      <div className="respuesta-item__info">
-                        <div className="respuesta-item__paciente">{r.paciente}</div>
-                        <div className="respuesta-item__meta">
-                          {r.respuesta === 'CANCELAR' ? '❌ Canceló' : '📅 Quiere reagendar'}
-                          {r.tardia && <span className="respuesta-item__tardia">Cancelación tardía</span>}
-                        </div>
-                        <div className="respuesta-item__meta">{fechaCortaCita(r.fecha, r.hora)}</div>
-                      </div>
-                      <div className="respuesta-item__acciones" data-no-swipe>
-                        <button type="button" className="accion-btn accion-btn--editar" onClick={() => verCitaDeRespuesta(r.citaId)}>
-                          Ver cita
-                        </button>
-                        <button type="button" className="accion-btn accion-btn--confirmar" onClick={() => marcarRespuestasRevisadas([r.id])}>
-                          ✓ Revisado
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {respuestasPendientes.length > 1 && (
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => marcarRespuestasRevisadas(respuestasPendientes.map(r => r.id))}>
-                  Marcar todas como revisadas
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <ModalRespuestas
+          respuestas={respuestasPendientes}
+          onCerrar={() => setShowModalRespuestas(false)}
+          onVerCita={verCitaDeRespuesta}
+          onMarcarRevisadas={marcarRespuestasRevisadas}
+        />
       )}
 
       {/* Modal Bloquear Horario */}
@@ -1617,7 +1376,7 @@ export default function CitasModule() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Bloquear Horario</h2>
-              <button className="modal-close" onClick={() => setShowModalBloqueo(false)}>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalBloqueo(false)}>
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
@@ -1698,7 +1457,7 @@ export default function CitasModule() {
                 </svg>
                 Registrar Pago
               </h2>
-              <button className="modal-close" onClick={() => setShowModalPago(false)}>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalPago(false)}>
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
@@ -1820,7 +1579,7 @@ export default function CitasModule() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
               <h2>🔄 Crear Citas Recurrentes</h2>
-              <button className="modal-close" onClick={() => setShowModalRecurrente(false)}>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalRecurrente(false)}>
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
@@ -1888,14 +1647,13 @@ export default function CitasModule() {
                       .map(p => (
                         <div
                           key={p.id}
-                          role="option"
                           aria-selected={recurrenteData.pacienteId === String(p.id)}
                           className="paciente-dropdown__item"
-                          onClick={() => {
+                          {...propsActivable(() => {
                             setRecurrenteData({...recurrenteData, pacienteId: String(p.id)});
                             setBusquedaPacienteRecurrente(`${p.nombre} - ${p.rut}`);
                             setMostrarDropdownRecurrente(false);
-                          }}
+                          }, 'option')}
                         >
                           <div className="paciente-dropdown__nombre">{p.nombre}</div>
                           <div className="paciente-dropdown__detalle">{p.rut}</div>
@@ -1949,9 +1707,7 @@ export default function CitasModule() {
                 <div className="form-field">
                   <label>Tipo</label>
                   <select value={recurrenteData.tipo} onChange={(e) => setRecurrenteData({...recurrenteData, tipo: e.target.value})}>
-                    <option value="Kinesioterapia">Kinesioterapia</option>
-                    <option value="Control">Control</option>
-                    <option value="Rehabilitación">Rehabilitación</option>
+                    {TIPOS_SESION.map(tipo => <option key={tipo} value={tipo}>{tipo}</option>)}
                   </select>
                 </div>
                 <div className="form-field">

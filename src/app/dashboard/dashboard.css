@@ -6564,6 +6564,15 @@ textarea.campo-input {
   color: #000000;
 }
 
+/* Diálogo de confirmación global (ConfirmDialog): siempre sobre cualquier otro modal */
+.confirm-overlay {
+  z-index: 3000;
+}
+
+.confirm-dialog__mensaje {
+  white-space: pre-line;
+}
+
 .ses-subtitulo {
   margin: 0 0 var(--space-3);
   font-size: var(--fs-md);

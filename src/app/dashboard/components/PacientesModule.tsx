@@ -6,9 +6,11 @@ import { nombreMarca } from '@/lib/marca';
 import { formatearFechaLocal, fechaAString } from '../utils';
 import { generarFichaPDF } from '../utils/generarFichaPDF';
 import FichaCompletaModal from './FichaCompletaModal';
+import { useConfirm } from '@/components/ConfirmDialog';
 
 // Módulo Pacientes
 export default function PacientesModule({ configuraciones = {}, onNavigate, initialPacienteId }: { configuraciones?: any; onNavigate?: (modulo: string, context?: { pacienteId?: number }) => void; initialPacienteId?: number }) {
+  const confirmar = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [showFichaCompleta, setShowFichaCompleta] = useState(false);
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any>(null);
@@ -320,7 +322,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
   };
 
   const handleEliminarDocumento = async (docId: number) => {
-    if (!pacienteSeleccionado || !confirm('¿Eliminar este documento?')) return;
+    if (!pacienteSeleccionado || !(await confirmar('¿Eliminar este documento?', { peligro: true }))) return;
     try {
       const response = await fetch(`/api/pacientes/${pacienteSeleccionado.id}/documentos?docId=${docId}`, {
         method: 'DELETE'
@@ -389,7 +391,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
   };
 
   const handleEliminarPaciente = async (paciente: any) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar al paciente ${paciente.nombre}?\n\nEsta acción no se puede deshacer.`)) {
+    if (!(await confirmar(`¿Estás seguro de que deseas eliminar al paciente ${paciente.nombre}?\n\nEsta acción no se puede deshacer.`, { peligro: true }))) {
       return;
     }
 
@@ -664,7 +666,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Ficha de Nuevo Paciente</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModal(false)}>
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
@@ -1173,7 +1175,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                     </button>
                   </>
                 )}
-                <button className="modal-close" onClick={() => {
+                <button className="modal-close" aria-label="Cerrar" onClick={() => {
                   setShowFichaCompleta(false);
                   setModoEdicion(false);
                 }}>
@@ -2106,7 +2108,7 @@ export default function PacientesModule({ configuraciones = {}, onNavigate, init
                 {estadoSeleccionado === 'abandono' && '❌ Marcar como Receso'}
                 {estadoSeleccionado === 'activo' && '🔄 Reactivar Paciente'}
               </h3>
-              <button className="modal-close" onClick={() => setShowModalEstado(false)}>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalEstado(false)}>
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>

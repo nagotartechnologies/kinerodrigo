@@ -1,35 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllProvidersStatus } from '@/lib/whatsapp/factory';
-import db from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import { validarBody } from '@/lib/validacion';
+import { respuestaError } from '@/lib/errores';
+import { cambiarProveedorSchema, credencialesProveedorSchema } from '@/lib/schemas/whatsapp';
+import { proveedorActivo, cambiarProveedor, guardarCredenciales } from '@/services/whatsappProveedores';
 
-// GET - Obtener estado de todos los proveedores
+// GET - Estado de todos los proveedores
 export async function GET(request: Request) {
   const noAutorizado = await requireAuth(request);
   if (noAutorizado) return noAutorizado;
-
   try {
-    const providers = await getAllProvidersStatus();
-    
-    // Obtener proveedor activo
-    const activeConfig: any = await db.prepare(
-      'SELECT valor FROM configuraciones WHERE clave = ?'
-    ).get('whatsapp_provider');
-    
-    const activeProvider = activeConfig?.valor || 'auto';
-    
-    return NextResponse.json({
-      success: true,
-      providers,
-      activeProvider,
-      testMode: process.env.WHATSAPP_TEST_MODE === 'true'
-    });
-  } catch (error: any) {
-    console.error('Error al obtener proveedores:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    const [providers, activeProvider] = await Promise.all([getAllProvidersStatus(), proveedorActivo()]);
+    return NextResponse.json({ success: true, providers, activeProvider, testMode: process.env.WHATSAPP_TEST_MODE === 'true' });
+  } catch (error) {
+    return respuestaError(error, 'Error al obtener proveedores');
   }
 }
 
@@ -37,48 +22,14 @@ export async function GET(request: Request) {
 export async function POST(request: NextRequest) {
   const noAutorizado = await requireAuth(request);
   if (noAutorizado) return noAutorizado;
-
   try {
-    const { provider } = await request.json();
-    
-    if (!provider) {
-      return NextResponse.json(
-        { success: false, error: 'Se requiere especificar el proveedor' },
-        { status: 400 }
-      );
-    }
-    
-    const validProviders = ['auto', 'greenapi', 'twilio', 'meta', 'wassenger', 'ultramsg'];
-    if (!validProviders.includes(provider)) {
-      return NextResponse.json(
-        { success: false, error: 'Proveedor no válido' },
-        { status: 400 }
-      );
-    }
-    
-    // Actualizar o insertar configuración
-    await db.prepare(`
-      INSERT INTO configuraciones (clave, valor, descripcion, categoria)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor
-    `).run(
-      'whatsapp_provider',
-      provider,
-      'Proveedor de WhatsApp activo (auto, greenapi, twilio, meta)',
-      'whatsapp'
-    );
-    
-    return NextResponse.json({
-      success: true,
-      message: `Proveedor cambiado a: ${provider}`,
-      provider
-    });
-  } catch (error: any) {
-    console.error('Error al cambiar proveedor:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    const validacion = await validarBody(request, cambiarProveedorSchema);
+    if (!validacion.ok) return validacion.response;
+    const { provider } = validacion.data;
+    await cambiarProveedor(provider);
+    return NextResponse.json({ success: true, message: `Proveedor cambiado a: ${provider}`, provider });
+  } catch (error) {
+    return respuestaError(error, 'Error al cambiar proveedor');
   }
 }
 
@@ -86,75 +37,13 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const noAutorizado = await requireAuth(request);
   if (noAutorizado) return noAutorizado;
-
   try {
-    const { provider, credentials } = await request.json();
-    
-    if (!provider || !credentials) {
-      return NextResponse.json(
-        { success: false, error: 'Se requiere proveedor y credenciales' },
-        { status: 400 }
-      );
-    }
-    
-    // Mapeo de credenciales por proveedor
-    const credentialMaps: Record<string, Record<string, string>> = {
-      greenapi: {
-        instanceId: 'greenapi_instance_id',
-        apiToken: 'greenapi_token'
-      },
-      twilio: {
-        accountSid: 'twilio_account_sid',
-        authToken: 'twilio_auth_token',
-        whatsappNumber: 'twilio_whatsapp_number'
-      },
-      meta: {
-        phoneNumberId: 'meta_phone_number_id',
-        accessToken: 'meta_access_token'
-      },
-      wassenger: {
-        apiKey: 'wassenger_api_key',
-        deviceId: 'wassenger_device_id'
-      },
-      ultramsg: {
-        instanceId: 'ultramsg_instance_id',
-        token: 'ultramsg_token'
-      }
-    };
-    
-    const credentialMap = credentialMaps[provider];
-    if (!credentialMap) {
-      return NextResponse.json(
-        { success: false, error: 'Proveedor no válido' },
-        { status: 400 }
-      );
-    }
-    
-    // Actualizar cada credencial
-    for (const [key, dbKey] of Object.entries(credentialMap)) {
-      if (credentials[key] !== undefined) {
-        await db.prepare(`
-          INSERT INTO configuraciones (clave, valor, descripcion, categoria)
-          VALUES (?, ?, ?, ?)
-          ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor
-        `).run(
-          dbKey,
-          credentials[key],
-          `Credencial ${key} para ${provider}`,
-          'whatsapp'
-        );
-      }
-    }
-    
-    return NextResponse.json({
-      success: true,
-      message: `Credenciales de ${provider} actualizadas exitosamente`
-    });
-  } catch (error: any) {
-    console.error('Error al actualizar credenciales:', error);
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    const validacion = await validarBody(request, credencialesProveedorSchema);
+    if (!validacion.ok) return validacion.response;
+    const { provider, credentials } = validacion.data;
+    await guardarCredenciales(provider, credentials);
+    return NextResponse.json({ success: true, message: `Credenciales de ${provider} actualizadas exitosamente` });
+  } catch (error) {
+    return respuestaError(error, 'Error al actualizar credenciales');
   }
 }

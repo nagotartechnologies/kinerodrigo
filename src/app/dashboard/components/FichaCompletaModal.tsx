@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { nombreMarca } from '@/lib/marca';
 import { formatearFechaLocal } from '../utils';
 import { generarFichaPDF } from '../utils/generarFichaPDF';
+import { useConfirm } from '@/components/ConfirmDialog';
 
 interface FichaCompletaModalProps {
   paciente: any;
@@ -22,6 +23,7 @@ export default function FichaCompletaModal({
   configuraciones = {},
   initialModoEdicion = false,
 }: FichaCompletaModalProps) {
+  const confirmar = useConfirm();
   const [pacienteSeleccionado, setPacienteSeleccionado] = useState<any>(pacienteInicial);
   const [modoEdicion, setModoEdicion] = useState(initialModoEdicion);
   const [sesionesPaciente, setSesionesPaciente] = useState<any[]>([]);
@@ -139,7 +141,7 @@ export default function FichaCompletaModal({
   };
 
   const handleEliminarDocumento = async (docId: number) => {
-    if (!pacienteSeleccionado || !confirm('¿Eliminar este documento?')) return;
+    if (!pacienteSeleccionado || !(await confirmar('¿Eliminar este documento?', { peligro: true }))) return;
     try {
       const response = await fetch(`/api/pacientes/${pacienteSeleccionado.id}/documentos?docId=${docId}`, {
         method: 'DELETE'
@@ -982,7 +984,7 @@ export default function FichaCompletaModal({
                   <><svg viewBox="0 0 24 24" fill="none" style={{ color: 'var(--estado-completada)' }} aria-hidden="true"><path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg> Reactivar Paciente</>
                 )}
               </h3>
-              <button className="modal-close" onClick={() => setShowModalEstado(false)} aria-label="Cerrar">
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalEstado(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/></svg>
               </button>
             </div>
@@ -1023,7 +1025,7 @@ export default function FichaCompletaModal({
           <div className="modal-content modal-sm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Reactivar Paciente</h3>
-              <button className="modal-close" onClick={() => setShowModalReactivar(false)} aria-label="Cerrar">
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalReactivar(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/></svg>
               </button>
             </div>
@@ -1067,7 +1069,7 @@ export default function FichaCompletaModal({
                 </svg>
                 Nuevo Episodio de Tratamiento
               </h3>
-              <button className="modal-close" onClick={() => setShowModalEpisodio(false)} aria-label="Cerrar">
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalEpisodio(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/></svg>
               </button>
             </div>

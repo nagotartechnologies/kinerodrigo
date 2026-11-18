@@ -1,40 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getWhatsAppProvider } from '@/lib/whatsapp/factory';
-import { verifyAuth } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
+import { validarBody } from '@/lib/validacion';
+import { respuestaError } from '@/lib/errores';
+import { telefonoPruebaSchema } from '@/lib/schemas/whatsapp';
+
+const MENSAJE_PRUEBA = 'Mensaje de prueba desde KINE-CITAS. Si recibes este mensaje, la conexion de WhatsApp esta funcionando correctamente.';
 
 export async function POST(request: NextRequest) {
-  const auth = await verifyAuth(request);
-  if (!auth.authenticated) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
-
+  const noAutorizado = await requireAuth(request);
+  if (noAutorizado) return noAutorizado;
   try {
-    const { telefono } = await request.json();
-
-    if (!telefono) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Se requiere un numero de telefono' 
-      }, { status: 400 });
-    }
-
+    const validacion = await validarBody(request, telefonoPruebaSchema);
+    if (!validacion.ok) return validacion.response;
     const provider = await getWhatsAppProvider();
-    
-    const result = await provider.sendMessage({
-      phone: telefono,
-      message: 'Mensaje de prueba desde KINE-CITAS. Si recibes este mensaje, la conexion de WhatsApp esta funcionando correctamente.'
-    });
-
-    return NextResponse.json({ 
-      success: true, 
-      provider: provider.name,
-      messageId: result.idMessage
-    });
-  } catch (error: any) {
-    console.error('Error en test de WhatsApp:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message || 'Error al enviar mensaje de prueba'
-    }, { status: 500 });
+    const result = await provider.sendMessage({ phone: validacion.data.telefono, message: MENSAJE_PRUEBA });
+    return NextResponse.json({ success: true, provider: provider.name, messageId: result.idMessage });
+  } catch (error) {
+    // Es una pantalla de diagnóstico: el motivo que da el proveedor le sirve al usuario
+    const detalle = error instanceof Error ? `: ${error.message}` : '';
+    return respuestaError(error, `Error al enviar mensaje de prueba${detalle}`);
   }
 }

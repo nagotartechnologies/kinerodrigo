@@ -4,10 +4,13 @@ import { useState, useEffect, useMemo } from 'react';
 import Paginacion, { usePaginacion } from './Paginacion';
 import { formatearFechaLocal, fechaAString } from '../utils';
 import FichaCompletaModal from './FichaCompletaModal';
+import { useConfirm } from '@/components/ConfirmDialog';
+import { TIPOS_SESION } from '@/lib/tiposSesion';
 
 
 // Módulo Sesiones
 export default function SesionesModule({ onNavigate, initialPacienteId }: { onNavigate?: (modulo: string, context?: { pacienteId?: number }) => void; initialPacienteId?: number }) {
+  const confirmar = useConfirm();
   const [sesiones, setSesiones] = useState<any[]>([]);
   const [pacientes, setPacientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -338,7 +341,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
   };
 
   const handleEliminarSesion = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar esta sesión?')) return;
+    if (!(await confirmar('¿Estás seguro de eliminar esta sesión?', { peligro: true }))) return;
     
     try {
       const response = await fetch(`/api/sesiones/${id}`, {
@@ -817,7 +820,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
   };
 
   const eliminarEjercicioDeBiblioteca = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar este ejercicio de la biblioteca? Esta acción no se puede deshacer.')) return;
+    if (!(await confirmar('¿Estás seguro de eliminar este ejercicio de la biblioteca? Esta acción no se puede deshacer.', { peligro: true }))) return;
     
     try {
       const response = await fetch(`/api/ejercicios/${id}`, {
@@ -1617,7 +1620,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editandoSesion ? 'Editar Sesión' : 'Nueva Sesión'}</h3>
-              <button className="modal-close" onClick={handleCerrarModal}>×</button>
+              <button className="modal-close" aria-label="Cerrar" onClick={handleCerrarModal}>×</button>
             </div>
             
             <form onSubmit={handleSubmit} className="ficha-form">
@@ -1677,9 +1680,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                       onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
                       required
                     >
-                      <option value="Kinesioterapia">Kinesioterapia</option>
-                      <option value="Control">Control</option>
-                      <option value="Rehabilitación">Rehabilitación</option>
+                      {TIPOS_SESION.map(tipo => <option key={tipo} value={tipo}>{tipo}</option>)}
                     </select>
                   </div>
 
@@ -2125,7 +2126,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 </svg>
                 Biblioteca de Ejercicios
               </h3>
-              <button className="modal-close" onClick={() => setMostrarGestionBiblioteca(false)} aria-label="Cerrar">
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setMostrarGestionBiblioteca(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
@@ -2195,7 +2196,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
           <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>📋 Evaluación Final del Tratamiento</h3>
-              <button className="modal-close" onClick={() => setShowModalEvaluacion(false)}>×</button>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalEvaluacion(false)}>×</button>
             </div>
             
             <div className="modal-body">
@@ -2255,7 +2256,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 </svg>
                 Progreso del Tratamiento
               </h3>
-              <button className="modal-close" onClick={() => setShowModalProgreso(false)} aria-label="Cerrar">×</button>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalProgreso(false)} aria-label="Cerrar">×</button>
             </div>
             
             <div className="modal-body">
@@ -2945,7 +2946,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                   </>
                 )}
               </h3>
-              <button className="modal-close" onClick={() => setShowModalEstadoPaciente(false)} aria-label="Cerrar">
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalEstadoPaciente(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>

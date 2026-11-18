@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { MARCA, nombreMarca } from '@/lib/marca';
 import SidebarNav from './components/SidebarNav';
+import { propsActivable } from './utils/accesible';
 import './dashboard.css';
 import './calendario.css';
 
@@ -581,7 +582,7 @@ export default function DashboardPage() {
 
         {/* Grilla de acceso a cada modulo del sistema */}
         <div className="modules-grid">
-          <div className="module-card" onClick={() => setSelectedModule('pacientes')}>
+          <div className="module-card" {...propsActivable(() => setSelectedModule('pacientes'))}>
             <div className="module-card-header">
               <div className="module-icon green">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -620,7 +621,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="module-card" onClick={() => setSelectedModule('citas')}>
+          <div className="module-card" {...propsActivable(() => setSelectedModule('citas'))}>
             <div className="module-card-header">
               <div className="module-icon blue">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -651,7 +652,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="module-card" onClick={() => setSelectedModule('sesiones')}>
+          <div className="module-card" {...propsActivable(() => setSelectedModule('sesiones'))}>
             <div className="module-card-header">
               <div className="module-icon purple">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -681,7 +682,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="module-card" onClick={() => setSelectedModule('pagos')}>
+          <div className="module-card" {...propsActivable(() => setSelectedModule('pagos'))}>
             <div className="module-card-header">
               <div className="module-icon orange">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -712,7 +713,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="module-card" onClick={() => setSelectedModule('configuracion')}>
+          <div className="module-card" {...propsActivable(() => setSelectedModule('configuracion'))}>
             <div className="module-card-header">
               <div className="module-icon gray">
                 <svg viewBox="0 0 24 24" fill="none">

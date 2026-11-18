@@ -3,10 +3,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import Paginacion, { usePaginacion } from './Paginacion';
 import { formatearFechaLocal, fechaAString } from '../utils';
+import { useConfirm } from '@/components/ConfirmDialog';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 export default function FinanzasModule() {
+  const confirmar = useConfirm();
   // Estado del mes seleccionado
   const [mesActual, setMesActual] = useState(() => {
     const now = new Date();
@@ -201,7 +203,7 @@ export default function FinanzasModule() {
 
   const handleEliminarMovimiento = async (mov: any) => {
     const tipo = mov.tipo === 'ingreso' ? 'ingreso' : 'gasto';
-    if (!confirm(`¿Eliminar este ${tipo}?`)) return;
+    if (!(await confirmar(`¿Eliminar este ${tipo}?`, { peligro: true }))) return;
     try {
       const url = mov.tipo === 'ingreso' ? `/api/pagos/${mov.id}` : `/api/gastos/${mov.id}`;
       const response = await fetch(url, { method: 'DELETE' });
@@ -269,7 +271,7 @@ export default function FinanzasModule() {
   };
 
   const handleEliminarGastoFijo = async (id: number) => {
-    if (!confirm('¿Eliminar este gasto fijo?')) return;
+    if (!(await confirmar('¿Eliminar este gasto fijo?', { peligro: true }))) return;
     try {
       const response = await fetch(`/api/gastos-fijos/${id}`, { method: 'DELETE' });
       const data = await response.json();
@@ -614,7 +616,7 @@ export default function FinanzasModule() {
           <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editandoPago ? 'Editar Ingreso' : 'Registrar Ingreso'}</h3>
-              <button className="modal-close" onClick={() => setShowModalIngreso(false)}>×</button>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalIngreso(false)}>×</button>
             </div>
             <form onSubmit={handleGuardarIngreso}>
               <div className="modal-body">
@@ -677,7 +679,7 @@ export default function FinanzasModule() {
           <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editandoGasto ? 'Editar Gasto' : 'Registrar Gasto'}</h3>
-              <button className="modal-close" onClick={() => setShowModalGasto(false)}>×</button>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalGasto(false)}>×</button>
             </div>
             <form onSubmit={handleGuardarGasto}>
               <div className="modal-body">
@@ -742,7 +744,7 @@ export default function FinanzasModule() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editandoGastoFijo ? 'Editar Gasto Fijo' : 'Nuevo Gasto Fijo'}</h3>
-              <button className="modal-close" onClick={() => setShowModalGastoFijo(false)}>×</button>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalGastoFijo(false)}>×</button>
             </div>
             <form onSubmit={handleGuardarGastoFijo}>
               <div className="modal-body">
@@ -784,7 +786,7 @@ export default function FinanzasModule() {
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
             <div className="modal-header">
               <h3>Nueva Categoria</h3>
-              <button className="modal-close" onClick={() => setShowModalCategoria(false)}>×</button>
+              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalCategoria(false)}>×</button>
             </div>
             <form onSubmit={handleCrearCategoria}>
               <div className="modal-body">
