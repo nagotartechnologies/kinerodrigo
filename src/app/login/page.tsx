@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MARCA } from '@/lib/marca';
 import { usePwa, instalarApp } from '@/lib/pwa';
 import './login.css';
@@ -16,6 +16,14 @@ export default function LoginPage() {
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
   const [mostrarPasosIOS, setMostrarPasosIOS] = useState(false);
   const { puedeInstalar, esIOS, instalada } = usePwa();
+
+  // VigilanteSesion redirige aquí con ?expirada=1 cuando la API rechaza la sesión.
+  // Se lee window.location en vez de useSearchParams para no exigir un <Suspense>
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('expirada') === '1') {
+      setError('Tu sesión expiró. Vuelve a iniciar sesión.');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

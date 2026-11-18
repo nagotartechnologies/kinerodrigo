@@ -10,6 +10,14 @@ const COLUMNAS_CREACION = COLUMNAS_PACIENTE.filter(
 );
 // Si llegan vacíos se conserva el valor previo: el dato vive también en el episodio
 const COLUMNAS_QUE_NO_SE_VACIAN: (keyof CamposPaciente)[] = ['lesion_consulta', 'objetivo_paciente', 'estado_tratamiento'];
+// La tabla en producción viene de un schema antiguo con NOT NULL en estas columnas
+// (el CREATE TABLE de db.ts no lo refleja). Vacío se guarda como '' en vez de NULL
+const COLUMNAS_NOT_NULL: (keyof CamposPaciente)[] = ['telefono', 'edad', 'altura', 'peso', 'lesion_consulta', 'objetivo_paciente'];
+
+function valorParaColumna(columna: keyof CamposPaciente, valor: CamposPaciente[keyof CamposPaciente]) {
+  if (valor === null && COLUMNAS_NOT_NULL.includes(columna)) return '';
+  return valor;
+}
 
 export async function listarPacientes() {
   return db.prepare('SELECT * FROM pacientes WHERE activo = 1 ORDER BY created_at DESC').all();
@@ -22,7 +30,7 @@ export async function obtenerPaciente(id: number) {
 }
 
 export async function crearPaciente(datos: CamposPaciente) {
-  const valores = COLUMNAS_CREACION.map((columna) => datos[columna] ?? null);
+  const valores = COLUMNAS_CREACION.map((columna) => valorParaColumna(columna, datos[columna] ?? null));
   const placeholders = COLUMNAS_CREACION.map(() => '?').join(', ');
   const result = await db
     .prepare(`INSERT INTO pacientes (${COLUMNAS_CREACION.join(', ')}) VALUES (${placeholders})`)
@@ -44,7 +52,7 @@ export async function actualizarPaciente(id: number, datos: CamposPaciente) {
   const campos = Object.fromEntries(COLUMNAS_PACIENTE.map((columna) => {
     const valor = datos[columna];
     const conservar = valor === null && COLUMNAS_QUE_NO_SE_VACIAN.includes(columna);
-    return [columna, conservar ? undefined : valor];
+    return [columna, conservar || valor === undefined ? undefined : valorParaColumna(columna, valor)];
   }));
 
   const update = sentenciaUpdate('pacientes', campos, id);

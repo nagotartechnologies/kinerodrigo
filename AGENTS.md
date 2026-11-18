@@ -100,6 +100,7 @@ src/
     cloudinary.ts
   components/DynamicFavicon.tsx, AppPwa.tsx
   components/ConfirmDialog.tsx  # ConfirmProvider + useConfirm(): reemplazo accesible de confirm()/alert()
+  components/VigilanteSesion.tsx  # en el layout del dashboard: si una /api/* responde 401, borra la cookie y manda a /login?expirada=1 (el middleware solo mira que exista la cookie, no si el JWT es válido)
 netlify/functions/
   recordatorios-cron.ts       # schedule '0 */2 * * *': solo llama a POST /api/cron/recordatorios con CRON_SECRET (la lógica vive en src/lib/cron.ts)
   backup-diario.ts            # schedule '0 3 * * *': dump SQL de las tablas
@@ -149,6 +150,7 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
 - `lastInsertRowid` es un `bigint`: hay que convertirlo con `Number(...)`.
 - `db.transaction()` **no es atómica**: solo ejecuta la función. Para operaciones atómicas usar `db.batch([{ sql, args }, ...])`, que devuelve un `ResultSet` por sentencia (con su `lastInsertRowid`).
 - `db.pragma()` no hace nada.
+- **El schema real de Turso no coincide del todo con `initDatabase()`**: la tabla `pacientes` en producción tiene `NOT NULL` en `telefono, edad, altura, peso, lesion_consulta, objetivo_paciente`. Por eso `services/pacientes/fichas.ts` guarda `''` en vez de `NULL` en esas columnas. Ante dudas, consultar `sqlite_master` en Turso antes de asumir el schema.
 - Las fechas se guardan como texto `YYYY-MM-DD` y las horas como `HH:MM`. En el front hay que evitar `new Date('YYYY-MM-DD')`, porque produce un desfase de zona horaria. Conviene parsear los componentes por separado.
 
 ## Modelo de datos (tablas principales)
