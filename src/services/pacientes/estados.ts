@@ -7,7 +7,7 @@ const ESTADO_POR_DEFECTO = 'activo';
 async function pacienteConEstado(id: number) {
   const paciente = await db.prepare('SELECT id, nombre, estado_paciente FROM pacientes WHERE id = ? AND activo = 1').get(id);
   if (!paciente) throw noEncontrado('Paciente no encontrado');
-  return { ...paciente, estado: String(paciente.estado_paciente || ESTADO_POR_DEFECTO) };
+  return { id: paciente.id, nombre: paciente.nombre, estado: String(paciente.estado_paciente || ESTADO_POR_DEFECTO) };
 }
 
 interface CambioEstado {

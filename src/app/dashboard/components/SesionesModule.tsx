@@ -2126,7 +2126,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 </svg>
                 Biblioteca de Ejercicios
               </h3>
-              <button className="modal-close" aria-label="Cerrar" onClick={() => setMostrarGestionBiblioteca(false)} aria-label="Cerrar">
+              <button className="modal-close" onClick={() => setMostrarGestionBiblioteca(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
@@ -2256,7 +2256,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                 </svg>
                 Progreso del Tratamiento
               </h3>
-              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalProgreso(false)} aria-label="Cerrar">×</button>
+              <button className="modal-close" onClick={() => setShowModalProgreso(false)} aria-label="Cerrar">×</button>
             </div>
             
             <div className="modal-body">
@@ -2946,7 +2946,7 @@ export default function SesionesModule({ onNavigate, initialPacienteId }: { onNa
                   </>
                 )}
               </h3>
-              <button className="modal-close" aria-label="Cerrar" onClick={() => setShowModalEstadoPaciente(false)} aria-label="Cerrar">
+              <button className="modal-close" onClick={() => setShowModalEstadoPaciente(false)} aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2"/>
                 </svg>
