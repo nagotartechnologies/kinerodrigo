@@ -82,7 +82,7 @@ src/
     citas/{consultas,mutaciones,conflictos,recurrentes}.ts
     pacientes/{fichas,estados,episodios,documentos}.ts
     sesiones/{consultas,mutaciones}.ts
-    finanzas/{pagos,gastos,gastosFijos,categorias}.ts
+    finanzas/{pagos,gastos,gastosFijos,categorias,cobros}.ts
     usuarios.ts, autenticacion.ts, limiteLogin.ts, configuraciones.ts, logo.ts, agenda.ts, whatsappProveedores.ts
   lib/
     db.ts                     # cliente Turso + wrapper que imita a better-sqlite3 + batch() + initDatabase()
@@ -173,6 +173,13 @@ const { changes, lastInsertRowid } = await db.prepare('INSERT ...').run(...param
    - WhatsApp con `notificarProfesional()` a `notif_whatsapp_telefono` (o a `telefono_contacto`), activable con `notif_whatsapp`.
    - Badge "Respuestas" en Citas, alimentado por `GET/POST /api/recordatorios/pendientes` (columna `revisado`).
 5. Diagnóstico: `/api/webhook/diagnostico`, `/api/whatsapp/diagnostico` y `/api/cron/diagnostico`. También están `DIAGNOSTICO_WHATSAPP.md` y `docs/plans/WEBHOOK_DEBUG.md`.
+
+## Recordatorios de pago (Finanzas → Recordatorios)
+
+- Envío **manual** y sin detección de deuda (decisión del usuario): se eligen uno o varios pacientes activos (buscador + checkboxes en `finanzas/RecordatoriosPago.tsx`) y "Enviar recordatorio" llama a `POST /api/cobros` `{ pacienteIds }` (`services/finanzas/cobros.ts`).
+- Máximo `MAX_RECORDATORIOS_PAGO_POR_ENVIO` (10) pacientes por petición por el timeout de Netlify; el cliente manda la selección en tandas secuenciales. Tras enviar, quedan marcados solo los que fallaron.
+- Cada envío (ok o fallido) queda en la tabla `recordatorios_pago`. La plantilla es `whatsapp_mensaje_cobro` (Configuración → WhatsApp) con `{paciente} {nombre_centro}`. Respeta `whatsapp_activo`. No hay envío automático por cron.
+- `crearPago()` acepta `citaId` (lo que manda el modal de Citas) y lo traduce a `sesion_id` de la sesión de esa cita.
 
 ## Advertencias conocidas
 

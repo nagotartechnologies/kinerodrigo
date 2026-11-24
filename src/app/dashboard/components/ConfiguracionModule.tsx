@@ -349,6 +349,12 @@ export default function ConfiguracionModule() {
                                 <code>{'{paciente}'}</code>
                               </>
                             )}
+                            {modalConfig.clave === 'whatsapp_mensaje_cobro' && (
+                              <>
+                                <code>{'{nombre_centro}'}</code>
+                                <code>{'{paciente}'}</code>
+                              </>
+                            )}
                             {modalConfig.clave === 'whatsapp_mensaje_reagendamiento' && (
                               <>
                                 <code>{'{telefono}'}</code>

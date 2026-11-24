@@ -4676,7 +4676,7 @@ a.pac-accion {
 
 .fin-vistas {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2px;
   padding: 3px;
   background: var(--surface-2);
@@ -4862,6 +4862,31 @@ a.pac-accion {
 
 .fin-fijos-botones button {
   width: 100%;
+}
+
+/* Recordatorios de pago: selección de pacientes */
+.fin-cobro__buscador {
+  width: 100%;
+  margin-bottom: var(--space-3);
+}
+
+.fin-cobro {
+  align-items: center;
+  min-height: var(--tap);
+  cursor: pointer;
+}
+
+.fin-cobro.is-seleccionado {
+  border-color: var(--accent);
+}
+
+.fin-cobro__check {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 @media (min-width: 769px) {

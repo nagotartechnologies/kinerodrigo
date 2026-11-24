@@ -1,5 +1,5 @@
 // Servicio de WhatsApp multi-proveedor
-import db from './db';
+import db, { MENSAJE_COBRO_POR_DEFECTO } from './db';
 import { getWhatsAppProvider } from './whatsapp/factory';
 import { nombreMarca } from './marca';
 
@@ -119,6 +119,15 @@ export async function formatearMensajeRecordatorio(cita: {
     duracion: String(cita.duracion),
     tipo: cita.tipo
   });
+}
+
+/**
+ * Formatear mensaje de recordatorio de pago
+ */
+export async function formatearMensajeCobro(cobro: { paciente: string }): Promise<string> {
+  const nombreCentro = nombreMarca(await getConfig('nombre_centro', ''));
+  const plantilla = await getConfig('whatsapp_mensaje_cobro', MENSAJE_COBRO_POR_DEFECTO);
+  return reemplazarVariables(plantilla, { nombre_centro: nombreCentro, paciente: cobro.paciente });
 }
 
 /**

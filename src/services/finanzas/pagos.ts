@@ -36,19 +36,29 @@ export async function obtenerPago(id: number) {
   return pago;
 }
 
+// Citas manda la cita y no la sesión: sin esto el vínculo pago-sesión se perdía
+async function resolverSesionId(datos: CrearPagoInput): Promise<number | null> {
+  if (datos.sesionId) {
+    const sesion = await db.prepare('SELECT id FROM sesiones WHERE id = ? AND paciente_id = ?').get(datos.sesionId, datos.pacienteId);
+    if (!sesion) throw noEncontrado('Sesión no encontrada');
+    return datos.sesionId;
+  }
+  if (!datos.citaId) return null;
+  const sesion = await db.prepare('SELECT id FROM sesiones WHERE cita_id = ? AND paciente_id = ? ORDER BY id DESC LIMIT 1')
+    .get(datos.citaId, datos.pacienteId);
+  return sesion ? Number(sesion.id) : null;
+}
+
 export async function crearPago(datos: CrearPagoInput) {
   const paciente = await db.prepare('SELECT id FROM pacientes WHERE id = ?').get(datos.pacienteId);
   if (!paciente) throw noEncontrado('Paciente no encontrado');
-  if (datos.sesionId) {
-    const sesion = await db.prepare('SELECT id FROM sesiones WHERE id = ?').get(datos.sesionId);
-    if (!sesion) throw noEncontrado('Sesión no encontrada');
-  }
+  const sesionId = await resolverSesionId(datos);
 
   const result = await db.prepare(`
     INSERT INTO pagos (paciente_id, sesion_id, monto, metodo_pago, estado, fecha_pago, concepto, notas, numero_factura)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    datos.pacienteId, datos.sesionId ?? null, datos.monto, datos.metodoPago, datos.estado || ESTADO_PAGO_POR_DEFECTO,
+    datos.pacienteId, sesionId, datos.monto, datos.metodoPago, datos.estado || ESTADO_PAGO_POR_DEFECTO,
     datos.fechaPago, datos.concepto || null, datos.notas || null, datos.numeroFactura || null
   );
   return obtenerPago(Number(result.lastInsertRowid));

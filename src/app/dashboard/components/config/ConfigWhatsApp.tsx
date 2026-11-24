@@ -194,6 +194,13 @@ export default function ConfigWhatsApp({ getConfigValue, handleEditarConfig, han
             </div>
             <button className="btn-secondary" onClick={() => handleEditarConfig('whatsapp_mensaje_reagendamiento')}>Editar</button>
           </div>
+          <div className="config-item">
+            <div className="config-item-info">
+              <p className="config-item-label">Mensaje de Cobro</p>
+              <p className="config-item-desc">Recordatorio de pago que se envía desde Finanzas → Recordatorios</p>
+            </div>
+            <button className="btn-secondary" onClick={() => handleEditarConfig('whatsapp_mensaje_cobro')}>Editar</button>
+          </div>
         </div>
       </div>
 

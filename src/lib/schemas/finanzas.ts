@@ -16,6 +16,8 @@ const idOpcional = z.preprocess((v) => (v === '' || v === undefined ? null : v),
 export const crearPagoSchema = z.object({
   pacienteId: idSchema,
   sesionId: idOpcional.optional(),
+  // Citas registra el pago desde la cita: el servicio lo traduce a su sesión
+  citaId: idOpcional.optional(),
   monto: montoPositivo,
   metodoPago: textoRequerido('El método de pago', 50),
   estado: z.string().max(30).optional(),
@@ -81,6 +83,17 @@ export const crearCategoriaSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Color inválido').optional(),
 });
 
+// Tope por petición para no pasar el timeout de las funciones de Netlify:
+// el cliente envía la selección en tandas de este tamaño
+export const MAX_RECORDATORIOS_PAGO_POR_ENVIO = 10;
+
+export const enviarRecordatoriosPagoSchema = z.object({
+  pacienteIds: z.array(idSchema, { error: 'Selecciona al menos un paciente' })
+    .min(1, 'Selecciona al menos un paciente')
+    .max(MAX_RECORDATORIOS_PAGO_POR_ENVIO, `Máximo ${MAX_RECORDATORIOS_PAGO_POR_ENVIO} pacientes por envío`),
+});
+
+export type EnviarRecordatoriosPagoInput = z.infer<typeof enviarRecordatoriosPagoSchema>;
 export type CrearPagoInput = z.infer<typeof crearPagoSchema>;
 export type ActualizarPagoInput = z.infer<typeof actualizarPagoSchema>;
 export type CrearGastoInput = z.infer<typeof crearGastoSchema>;

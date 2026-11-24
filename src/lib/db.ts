@@ -146,6 +146,8 @@ async function retryWithTimeout<T>(
   throw new Error('No se pudo completar la operación');
 }
 
+export const MENSAJE_COBRO_POR_DEFECTO = '💳 *RECORDATORIO DE PAGO - {nombre_centro}*\n\nHola {paciente},\n\nTe recordamos que tienes un pago pendiente por tus sesiones de kinesiología.\n\nSi ya realizaste el pago, por favor ignora este mensaje. ¡Gracias! 🙌';
+
 // Crea todas las tablas y datos iniciales si no existen.
 // Se ejecuta una sola vez por arranque del servidor.
 let dbInitialized = false;
@@ -451,6 +453,21 @@ export async function initDatabase() {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    // Recordatorios de pago enviados a mano desde Finanzas
+    await tursoClient.batch([
+      `CREATE TABLE IF NOT EXISTS recordatorios_pago (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        paciente_id INTEGER NOT NULL,
+        telefono TEXT NOT NULL,
+        mensaje TEXT NOT NULL,
+        estado TEXT NOT NULL DEFAULT 'enviado',
+        error_envio TEXT,
+        enviado_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (paciente_id) REFERENCES pacientes(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_recordatorios_pago_paciente ON recordatorios_pago (paciente_id, enviado_at)'
+    ], 'write');
+
     // Intentos fallidos de login (en BD y no en memoria: en Netlify cada
     // petición puede caer en una instancia distinta)
     await tursoClient.batch([
@@ -503,7 +520,8 @@ export async function initDatabase() {
       { clave: 'whatsapp_mensaje_recordatorio', valor: '🏥 *RECORDATORIO DE CITA - {nombre_centro}*\n\nHola {paciente},\n\nTe recordamos tu cita programada:\n\n📅 *Fecha:* {fecha}\n🕐 *Hora:* {hora}\n⏱️ *Duración:* {duracion} minutos\n📋 *Tipo:* {tipo}\n\nPor favor, responde con una de las siguientes opciones:\n\n1️⃣ *CONFIRMAR* - Para confirmar tu asistencia\n2️⃣ *CANCELAR* - Para cancelar la cita\n3️⃣ *REAGENDAR* - Para cambiar la fecha/hora\n\n¡Te esperamos! 💪', tipo: 'textarea', categoria: 'whatsapp', descripcion: 'Plantilla de mensaje de recordatorio' },
       { clave: 'whatsapp_mensaje_confirmacion', valor: '✅ *CITA CONFIRMADA*\n\nGracias {paciente}!\nTu cita ha sido confirmada para el {fecha} a las {hora}.\n\nNos vemos pronto! 🏥', tipo: 'textarea', categoria: 'whatsapp', descripcion: 'Mensaje de confirmación' },
       { clave: 'whatsapp_mensaje_cancelacion', valor: '❌ *CITA CANCELADA*\n\nHola {paciente},\nTu cita ha sido cancelada exitosamente.\n\nSi deseas agendar una nueva cita, contáctanos.\n¡Esperamos verte pronto! 🏥', tipo: 'textarea', categoria: 'whatsapp', descripcion: 'Mensaje de cancelación' },
-      { clave: 'whatsapp_mensaje_reagendamiento', valor: '📅 *REAGENDAR CITA*\n\nPara reagendar tu cita, contáctanos:\n📞 Teléfono: {telefono}\n\n¡Gracias! 🏥', tipo: 'textarea', categoria: 'whatsapp', descripcion: 'Mensaje de reagendamiento' }
+      { clave: 'whatsapp_mensaje_reagendamiento', valor: '📅 *REAGENDAR CITA*\n\nPara reagendar tu cita, contáctanos:\n📞 Teléfono: {telefono}\n\n¡Gracias! 🏥', tipo: 'textarea', categoria: 'whatsapp', descripcion: 'Mensaje de reagendamiento' },
+      { clave: 'whatsapp_mensaje_cobro', valor: MENSAJE_COBRO_POR_DEFECTO, tipo: 'textarea', categoria: 'whatsapp', descripcion: 'Mensaje de recordatorio de pago' }
     ];
 
     for (const config of configDefault) {

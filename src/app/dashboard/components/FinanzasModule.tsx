@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Paginacion, { usePaginacion } from './Paginacion';
 import { formatearFechaLocal, fechaAString } from '../utils';
 import { useConfirm } from '@/components/ConfirmDialog';
+import RecordatoriosPago from './finanzas/RecordatoriosPago';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -23,7 +24,7 @@ export default function FinanzasModule() {
   const [loading, setLoading] = useState(true);
 
   // UI
-  const [vista, setVista] = useState<'movimientos' | 'gastos-fijos'>('movimientos');
+  const [vista, setVista] = useState<'movimientos' | 'gastos-fijos' | 'recordatorios'>('movimientos');
   const [showModalIngreso, setShowModalIngreso] = useState(false);
   const [showModalGasto, setShowModalGasto] = useState(false);
   const [showModalGastoFijo, setShowModalGastoFijo] = useState(false);
@@ -453,6 +454,9 @@ export default function FinanzasModule() {
           <button role="tab" aria-selected={vista === 'gastos-fijos'} className={vista === 'gastos-fijos' ? 'vista-btn active' : 'vista-btn'} onClick={() => setVista('gastos-fijos')}>
             Gastos fijos
           </button>
+          <button role="tab" aria-selected={vista === 'recordatorios'} className={vista === 'recordatorios' ? 'vista-btn active' : 'vista-btn'} onClick={() => setVista('recordatorios')}>
+            Recordatorios
+          </button>
         </div>
         {vista === 'movimientos' && (
           <div className="pac-filtros fin-filtros" role="tablist" aria-label="Filtrar por tipo" data-no-swipe>
@@ -607,6 +611,10 @@ export default function FinanzasModule() {
               etiqueta="gastos fijos"
             />
           </div>
+        )}
+
+        {vista === 'recordatorios' && (
+          <RecordatoriosPago pacientes={pacientes} mostrarMensaje={mostrarMensaje} />
         )}
       </div>
 
